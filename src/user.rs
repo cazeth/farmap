@@ -144,6 +144,13 @@ impl Users {
         self.map.len()
     }
 
+    pub fn user_count_at_date(&self, date: NaiveDate) -> usize {
+        self.map
+            .iter()
+            .filter(|(_, user)| user.spam_score_at_date(&date).is_some())
+            .count()
+    }
+
     pub fn create_from_dir(dir: &str) -> Self {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
         let mut users = Users::default();
@@ -312,6 +319,33 @@ pub mod tests {
     pub fn test_user_count_on_dir() {
         let users = Users::create_from_dir("data/dummy-data/");
         assert_eq!(users.user_count(), 2);
+    }
+
+    #[test]
+    pub fn test_user_count_at_date() {
+        let users = Users::create_from_dir("data/dummy-data/");
+        assert_eq!(
+            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
+            0
+        );
+
+        assert_eq!(
+            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()),
+            0
+        );
+
+        assert_eq!(
+            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
+            1
+        );
+        assert_eq!(
+            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 5, 1).unwrap()),
+            1
+        );
+        assert_eq!(
+            users.user_count_at_date(NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()),
+            2
+        );
     }
 
     #[test]
