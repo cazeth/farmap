@@ -281,13 +281,14 @@ impl UnprocessedUserLine {
         let mut result: Vec<UnprocessedUserLine> = Vec::new();
         println!("paths :{:?}", paths);
 
-        for path in paths {
-            //let s = read_to_string(path.unwrap().path()).unwrap();
-            let mut new_lines = json_lines(path.unwrap().path())
-                .unwrap()
-                .collect::<Result<Vec<UnprocessedUserLine>, _>>()
-                .unwrap();
-            result.append(&mut new_lines);
+        for path in paths.flatten() {
+            if path.path().extension().unwrap_or_default() == "jsonl" {
+                let mut new_lines = json_lines(path.path())
+                    .unwrap()
+                    .collect::<Result<Vec<UnprocessedUserLine>, _>>()
+                    .unwrap();
+                result.append(&mut new_lines);
+            }
         }
         result
     }
