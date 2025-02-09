@@ -4,6 +4,8 @@ A WIP analysis tool for [farcaster label datasets](https://github.com/farcasterx
 
 ## Get Started
 
+Only tested on Linux so far, but it's probably not hard to make it run on other systems.
+
 It's easy to get started. You need to get data and you need to get program:
 
 ### get data
@@ -23,25 +25,27 @@ git clone https://github.com/cazeth/farmap.git
 cp farmap
 ```
 
-Now the program should work
+You can now run the program directly...
+
 ```bash
 cargo run -- --help
+
 ```
 
-or you can build the program and copy it to somewhere on PATH:
+...or build it and copy it to somewhere on PATH:
 
 ```bash
 cargo build --release
-cp ./target/release/farmap ~/.local/bin/
+cp ./target/release/farmap ~/.local/bin/  #.local/bin is an example of a dir on path. It is not a requirement to place it there.
 ```
 
-Now, if you store the data in the default directory as mentioned above, run the program with
+Now (if you stored the data in the default directory as mentioned above) run the program with
 
 ```bash
 farmap
 ```
 
-otherwise point the program to your data directory:
+otherwise you must point the program to your data directory:
 
 ```bash
 farmap -p {data-dir}
