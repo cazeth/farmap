@@ -195,6 +195,25 @@ impl Users {
         distribution_from_counts(&counts).unwrap()
     }
 
+    /// Returns the spam_score_distribution after applying a filter. The function returns None if
+    /// the subset is empty.
+    pub fn spam_score_distribution_for_subset<F>(&self, filter: F) -> Option<[f32; 3]>
+    where
+        F: Fn(&User) -> bool,
+    {
+        let mut counts = [0; 3];
+
+        for user in self.map.values().filter(|user| filter(user)) {
+            match user.latest_spam_record().0 {
+                SpamScore::Zero => counts[0] += 1,
+                SpamScore::One => counts[1] += 1,
+                SpamScore::Two => counts[2] += 2,
+            }
+        }
+
+        distribution_from_counts(&counts)
+    }
+
     pub fn current_spam_score_distribution(&self) -> [f32; 3] {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
@@ -409,5 +428,36 @@ pub mod tests {
 
         let date = NaiveDate::from_ymd_opt(2025, 1, 25).unwrap();
         assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::Zero);
+    }
+
+    #[test]
+    fn test_spam_distribution_for_users_created_at_or_after_date() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
+        let closure = |user: &User| user.created_at_or_after_date(date);
+
+        assert_eq!(
+            users.spam_score_distribution_for_subset(closure),
+            Some([0.0, 0.0, 1.0])
+        );
+    }
+
+    #[test]
+    fn test_spam_distribution_for_one_fid() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let closure = |user: &User| user.fid() == 2;
+
+        assert_eq!(
+            users.spam_score_distribution_for_subset(closure),
+            Some([0.0, 0.0, 1.0])
+        );
+    }
+
+    #[test]
+    fn test_none_for_filtered_spam_distribution() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let closure = |user: &User| user.fid() == 3;
+
+        assert_eq!(users.spam_score_distribution_for_subset(closure), None);
     }
 }
