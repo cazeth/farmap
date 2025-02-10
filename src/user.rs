@@ -177,7 +177,8 @@ impl Users {
 
     /// Returns the distribution of spam scores at a certain date. Excludes users that did not
     /// exist at the given date.
-    pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> [f32; 3] {
+    /// Returns none if the struct contains no users
+    pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
 
         for spam_score in self
@@ -192,7 +193,7 @@ impl Users {
             }
         }
 
-        distribution_from_counts(&counts).unwrap()
+        distribution_from_counts(&counts)
     }
 
     /// Returns the spam_score_distribution after applying a filter. The function returns None if
@@ -214,7 +215,7 @@ impl Users {
         distribution_from_counts(&counts)
     }
 
-    pub fn current_spam_score_distribution(&self) -> [f32; 3] {
+    pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
             match user.latest_spam_record().0 {
@@ -224,7 +225,7 @@ impl Users {
             }
         }
 
-        distribution_from_counts(&counts).unwrap()
+        distribution_from_counts(&counts)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &User> {
