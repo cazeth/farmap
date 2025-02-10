@@ -226,6 +226,10 @@ impl Users {
 
         distribution_from_counts(&counts).unwrap()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &User> {
+        self.map.values()
+    }
 }
 
 impl TryFrom<UnprocessedUserLine> for User {
