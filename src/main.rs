@@ -1,9 +1,12 @@
 pub mod spam_score;
+pub mod subset;
 pub mod user;
 pub mod utils;
 use chrono::NaiveDate;
 use clap::Parser;
 use std::path::PathBuf;
+use subset::UsersSubset;
+use user::User;
 use user::Users;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
@@ -19,6 +22,10 @@ struct Args {
     /// to a directory with such data
     #[arg(short, long, default_value = None)]
     path: Option<PathBuf>,
+
+    /// Only include users created at or after this date.
+    #[arg(short, long, default_value = None)]
+    created_after_date: Option<String>,
 }
 
 fn main() {
@@ -38,11 +45,29 @@ fn main() {
 
     let users = Users::create_from_dir(&path);
 
-    println!(
+    // If filter_date is some, create a subset by that filter.
+    let subset = args.created_after_date.map(|filter_date| {
+        UsersSubset::from_filter(&users, |user: &User| {
+            user.created_at_or_after_date(
+                NaiveDate::parse_from_str(&filter_date, "%Y-%m-%d").unwrap(),
+            )
+        })
+    });
+
+    if let Some(subset) = subset {
+        println!(
+            "The spam score distribution at date {:?} is {:?}. User count in subset is {}",
+            date,
+            subset.spam_score_distribution_at_date(date),
+            subset.user_count(),
+        );
+    } else {
+        println!(
         "The spam score distribution at date {:?} is {:?}. The number of users included is {:?} (total {})",
         date,
         users.spam_score_distribution_at_date(date),
         users.user_count_at_date(date),
         users.user_count(),
     );
+    }
 }
