@@ -50,6 +50,27 @@ impl<'a> UsersSubset<'a> {
         distribution_from_counts(&counts)
     }
 
+    /// Returns the distribution of spam scores at a certain date. Excludes users that did not
+    /// exist at the given date.
+    /// Returns none if the struct contains no users or if no users existed at the provided date.
+    pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
+        let mut counts = [0; 3];
+
+        for spam_score in self
+            .map
+            .iter()
+            .filter_map(|(_, user)| user.spam_score_at_date(&date))
+        {
+            match spam_score {
+                SpamScore::Zero => counts[0] += 1,
+                SpamScore::One => counts[1] += 1,
+                SpamScore::Two => counts[2] += 1,
+            }
+        }
+
+        distribution_from_counts(&counts)
+    }
+
     pub fn user_count(&self) -> usize {
         self.map.len()
     }
@@ -100,5 +121,25 @@ mod tests {
         assert_eq!(subset.user_count(), 2);
         subset.filter(|user: &User| user.fid() == 1);
         assert_eq!(subset.user_count(), 1);
+    }
+
+    #[test]
+    fn test_spam_score_distribution_at_date() {
+        let users = Users::create_from_dir("data/dummy-data");
+        assert_eq!(users.user_count(), 2);
+        let subset = UsersSubset::from_filter(&users, |user: &User| {
+            user.created_at_or_after_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
+        });
+
+        assert!(subset
+            .spam_score_distribution_at_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
+            .is_none(),);
+
+        assert_eq!(
+            subset
+                .spam_score_distribution_at_date(NaiveDate::from_ymd_opt(2025, 1, 23).unwrap())
+                .unwrap(),
+            [0.0, 0.0, 1.0]
+        );
     }
 }
