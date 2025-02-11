@@ -175,6 +175,21 @@ impl Users {
         users
     }
 
+    /// Applies a filter to the user data. Use with caution since the data is removed from the
+    /// struct. For most situations it is preferred to create a subset of the data.
+    pub fn apply_filter<F>(&mut self, filter: F)
+    where
+        F: Fn(&User) -> bool,
+    {
+        let old_map = std::mem::take(&mut self.map);
+        let new_map = old_map
+            .into_values()
+            .filter(|user| filter(user))
+            .map(|user| (user.fid(), user))
+            .collect::<HashMap<usize, User>>();
+        self.map = new_map;
+    }
+
     /// Returns the distribution of spam scores at a certain date. Excludes users that did not
     /// exist at the given date.
     /// Returns none if the struct contains no users
@@ -456,6 +471,17 @@ pub mod tests {
             users.spam_score_distribution_for_subset(closure),
             Some([0.0, 0.0, 1.0])
         );
+    }
+
+    #[test]
+    fn test_apply_filter_for_one_fid() {
+        let mut users = Users::create_from_dir("data/dummy-data");
+        let closure = |user: &User| user.fid() == 2;
+        users.apply_filter(closure);
+        assert_eq!(
+            users.current_spam_score_distribution(),
+            Some([0.0, 0.0, 1.0])
+        )
     }
 
     #[test]
