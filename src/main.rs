@@ -2,8 +2,10 @@ pub mod spam_score;
 pub mod subset;
 pub mod user;
 pub mod utils;
+use chrono::Days;
 use chrono::NaiveDate;
 use clap::Parser;
+use clap::Subcommand;
 use std::path::PathBuf;
 use subset::UsersSubset;
 use user::User;
@@ -13,7 +15,7 @@ use user::Users;
 #[derive(Parser, Debug)]
 struct Args {
     /// Date of analysis in format YYYY-MM-DD.
-    /// If no date is provided the program assumes the most recent date.
+    /// If no date is provided the program assumes today's date.
     #[arg(short, long, default_value = None)]
     date: Option<String>,
 
@@ -26,6 +28,24 @@ struct Args {
     /// Only include users created at or after this date.
     #[arg(short, long, default_value = None)]
     created_after_date: Option<String>,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Generate a change matrix from the data. The change matrix tracks the spam label of each user
+    /// between two dates. Prints the changes in a matrix where the rows
+    /// represent the spam label at the from date and the columns represent the spam label at the to
+    /// date.
+    ChangeMatrix {
+        #[arg(short, long)]
+        from_date: String,
+
+        #[arg(short, long)]
+        to_date: String,
+    },
 }
 
 fn main() {
@@ -54,20 +74,58 @@ fn main() {
         })
     });
 
-    if let Some(subset) = subset {
-        println!(
-            "The spam score distribution at date {:?} is {:?}. User count in subset is {}",
-            date,
-            subset.spam_score_distribution_at_date(date),
-            subset.user_count(),
-        );
+    // If date is some, filter out users created after that date.
+    let mut set = if let Some(set) = subset {
+        set
     } else {
-        println!(
-        "The spam score distribution at date {:?} is {:?}. The number of users included is {:?} (total {})",
+        UsersSubset::from_filter(&users, |_: &User| true)
+    };
+
+    if args.date.is_some() {
+        set.filter(|user: &User| {
+            !user.created_at_or_after_date(date.checked_add_days(Days::new(1)).unwrap())
+            // created
+            // at or
+            // before
+            // date
+        })
+    }
+
+    match args.command {
+        Some(Commands::ChangeMatrix { from_date, to_date }) => {
+            let from_date = NaiveDate::parse_from_str(&from_date, "%Y-%m-%d").unwrap();
+            let to_date = NaiveDate::parse_from_str(&to_date, "%Y-%m-%d").unwrap();
+            let days = to_date.signed_duration_since(from_date).num_days();
+            if days <= 0 {
+                println!("The days between to_date and from_date must be greater than zero.");
+                panic!();
+            };
+
+            print_change_matrix(&set, from_date, Days::new(days as u64));
+        }
+        None => {
+            print_spam_score_distribution(&set, date);
+        }
+    }
+}
+
+fn print_spam_score_distribution(set: &UsersSubset, date: NaiveDate) {
+    println!(
+        "Spam score distribution at date {:?}: \n 0: {:.2}% \n 1: {:.2}% \n 2: {:.2}% \n User count in set is {}",
         date,
-        users.spam_score_distribution_at_date(date),
-        users.user_count_at_date(date),
-        users.user_count(),
+        set.spam_score_distribution_at_date(date).unwrap()[0]*100.0,
+        set.spam_score_distribution_at_date(date).unwrap()[1]*100.0,
+        set.spam_score_distribution_at_date(date).unwrap()[2]*100.0,
+        set.user_count(),
     );
+}
+
+fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
+    let matrix = subset.spam_change_matrix(from_date, days);
+    for row in matrix {
+        for element in row {
+            print!(" {} ", element)
+        }
+        println!();
     }
 }
