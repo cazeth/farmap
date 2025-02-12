@@ -2,6 +2,7 @@ use crate::spam_score::SpamScore;
 use crate::user::User;
 use crate::user::Users;
 use crate::utils::distribution_from_counts;
+use chrono::Days;
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
@@ -50,6 +51,29 @@ impl<'a> UsersSubset<'a> {
         distribution_from_counts(&counts)
     }
 
+    /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
+    /// it means that 1 user has moved from spam score i to spam score j during the period.
+    pub fn spam_change_matrix(&self, initial_date: NaiveDate, days: Days) -> [[usize; 3]; 3] {
+        let end_date = initial_date
+            .checked_add_days(days)
+            .unwrap_or(NaiveDate::MAX);
+
+        let mut result: [[usize; 3]; 3] = [[0; 3]; 3];
+
+        for user in self.map.values() {
+            if let Some(from_spam_score) = user.spam_score_at_date(&initial_date) {
+                let from_index = *from_spam_score as usize;
+                let to_spam_score = user.spam_score_at_date(&end_date).unwrap(); // must be Some if
+                                                                                 // intial_date
+                                                                                 // is Some.
+                let to_index = *to_spam_score as usize;
+                result[from_index][to_index] += 1;
+            }
+        }
+
+        result
+    }
+
     /// Returns the distribution of spam scores at a certain date. Excludes users that did not
     /// exist at the given date.
     /// Returns none if the struct contains no users or if no users existed at the provided date.
@@ -78,8 +102,6 @@ impl<'a> UsersSubset<'a> {
 
 #[cfg(test)]
 mod tests {
-
-    use chrono::NaiveDate;
 
     use super::*;
 
@@ -141,5 +163,19 @@ mod tests {
                 .unwrap(),
             [0.0, 0.0, 1.0]
         );
+    }
+
+    #[test]
+    fn test_spam_change_matrix() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let subset = UsersSubset::from_filter(&users, |_: &User| true);
+        let change_matrix =
+            subset.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
+        assert_eq!(change_matrix, [[0, 0, 0], [1, 0, 0], [0, 0, 0]]);
+        let change_matrix = subset.spam_change_matrix(
+            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
+            Days::new(700),
+        );
+        assert_eq!(change_matrix, [[1, 0, 0], [0, 0, 0], [0, 0, 1]]);
     }
 }
