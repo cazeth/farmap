@@ -37,6 +37,10 @@ impl User {
         self.earliest_spam_record().1 >= date
     }
 
+    pub fn created_at_or_before_date(&self, date: NaiveDate) -> bool {
+        self.earliest_spam_record().1 <= date
+    }
+
     // TODO need to return an error if a spam record exists with the same date.
     fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), String> {
         //let mut index = 0;
@@ -490,5 +494,25 @@ pub mod tests {
         let closure = |user: &User| user.fid() == 3;
 
         assert_eq!(users.spam_score_distribution_for_subset(closure), None);
+    }
+
+    #[test]
+    fn test_created_by_before_date() {
+        let users = Users::create_from_dir("data/dummy-data");
+
+        let user = users.user(1).unwrap();
+        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
+
+        let user = users.user(2).unwrap();
+        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 1, 31).unwrap()));
+        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
+        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
+        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 22).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 24).unwrap()));
+        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
     }
 }
