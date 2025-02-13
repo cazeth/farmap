@@ -98,6 +98,10 @@ impl<'a> UsersSubset<'a> {
     pub fn user_count(&self) -> usize {
         self.map.len()
     }
+
+    pub fn user(&self, fid: usize) -> Option<&User> {
+        self.map.get(&fid).copied()
+    }
 }
 
 #[cfg(test)]
@@ -177,5 +181,21 @@ mod tests {
             Days::new(700),
         );
         assert_eq!(change_matrix, [[1, 0, 0], [0, 0, 0], [0, 0, 1]]);
+    }
+
+    #[test]
+    fn test_get_user() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let subset = UsersSubset::from_filter(&users, |_: &User| true);
+        assert!(subset.user(3).is_none());
+        assert_eq!(
+            subset.user(1).unwrap().earliest_spam_record().1,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+        );
+
+        assert_eq!(
+            subset.user(2).unwrap().earliest_spam_record().1,
+            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+        );
     }
 }
