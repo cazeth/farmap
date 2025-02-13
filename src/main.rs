@@ -25,9 +25,9 @@ struct Args {
     #[arg(short, long, default_value = None)]
     path: Option<PathBuf>,
 
-    /// Only include users created at or after this date.
+    /// Only include users with earliest spam score at or after this date.
     #[arg(short, long, default_value = None)]
-    created_after_date: Option<String>,
+    after_date: Option<String>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -65,11 +65,11 @@ fn main() {
 
     let users = Users::create_from_dir(&path);
 
-    // If filter_date is some, create a subset by that filter.
-    let subset = args.created_after_date.map(|filter_date| {
+    // If after_date is some, create a subset by that filter.
+    let subset = args.after_date.map(|after_date| {
         UsersSubset::from_filter(&users, |user: &User| {
             user.created_at_or_after_date(
-                NaiveDate::parse_from_str(&filter_date, "%Y-%m-%d").unwrap(),
+                NaiveDate::parse_from_str(&after_date, "%Y-%m-%d").unwrap(),
             )
         })
     });
