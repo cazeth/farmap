@@ -138,3 +138,37 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
         println!();
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use std::env;
+
+    use assert_cmd::Command;
+
+    #[test]
+    fn test_distribution_on_dummy_data() {
+        let current_dir = env::current_dir().unwrap();
+        let path_arg = format!("-p{}{}", current_dir.to_str().unwrap(), "/data/dummy-data/");
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("spam-distribution")
+            .arg("-d 2025-01-01")
+            .assert()
+            .stdout(
+                "Spam score distribution at date 2025-01-01: \n 0: 0.00% \n 1: 100.00% \n 2: 0.00% \n User count in set is 1\n",
+            );
+
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg)
+            .arg("spam-distribution")
+            .arg("-d 2025-01-23")
+            .assert()
+            .stdout(
+                "Spam score distribution at date 2025-01-23: \n 0: 50.00% \n 1: 0.00% \n 2: 50.00% \n User count in set is 2\n",
+            );
+    }
+}

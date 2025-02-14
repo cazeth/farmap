@@ -330,7 +330,6 @@ impl UnprocessedUserLine {
     pub fn import_data_from_dir(data_dir: &str) -> Vec<UnprocessedUserLine> {
         let paths = read_dir(data_dir).unwrap();
         let mut result: Vec<UnprocessedUserLine> = Vec::new();
-        println!("paths :{:?}", paths);
 
         for path in paths.flatten() {
             if path.path().extension().unwrap_or_default() == "jsonl" {
