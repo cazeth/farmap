@@ -72,7 +72,7 @@ fn main() {
     // If after_date is some, create a subset by that filter.
     // If after_date is none, create a set with all users
     let mut set = args.after_date.map_or_else(
-        || UsersSubset::from_filter(&users, |_: &User| true),
+        || UsersSubset::from(&users),
         |after_date| {
             UsersSubset::from_filter(&users, |user: &User| {
                 user.created_at_or_after_date(

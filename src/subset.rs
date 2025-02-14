@@ -104,6 +104,17 @@ impl<'a> UsersSubset<'a> {
     }
 }
 
+impl<'a> From<&'a Users> for UsersSubset<'a> {
+    fn from(users: &'a Users) -> Self {
+        let map: HashMap<usize, &User> = users
+            .data()
+            .iter()
+            .map(|(key, value)| (*key, value))
+            .collect();
+        Self { map }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -126,27 +137,27 @@ mod tests {
     #[test]
     fn test_user_count() {
         let users = Users::create_from_dir("data/dummy-data");
-        let mut subset = UsersSubset::from_filter(&users, |_: &User| true);
-        subset.filter(|user: &User| {
+        let mut set = UsersSubset::from(&users);
+        set.filter(|user: &User| {
             !user.created_at_or_after_date(NaiveDate::from_ymd_opt(2023, 12, 29).unwrap())
         });
-        assert_eq!(subset.user_count(), 0);
-        let mut subset = UsersSubset::from_filter(&users, |_: &User| true);
-        subset.filter(|user: &User| {
+        assert_eq!(set.user_count(), 0);
+        let mut set = UsersSubset::from_filter(&users, |_: &User| true);
+        set.filter(|user: &User| {
             !user.created_at_or_after_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
         });
-        assert_eq!(subset.user_count(), 1);
+        assert_eq!(set.user_count(), 1);
     }
 
     #[test]
     fn filter_test() {
         let users = Users::create_from_dir("data/dummy-data");
-        let mut subset = UsersSubset::from_filter(&users, |_: &User| true);
-        assert_eq!(subset.user_count(), 2);
-        subset.filter(|user: &User| user.fid() != 3);
-        assert_eq!(subset.user_count(), 2);
-        subset.filter(|user: &User| user.fid() == 1);
-        assert_eq!(subset.user_count(), 1);
+        let mut set = UsersSubset::from(&users);
+        assert_eq!(set.user_count(), 2);
+        set.filter(|user: &User| user.fid() != 3);
+        assert_eq!(set.user_count(), 2);
+        set.filter(|user: &User| user.fid() == 1);
+        assert_eq!(set.user_count(), 1);
     }
 
     #[test]
@@ -172,11 +183,11 @@ mod tests {
     #[test]
     fn test_spam_change_matrix() {
         let users = Users::create_from_dir("data/dummy-data");
-        let subset = UsersSubset::from_filter(&users, |_: &User| true);
+        let set = UsersSubset::from(&users);
         let change_matrix =
-            subset.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
+            set.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
         assert_eq!(change_matrix, [[0, 0, 0], [1, 0, 0], [0, 0, 0]]);
-        let change_matrix = subset.spam_change_matrix(
+        let change_matrix = set.spam_change_matrix(
             NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
             Days::new(700),
         );
@@ -186,16 +197,23 @@ mod tests {
     #[test]
     fn test_get_user() {
         let users = Users::create_from_dir("data/dummy-data");
-        let subset = UsersSubset::from_filter(&users, |_: &User| true);
-        assert!(subset.user(3).is_none());
+        let set = UsersSubset::from(&users);
+        assert!(set.user(3).is_none());
         assert_eq!(
-            subset.user(1).unwrap().earliest_spam_record().1,
+            set.user(1).unwrap().earliest_spam_record().1,
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
         );
 
         assert_eq!(
-            subset.user(2).unwrap().earliest_spam_record().1,
+            set.user(2).unwrap().earliest_spam_record().1,
             NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
         );
+    }
+
+    #[test]
+    fn test_full_set_from_data() {
+        let users = Users::create_from_dir("data/dummy-data");
+        let set = UsersSubset::from(&users);
+        assert_eq!(users.user_count(), set.user_count());
     }
 }
