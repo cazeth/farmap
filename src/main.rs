@@ -14,11 +14,6 @@ use user::Users;
 /// Returns the spam score distribution of warpcast label data at a certain date.
 #[derive(Parser, Debug)]
 struct Args {
-    /// Date of analysis in format YYYY-MM-DD.
-    /// If no date is provided the program assumes today's date.
-    #[arg(short, long, default_value = None)]
-    date: Option<String>,
-
     /// Path to data directory. If no path is provided the program checks $HOME/.local/share/farmap. It is necessary to
     /// either populate that directory with farcaster label data in .jsonl files or provide a path
     /// to a directory with such data
@@ -50,6 +45,13 @@ enum Commands {
         #[arg(short, long)]
         to_date: String,
     },
+
+    SpamDistribution {
+        /// Date of analysis in format YYYY-MM-DD.
+        /// If no date is provided the program assumes today's date.
+        #[arg(short, long, default_value = None)]
+        date: Option<String>,
+    },
 }
 
 fn main() {
@@ -59,12 +61,6 @@ fn main() {
     } else {
         let home_dir = std::env::var("HOME").unwrap();
         home_dir + "/.local/share/farmap"
-    };
-
-    let date = if let Some(d) = &args.date {
-        NaiveDate::parse_from_str(d, "%Y-%m-%d").unwrap()
-    } else {
-        chrono::Local::now().naive_local().date()
     };
 
     let users = Users::create_from_dir(&path);
@@ -91,16 +87,6 @@ fn main() {
         })
     };
 
-    if args.date.is_some() {
-        set.filter(|user: &User| {
-            !user.created_at_or_after_date(date.checked_add_days(Days::new(1)).unwrap())
-            // created
-            // at or
-            // before
-            // date
-        })
-    }
-
     match args.command {
         Some(Commands::ChangeMatrix { from_date, to_date }) => {
             let from_date = NaiveDate::parse_from_str(&from_date, "%Y-%m-%d").unwrap();
@@ -113,8 +99,21 @@ fn main() {
 
             print_change_matrix(&set, from_date, Days::new(days as u64));
         }
+
+        Some(Commands::SpamDistribution { date }) => {
+            let analysis_date = if let Some(d) = &date {
+                NaiveDate::parse_from_str(d, "%Y-%m-%d").unwrap()
+            } else {
+                chrono::Local::now().naive_local().date()
+            };
+            set.filter(|user: &User| user.created_at_or_before_date(analysis_date));
+            print_spam_score_distribution(&set, analysis_date);
+        }
+
         None => {
-            print_spam_score_distribution(&set, date);
+            // The program returns the spam distribution today if no option is provided
+            let analysis_date = chrono::Local::now().naive_local().date();
+            print_spam_score_distribution(&set, analysis_date);
         }
     }
 }
