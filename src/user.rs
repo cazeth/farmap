@@ -250,6 +250,10 @@ impl Users {
     pub fn iter(&self) -> impl Iterator<Item = &User> {
         self.map.values()
     }
+
+    pub fn data(&self) -> &HashMap<usize, User> {
+        &self.map
+    }
 }
 
 impl TryFrom<UnprocessedUserLine> for User {
