@@ -52,6 +52,12 @@ enum Commands {
         #[arg(short, long, default_value = None)]
         date: Option<String>,
     },
+
+    /// Print the spam score and their dates set for a given FID.
+    Fid {
+        #[arg(short, long)]
+        fid: usize,
+    },
 }
 
 fn main() {
@@ -115,6 +121,18 @@ fn main() {
             let analysis_date = chrono::Local::now().naive_local().date();
             print_spam_score_distribution(&set, analysis_date);
         }
+
+        Some(Commands::Fid { fid }) => {
+            print_fid_history(&set, &fid);
+        }
+    }
+}
+
+fn print_fid_history(set: &UsersSubset, fid: &usize) {
+    println!("Spam record history for {}", fid);
+    println!("------");
+    for record in set.user(*fid).unwrap().all_spam_records() {
+        println!("{:?}: {:?}", record.1, record.0 as usize);
     }
 }
 
