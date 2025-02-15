@@ -41,16 +41,23 @@ impl User {
         self.earliest_spam_record().1 <= date
     }
 
-    // TODO need to return an error if a spam record exists with the same date.
-    fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), String> {
-        //let mut index = 0;
+    fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
         let mut label_iter = self.labels.iter().enumerate();
         let label_iter_len = self.labels.iter().len();
 
         let index = loop {
-            if let Some((i, (_, label_date))) = label_iter.next() {
-                if new_record.1 < *label_date {
+            if let Some((i, (score, date))) = label_iter.next() {
+                if new_record.1 < *date {
                     break i;
+                } else if new_record.1 == *date && new_record.0 == *score {
+                    return Ok(());
+                } else if new_record.1 == *date && new_record.0 != *score {
+                    return Err(UserError::SpamScoreCollision {
+                        fid: self.fid(),
+                        date: *date,
+                        old_spam_score: *score,
+                        new_spam_score: new_record.0,
+                    });
                 };
             } else {
                 break label_iter_len;
@@ -61,7 +68,7 @@ impl User {
         Ok(())
     }
 
-    pub fn merge_user(&mut self, other: Self) -> Result<(), String> {
+    pub fn merge_user(&mut self, other: Self) -> Result<(), UserError> {
         assert_eq!(self.fid(), other.fid());
 
         for spam_record in other.labels {
@@ -367,6 +374,42 @@ pub mod tests {
         assert!(SpamScore::try_from(2).is_ok());
         assert!(SpamScore::try_from(3).is_err());
         assert!(SpamScore::try_from(100).is_err());
+    }
+
+    #[test]
+    pub fn test_spam_score_collision_error_for_invalid_record_add() {
+        let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
+        let later_date = NaiveDate::from_ymd_opt(2020, 1, 3).unwrap();
+        let earlier_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+
+        let spam_record = (SpamScore::One, date);
+        let mut user = User {
+            fid: 1,
+            labels: vec![spam_record],
+        };
+
+        assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
+        assert!(user.add_spam_record((SpamScore::One, date)).is_ok());
+        assert_eq!(user.all_spam_records().len(), 1);
+        assert!(user.add_spam_record((SpamScore::Two, later_date)).is_ok());
+        assert_eq!(user.all_spam_records().len(), 2);
+
+        //make sure spam_records are sorted
+        assert_eq!(user.all_spam_records().first().unwrap().1, date);
+        assert_eq!(user.all_spam_records().last().unwrap().1, later_date);
+
+        assert!(user
+            .add_spam_record((SpamScore::Zero, earlier_date))
+            .is_ok());
+        assert_eq!(
+            user.all_spam_records().first().unwrap(),
+            &(SpamScore::Zero, earlier_date)
+        );
+        assert_eq!(user.all_spam_records()[1], (SpamScore::One, date));
+        assert_eq!(
+            user.all_spam_records().last().unwrap(),
+            &(SpamScore::Two, later_date)
+        );
     }
 
     #[test]
