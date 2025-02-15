@@ -77,19 +77,24 @@ impl User {
         Ok(())
     }
 
+    /// Merges two user objects into one. Both must have the same FID and no contradictory spam
+    /// records (i.e same date but different scores)
     pub fn merge_user(&mut self, other: Self) -> Result<(), UserError> {
-        assert_eq!(self.fid(), other.fid());
+        if self.fid != other.fid() {
+            return Err(UserError::DifferentFidMerge {
+                fid_1: self.fid,
+                fid_2: other.fid,
+            });
+        };
 
-        for spam_record in other.labels {
-            self.add_spam_record(spam_record)?;
+        for spam_record in other.all_spam_records() {
+            self.add_spam_record(*spam_record)?
         }
 
-        todo!();
+        Ok(())
     }
 
-    // TODO : this method is weird because if other has many elements in label it doesn't merge
-    // all of them but it still accepts it as input.
-    // it's more of a merge but it doesn't quite work.
+    #[deprecated(note = "use merge_user instead")]
     pub fn update_user(&mut self, other: Self) {
         assert_eq!(self.fid(), other.fid());
         //self.labels.push(*other.labels.first().unwrap())
@@ -147,6 +152,7 @@ impl Users {
     /// add a user to the collection. If the fid already exists, the label is updated.
     pub fn push(&mut self, user: User) -> bool {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
+            #[allow(deprecated)]
             existing_user.update_user(user);
             false
         } else {
