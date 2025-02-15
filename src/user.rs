@@ -256,6 +256,17 @@ impl Users {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum UserError {
+    #[error("User {0} already has a spam record for date {1}. The existing spam score at the date is {} but a spamscore of {} is now trying to be set.", .fid, . date) ]
+    SpamScoreCollision {
+        fid: usize,
+        date: NaiveDate,
+        old_spam_score: SpamScore,
+        new_spam_score: SpamScore,
+    },
+}
+
 impl TryFrom<UnprocessedUserLine> for User {
     type Error = InvalidInputError;
 
