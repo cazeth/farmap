@@ -17,6 +17,15 @@ pub struct User {
 type SpamRecord = (SpamScore, NaiveDate);
 
 impl User {
+    /// This method only takes a single SpamRecord as input. Therefore it cannot fail. Add more
+    /// SpamRecords with add_spam_record. This function is mostly used for testing.
+    pub fn new(fid: usize, labels: SpamRecord) -> Self {
+        Self {
+            fid,
+            labels: vec![labels],
+        }
+    }
+
     pub fn fid(&self) -> usize {
         self.fid
     }
