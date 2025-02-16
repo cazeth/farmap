@@ -84,8 +84,9 @@ impl User {
     pub fn update_user(&mut self, other: Self) {
         assert_eq!(self.fid(), other.fid());
         //self.labels.push(*other.labels.first().unwrap())
-        self.add_spam_record(*other.labels.first().unwrap())
-            .unwrap();
+        if let Err(err) = self.add_spam_record(*other.labels.first().unwrap()) {
+            println!("{:?}", err);
+        }
     }
 
     pub fn last_spam_score_update_date(&self) -> NaiveDate {
