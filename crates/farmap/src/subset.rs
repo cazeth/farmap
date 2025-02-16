@@ -93,6 +93,7 @@ impl<'a> UsersSubset<'a> {
         new
     }
 
+    /// Returns none if the subset is empty
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
@@ -106,6 +107,9 @@ impl<'a> UsersSubset<'a> {
         distribution_from_counts(&counts)
     }
 
+    /// Returns the spam score count for a set at a weekly cadence. The first value is at the
+    /// earliest spam score date in the set and the last value is always the current date even if
+    /// it is the fewer than seven days between it and the next-to-last value.
     pub fn weekly_spam_score_counts(&self) -> Vec<SpamScoreCount> {
         if self.map.is_empty() {
             return Vec::new();
@@ -158,6 +162,7 @@ impl<'a> UsersSubset<'a> {
 
     /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
     /// it means that 1 user has moved from spam score i to spam score j during the period.
+    #[doc(hidden)]
     #[deprecated(note = "use spam changes with fid score shift instead")]
     pub fn spam_change_matrix(&self, initial_date: NaiveDate, days: Days) -> [[usize; 3]; 3] {
         let end_date = initial_date
