@@ -5,6 +5,7 @@ use farmap::user::{User, Users};
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
+#[allow(deprecated)]
 fn create_users_with_spam_label_one(n: usize) -> Users {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
     let mut users = Users::default();
@@ -20,6 +21,7 @@ fn create_users_with_spam_label_one(n: usize) -> Users {
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
+#[allow(deprecated)]
 fn create_users_with_spam_label_one_then_two(n: usize) -> Users {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
     let mut users = Users::default();

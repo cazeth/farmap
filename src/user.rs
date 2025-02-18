@@ -150,14 +150,28 @@ pub struct Users {
 
 impl Users {
     /// add a user to the collection. If the fid already exists, the label is updated.
+    #[deprecated(note = "use push_with_res instead")]
+    #[allow(deprecated)]
     pub fn push(&mut self, user: User) -> bool {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
-            #[allow(deprecated)]
             existing_user.update_user(user);
             false
         } else {
             self.map.insert(user.fid(), user);
             true
+        }
+    }
+
+    /// add a user to the collection. If the fid already exists, the label is updated.
+    /// This method may fail if the user is considered invalid in Users because of
+    /// SpamScoreCollision.
+    pub fn push_with_res(&mut self, user: User) -> Result<bool, UserError> {
+        if let Some(existing_user) = self.map.get_mut(&user.fid()) {
+            existing_user.merge_user(user)?;
+            Ok(false)
+        } else {
+            self.map.insert(user.fid(), user);
+            Ok(true)
         }
     }
 
@@ -182,6 +196,7 @@ impl Users {
             .count()
     }
 
+    #[allow(deprecated)]
     pub fn create_from_dir(dir: &str) -> Self {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
         let mut users = Users::default();
@@ -191,6 +206,7 @@ impl Users {
         users
     }
 
+    #[allow(deprecated)]
     pub fn create_from_file(path: &str) -> Self {
         let mut users = Users::default();
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_file(path);
