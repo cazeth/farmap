@@ -314,6 +314,33 @@ struct Type {
 }
 
 #[derive(Error, Debug)]
+pub enum DataCreationError {
+    #[error("Input data is invalid.")]
+    InvalidInputError(#[from] InvalidInputError),
+
+    #[error("UserError")]
+    UserError(#[from] UserError),
+
+    #[error("Input is not readable or accessible")]
+    DataReadError(#[from] DataReadError),
+}
+
+#[derive(Error, Debug)]
+#[error("Input data is not jsonl at : .path")]
+pub struct InvalidJsonlError {
+    path: String,
+}
+
+#[derive(Error, Debug)]
+pub enum DataReadError {
+    #[error("Input data is not jsonl at : .path")]
+    InvalidJsonlError(#[from] InvalidJsonlError),
+
+    #[error("The path {0} is invalid", .path)]
+    InvalidDataPathError { path: String },
+}
+
+#[derive(Error, Debug)]
 pub enum InvalidInputError {
     #[error("SpamScore was {0}, not zero, one or two.", .label)]
     SpamScoreError { label: usize },
