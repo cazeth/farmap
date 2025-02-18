@@ -440,9 +440,48 @@ impl UnprocessedUserLine {
         Ok(result)
     }
 
+    pub fn import_data_from_dir_with_res(
+        data_dir: &str,
+    ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
+        let paths = if let Ok(paths) = read_dir(data_dir) {
+            paths
+        } else {
+            return Err(DataReadError::InvalidDataPathError {
+                path: data_dir.to_string(),
+            });
+        };
+
+        let mut result: Vec<UnprocessedUserLine> = Vec::new();
+
+        for path in paths.flatten() {
+            if path.path().extension().unwrap_or_default() == "jsonl" {
+                let new_jsonl_lines =
+                    if let Ok(lines) = json_lines::<UnprocessedUserLine, _>(path.path()) {
+                        lines
+                    } else {
+                        return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
+                            path: path.path().to_str().unwrap().to_owned(),
+                        }));
+                    };
+
+                for line in new_jsonl_lines {
+                    result.push(if let Ok(line) = line {
+                        line
+                    } else {
+                        return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
+                            path: path.path().to_str().unwrap().to_owned(),
+                        }));
+                    })
+                }
+            }
+        }
+        Ok(result)
+    }
+
     //TODO it's probably must for efficient to check the dates of the first line of each file and
     //abort when it reaches a data that has already been checked. There is probably a lot of
     //duplicate checking right now.
+    #[deprecated(note = "use import_data_from_dir_with_res instead")]
     pub fn import_data_from_dir(data_dir: &str) -> Vec<UnprocessedUserLine> {
         let paths = read_dir(data_dir).unwrap();
         let mut result: Vec<UnprocessedUserLine> = Vec::new();
