@@ -206,6 +206,7 @@ impl Users {
         users
     }
 
+    #[deprecated(note = "use create_from_file_with_res_instead")]
     #[allow(deprecated)]
     pub fn create_from_file(path: &str) -> Self {
         let mut users = Users::default();
@@ -216,6 +217,17 @@ impl Users {
         }
 
         users
+    }
+
+    pub fn create_from_file_with_res(path: &str) -> Result<Self, DataCreationError> {
+        let mut users = Users::default();
+        let unprocessed_user_line = UnprocessedUserLine::import_data_from_file_with_res(path)?;
+
+        for line in unprocessed_user_line {
+            users.push_with_res(User::try_from(line)?)?;
+        }
+
+        Ok(users)
     }
 
     /// Applies a filter to the user data. Use with caution since the data is removed from the
@@ -499,6 +511,7 @@ pub mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     pub fn test_user_count_on_file() {
         let users = Users::create_from_file("data/dummy-data/spam.jsonl");
         assert_eq!(users.user_count(), 2);
