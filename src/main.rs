@@ -69,6 +69,7 @@ fn main() {
         home_dir + "/.local/share/farmap"
     };
 
+    #[allow(deprecated)]
     let users = Users::create_from_dir(&path);
 
     // If after_date is some, create a subset by that filter.

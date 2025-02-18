@@ -196,6 +196,16 @@ impl Users {
             .count()
     }
 
+    pub fn create_from_dir_with_res(dir: &str) -> Result<Self, DataCreationError> {
+        let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
+        let mut users = Users::default();
+        for line in unprocessed_user_line {
+            users.push_with_res(User::try_from(line)?)?;
+        }
+        Ok(users)
+    }
+
+    #[deprecated(note = "use create_from_dir_with_res instead")]
     #[allow(deprecated)]
     pub fn create_from_dir(dir: &str) -> Self {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
@@ -500,6 +510,7 @@ impl UnprocessedUserLine {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 pub mod tests {
 
     use super::*;

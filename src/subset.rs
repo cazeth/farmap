@@ -116,6 +116,7 @@ impl<'a> From<&'a Users> for UsersSubset<'a> {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
 
     use super::*;
