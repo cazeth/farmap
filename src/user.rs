@@ -396,11 +396,36 @@ impl UnprocessedUserLine {
         self.timestamp
     }
 
+    #[deprecated(note = "use import_data_from_file_with_res")]
     pub fn import_data_from_file(path: &str) -> Vec<UnprocessedUserLine> {
         json_lines(path)
             .unwrap()
             .collect::<Result<Vec<UnprocessedUserLine>, _>>()
             .unwrap()
+    }
+
+    pub fn import_data_from_file_with_res(
+        path: &str,
+    ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
+        let mut result: Vec<UnprocessedUserLine> = Vec::new();
+        let lines_iter = json_lines::<UnprocessedUserLine, _>(path).map_err(|_| {
+            DataReadError::InvalidDataPathError {
+                path: path.to_string(),
+            }
+        })?;
+
+        for line in lines_iter {
+            let line = if let Ok(line) = line {
+                line
+            } else {
+                return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
+                    path: "hello".to_string(),
+                }));
+            };
+
+            result.push(line);
+        }
+        Ok(result)
     }
 
     //TODO it's probably must for efficient to check the dates of the first line of each file and
