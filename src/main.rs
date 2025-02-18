@@ -8,6 +8,7 @@ use clap::Parser;
 use clap::Subcommand;
 use std::path::PathBuf;
 use subset::UsersSubset;
+use user::UnprocessedUserLine;
 use user::User;
 use user::Users;
 
@@ -69,8 +70,7 @@ fn main() {
         home_dir + "/.local/share/farmap"
     };
 
-    #[allow(deprecated)]
-    let users = Users::create_from_dir(&path);
+    let users = import_data(&path);
 
     // If after_date is some, create a subset by that filter.
     // If after_date is none, create a set with all users
@@ -156,6 +156,33 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
         }
         println!();
     }
+}
+
+fn import_data(data_dir: &str) -> Users {
+    // for now just panic if the path doesn't exist or is not jsonl.
+    let unprocessed_user_lines =
+        UnprocessedUserLine::import_data_from_dir_with_res(data_dir).unwrap();
+
+    let mut users = Users::default();
+
+    for line in unprocessed_user_lines {
+        let user = match User::try_from(line) {
+            Ok(user) => user,
+            Err(err) => {
+                eprintln!("got an error of type {:?}. Skipping line...", err);
+                continue;
+            }
+        };
+
+        if let Err(err) = users.push_with_res(user) {
+            eprintln!(
+                "got an error of type {:?} when trying to push user to collection.",
+                err
+            )
+        }
+    }
+
+    users
 }
 
 #[cfg(test)]
