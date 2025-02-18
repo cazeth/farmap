@@ -282,6 +282,8 @@ pub enum UserError {
         old_spam_score: SpamScore,
         new_spam_score: SpamScore,
     },
+    #[error("Trying to merge users with different fids. For merge_user to work both input users must have the same fid. provided fid_1: {} and provided fid_2 {}", .fid_1, .fid_2)]
+    DifferentFidMerge { fid_1: usize, fid_2: usize },
 }
 
 impl TryFrom<UnprocessedUserLine> for User {
