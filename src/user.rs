@@ -6,7 +6,7 @@ use serde_jsonlines::json_lines;
 use std::fs::read_dir;
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct User {
     fid: usize,
     labels: Vec<SpamRecord>,
@@ -141,7 +141,7 @@ impl User {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum UserError {
     #[error("User {0} already has a spam record for date {1}. The existing spam score at the date is {} but a spamscore of {} is now trying to be set.", .fid, . date) ]
     SpamScoreCollision {
@@ -181,13 +181,13 @@ struct Type {
     target: String,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 #[error("Input data is not jsonl at : .path")]
 pub struct InvalidJsonlError {
     path: String,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum DataReadError {
     #[error("Input data is not jsonl at : .path")]
     InvalidJsonlError(#[from] InvalidJsonlError),
@@ -196,7 +196,7 @@ pub enum DataReadError {
     InvalidDataPathError { path: String },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum InvalidInputError {
     #[error("SpamScore was {0}, not zero, one or two.", .label)]
     SpamScoreError { label: usize },

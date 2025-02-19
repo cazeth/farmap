@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use std::collections::HashMap;
 use thiserror::Error;
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub struct UserCollection {
     map: HashMap<usize, User>,
 }
@@ -183,7 +183,7 @@ impl UserCollection {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum DataCreationError {
     #[error("Input data is invalid.")]
     InvalidInputError(#[from] InvalidInputError),
@@ -204,6 +204,64 @@ pub mod tests {
         let users =
             UserCollection::create_from_file_with_res("data/dummy-data/spam.jsonl").unwrap();
         assert_eq!(users.user_count(), 2);
+    }
+
+    #[test]
+    pub fn test_error_on_nonexisting_file() {
+        assert_eq!(
+            UserCollection::create_from_file_with_res("no-data-here"),
+            Err(DataCreationError::DataReadError(
+                DataReadError::InvalidDataPathError {
+                    path: "no-data-here".to_string()
+                }
+            ))
+        )
+    }
+
+    #[test]
+    pub fn test_error_on_nonexisting_dir() {
+        assert_eq!(
+            UserCollection::create_from_dir_with_res("no-data-here"),
+            Err(DataCreationError::DataReadError(
+                DataReadError::InvalidDataPathError {
+                    path: "no-data-here".to_string()
+                }
+            ))
+        )
+    }
+
+    #[test]
+    pub fn test_error_on_invalid_jsonl_data_on_file() {
+        let users = UserCollection::create_from_file_with_res("data/invalid-data/data.jsonl");
+        match users {
+            Err(DataCreationError::DataReadError(DataReadError::InvalidJsonlError(..))) => (),
+            Err(_) => panic!(),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    pub fn test_error_on_spam_score_collision() {
+        let users =
+            UserCollection::create_from_file_with_res("data/invalid-data/collision_data.jsonl");
+        match users {
+            Err(DataCreationError::UserError(UserError::SpamScoreCollision { .. })) => (),
+            Err(_) => panic!(),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    pub fn test_error_on_invalid_fid() {
+        let users =
+            UserCollection::create_from_file_with_res("data/invalid-data/invalid_spamscore.jsonl");
+        match users {
+            Err(DataCreationError::InvalidInputError(InvalidInputError::SpamScoreError {
+                ..
+            })) => (),
+            Err(_) => panic!(),
+            Ok(_) => panic!(),
+        }
     }
 
     /// this test has been replaced with test_users_count_on_file_with_res and will be removed once
