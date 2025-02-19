@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use subset::UsersSubset;
 use user::UnprocessedUserLine;
 use user::User;
-use user::Users;
+use user::UserCollection;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
 #[derive(Parser, Debug)]
@@ -158,12 +158,12 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
     }
 }
 
-fn import_data(data_dir: &str) -> Users {
+fn import_data(data_dir: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
     let unprocessed_user_lines =
         UnprocessedUserLine::import_data_from_dir_with_res(data_dir).unwrap();
 
-    let mut users = Users::default();
+    let mut users = UserCollection::default();
 
     for line in unprocessed_user_lines {
         let user = match User::try_from(line) {

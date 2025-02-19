@@ -1,6 +1,6 @@
 use crate::spam_score::SpamScore;
 use crate::user::User;
-use crate::user::Users;
+use crate::user::UserCollection;
 use crate::utils::distribution_from_counts;
 use chrono::Days;
 use chrono::NaiveDate;
@@ -11,7 +11,7 @@ pub struct UsersSubset<'a> {
 }
 
 impl<'a> UsersSubset<'a> {
-    pub fn from_filter<F>(users: &'a Users, filter: F) -> Self
+    pub fn from_filter<F>(users: &'a UserCollection, filter: F) -> Self
     where
         F: Fn(&User) -> bool,
     {
@@ -104,8 +104,8 @@ impl<'a> UsersSubset<'a> {
     }
 }
 
-impl<'a> From<&'a Users> for UsersSubset<'a> {
-    fn from(users: &'a Users) -> Self {
+impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
+    fn from(users: &'a UserCollection) -> Self {
         let map: HashMap<usize, &User> = users
             .data()
             .iter()
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn from_filter_test_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let filter = |user: &User| {
             user.earliest_spam_record().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
         };
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn from_filter_test() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let filter = |user: &User| {
             user.earliest_spam_record().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
         };
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_user_count_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let mut set = UsersSubset::from(&users);
         set.filter(|user: &User| {
             !user.created_at_or_after_date(NaiveDate::from_ymd_opt(2023, 12, 29).unwrap())
@@ -170,7 +170,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_user_count() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let mut set = UsersSubset::from(&users);
         set.filter(|user: &User| {
             !user.created_at_or_after_date(NaiveDate::from_ymd_opt(2023, 12, 29).unwrap())
@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn filter_test_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let mut set = UsersSubset::from(&users);
         assert_eq!(set.user_count(), 2);
         set.filter(|user: &User| user.fid() != 3);
@@ -197,7 +197,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn filter_test() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let mut set = UsersSubset::from(&users);
         assert_eq!(set.user_count(), 2);
         set.filter(|user: &User| user.fid() != 3);
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn test_spam_score_distribution_at_date_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         assert_eq!(users.user_count(), 2);
         let subset = UsersSubset::from_filter(&users, |user: &User| {
             user.created_at_or_after_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_spam_score_distribution_at_date() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         assert_eq!(users.user_count(), 2);
         let subset = UsersSubset::from_filter(&users, |user: &User| {
             user.created_at_or_after_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn test_spam_change_matrix_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
         let change_matrix =
             set.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
@@ -264,7 +264,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_spam_change_matrix() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let set = UsersSubset::from(&users);
         let change_matrix =
             set.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_get_user_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
         assert!(set.user(3).is_none());
         assert_eq!(
@@ -295,7 +295,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_get_user() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let set = UsersSubset::from(&users);
         assert!(set.user(3).is_none());
         assert_eq!(
@@ -311,7 +311,7 @@ mod tests {
 
     #[test]
     fn test_full_set_from_data_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
         assert_eq!(users.user_count(), set.user_count());
     }
@@ -319,7 +319,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_full_set_from_data() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let set = UsersSubset::from(&users);
         assert_eq!(users.user_count(), set.user_count());
     }

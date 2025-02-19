@@ -1,13 +1,13 @@
 use chrono::{Days, Duration, NaiveDate};
 use farmap::spam_score::SpamScore;
 use farmap::subset::UsersSubset;
-use farmap::user::{User, UserError, Users};
+use farmap::user::{User, UserCollection, UserError};
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
-fn create_users_with_spam_label_one(n: usize) -> Result<Users, UserError> {
+fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserError> {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-    let mut users = Users::default();
+    let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
         date = date.checked_add_signed(Duration::days(1)).unwrap();
@@ -19,9 +19,9 @@ fn create_users_with_spam_label_one(n: usize) -> Result<Users, UserError> {
 }
 
 #[allow(deprecated)]
-fn create_users_with_spam_label_one_with_deprecated_methods(n: usize) -> Users {
+fn create_users_with_spam_label_one_with_deprecated_methods(n: usize) -> UserCollection {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-    let mut users = Users::default();
+    let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
         date = date.checked_add_signed(Duration::days(1)).unwrap();
@@ -34,9 +34,9 @@ fn create_users_with_spam_label_one_with_deprecated_methods(n: usize) -> Users {
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
-fn create_users_with_spam_label_one_then_two(n: usize) -> Result<Users, UserError> {
+fn create_users_with_spam_label_one_then_two(n: usize) -> Result<UserCollection, UserError> {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-    let mut users = Users::default();
+    let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
         let user = User::new(i, (SpamScore::One, date));
@@ -56,9 +56,9 @@ fn create_users_with_spam_label_one_then_two(n: usize) -> Result<Users, UserErro
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
 #[allow(deprecated)]
-fn create_users_with_spam_label_one_then_two_with_deprecated_methods(n: usize) -> Users {
+fn create_users_with_spam_label_one_then_two_with_deprecated_methods(n: usize) -> UserCollection {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-    let mut users = Users::default();
+    let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
         let user = User::new(i, (SpamScore::One, date));

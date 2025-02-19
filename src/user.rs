@@ -144,11 +144,11 @@ impl User {
 }
 
 #[derive(Default)]
-pub struct Users {
+pub struct UserCollection {
     map: HashMap<usize, User>,
 }
 
-impl Users {
+impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
     #[deprecated(note = "use push_with_res instead")]
     #[allow(deprecated)]
@@ -163,7 +163,7 @@ impl Users {
     }
 
     /// add a user to the collection. If the fid already exists, the label is updated.
-    /// This method may fail if the user is considered invalid in Users because of
+    /// This method may fail if the user is considered invalid in UserCollection because of
     /// SpamScoreCollision.
     pub fn push_with_res(&mut self, user: User) -> Result<bool, UserError> {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
@@ -198,7 +198,7 @@ impl Users {
 
     pub fn create_from_dir_with_res(dir: &str) -> Result<Self, DataCreationError> {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
-        let mut users = Users::default();
+        let mut users = UserCollection::default();
         for line in unprocessed_user_line {
             users.push_with_res(User::try_from(line)?)?;
         }
@@ -209,7 +209,7 @@ impl Users {
     #[allow(deprecated)]
     pub fn create_from_dir(dir: &str) -> Self {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
-        let mut users = Users::default();
+        let mut users = UserCollection::default();
         for line in unprocessed_user_line {
             users.push(User::try_from(line).unwrap());
         }
@@ -219,7 +219,7 @@ impl Users {
     #[deprecated(note = "use create_from_file_with_res_instead")]
     #[allow(deprecated)]
     pub fn create_from_file(path: &str) -> Self {
-        let mut users = Users::default();
+        let mut users = UserCollection::default();
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_file(path);
 
         for line in unprocessed_user_line {
@@ -230,7 +230,7 @@ impl Users {
     }
 
     pub fn create_from_file_with_res(path: &str) -> Result<Self, DataCreationError> {
-        let mut users = Users::default();
+        let mut users = UserCollection::default();
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_file_with_res(path)?;
 
         for line in unprocessed_user_line {
@@ -562,7 +562,8 @@ pub mod tests {
 
     #[test]
     pub fn test_user_count_on_file_with_res() {
-        let users = Users::create_from_file_with_res("data/dummy-data/spam.jsonl").unwrap();
+        let users =
+            UserCollection::create_from_file_with_res("data/dummy-data/spam.jsonl").unwrap();
         assert_eq!(users.user_count(), 2);
     }
 
@@ -571,28 +572,28 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     pub fn test_user_count_on_file() {
-        let users = Users::create_from_file("data/dummy-data/spam.jsonl");
+        let users = UserCollection::create_from_file("data/dummy-data/spam.jsonl");
         assert_eq!(users.user_count(), 2);
-        let users = Users::create_from_dir("data/dummy-data/");
+        let users = UserCollection::create_from_dir("data/dummy-data/");
         assert_eq!(users.user_count(), 2);
     }
 
     #[test]
     pub fn test_user_count_on_dir_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data/").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
         assert_eq!(users.user_count(), 2);
     }
 
     #[test]
     #[allow(deprecated)]
     pub fn test_user_count_on_dir() {
-        let users = Users::create_from_dir("data/dummy-data/");
+        let users = UserCollection::create_from_dir("data/dummy-data/");
         assert_eq!(users.user_count(), 2);
     }
 
     #[test]
     pub fn test_user_count_at_date_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data/").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
         assert_eq!(
             users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
             0
@@ -620,7 +621,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     pub fn test_user_count_at_date() {
-        let users = Users::create_from_dir("data/dummy-data/");
+        let users = UserCollection::create_from_dir("data/dummy-data/");
         assert_eq!(
             users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
             0
@@ -648,7 +649,7 @@ pub mod tests {
     #[test]
     pub fn test_dummy_data_import_with_new() {
         let fid = 1;
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         assert_eq!(users.spam_score_by_fid(fid).unwrap(), SpamScore::Zero);
         let user = users.user(fid).unwrap();
         assert_eq!(
@@ -666,7 +667,7 @@ pub mod tests {
     #[allow(deprecated)]
     pub fn test_dummy_data_import() {
         let fid = 1;
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         assert_eq!(users.spam_score_by_fid(fid).unwrap(), SpamScore::Zero);
         let user = users.user(fid).unwrap();
         assert_eq!(
@@ -684,7 +685,7 @@ pub mod tests {
     pub fn test_user_created_after_date_on_dummy_data_with_new() {
         let fid = 1;
         let date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
 
         assert!(users.user(fid).unwrap().created_at_or_after_date(date));
 
@@ -703,7 +704,7 @@ pub mod tests {
     pub fn test_user_created_after_date_on_dummy_data() {
         let fid = 1;
         let date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
 
         assert!(users.user(fid).unwrap().created_at_or_after_date(date));
 
@@ -719,7 +720,7 @@ pub mod tests {
 
     #[test]
     pub fn test_spam_score_by_date_on_dummy_data_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let date = NaiveDate::from_ymd_opt(2023, 1, 25).unwrap();
         let user = users.user(1).unwrap();
 
@@ -743,7 +744,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     pub fn test_spam_score_by_date_on_dummy_data() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let date = NaiveDate::from_ymd_opt(2023, 1, 25).unwrap();
         let user = users.user(1).unwrap();
 
@@ -766,7 +767,7 @@ pub mod tests {
 
     #[test]
     fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
         let closure = |user: &User| user.created_at_or_after_date(date);
 
@@ -779,7 +780,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_spam_distribution_for_users_created_at_or_after_date() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
         let closure = |user: &User| user.created_at_or_after_date(date);
 
@@ -792,7 +793,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_apply_filter_for_one_fid() {
-        let mut users = Users::create_from_dir("data/dummy-data");
+        let mut users = UserCollection::create_from_dir("data/dummy-data");
         let closure = |user: &User| user.fid() == 2;
         users.apply_filter(closure);
         assert_eq!(
@@ -803,7 +804,7 @@ pub mod tests {
 
     #[test]
     fn test_apply_filter_for_one_fid_with_new() {
-        let mut users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let mut users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let closure = |user: &User| user.fid() == 2;
         users.apply_filter(closure);
         assert_eq!(
@@ -814,7 +815,7 @@ pub mod tests {
 
     #[test]
     fn test_none_for_filtered_spam_distribution_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let closure = |user: &User| user.fid() == 3;
 
         assert_eq!(users.spam_score_distribution_for_subset(closure), None);
@@ -823,7 +824,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_none_for_filtered_spam_distribution() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
         let closure = |user: &User| user.fid() == 3;
 
         assert_eq!(users.spam_score_distribution_for_subset(closure), None);
@@ -831,7 +832,7 @@ pub mod tests {
 
     #[test]
     fn test_created_by_before_date_with_new() {
-        let users = Users::create_from_dir_with_res("data/dummy-data").unwrap();
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
 
         let user = users.user(1).unwrap();
         assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
@@ -852,7 +853,7 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_created_by_before_date() {
-        let users = Users::create_from_dir("data/dummy-data");
+        let users = UserCollection::create_from_dir("data/dummy-data");
 
         let user = users.user(1).unwrap();
         assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
