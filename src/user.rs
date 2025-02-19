@@ -253,7 +253,7 @@ impl UnprocessedUserLine {
                 line
             } else {
                 return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
-                    path: "hello".to_string(),
+                    path: path.to_string(),
                 }));
             };
 
