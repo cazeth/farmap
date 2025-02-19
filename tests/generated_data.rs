@@ -1,7 +1,8 @@
 use chrono::{Days, Duration, NaiveDate};
 use farmap::spam_score::SpamScore;
 use farmap::subset::UsersSubset;
-use farmap::user::{User, UserCollection, UserError};
+use farmap::user::{User, UserError};
+use farmap::user_collection::UserCollection;
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.

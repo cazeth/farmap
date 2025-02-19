@@ -1,6 +1,7 @@
 pub mod spam_score;
 pub mod subset;
 pub mod user;
+pub mod user_collection;
 pub mod utils;
 use chrono::Days;
 use chrono::NaiveDate;
@@ -10,7 +11,7 @@ use std::path::PathBuf;
 use subset::UsersSubset;
 use user::UnprocessedUserLine;
 use user::User;
-use user::UserCollection;
+use user_collection::UserCollection;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
 #[derive(Parser, Debug)]

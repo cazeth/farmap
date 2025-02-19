@@ -1,6 +1,6 @@
 use crate::spam_score::SpamScore;
 use crate::user::User;
-use crate::user::UserCollection;
+use crate::user_collection::UserCollection;
 use crate::utils::distribution_from_counts;
 use chrono::Days;
 use chrono::NaiveDate;
