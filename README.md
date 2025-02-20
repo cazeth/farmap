@@ -14,7 +14,7 @@ Use the script in the scripts dir to setup the data. This will create several fi
 
 ```bash
 git clone https://github.com/cazeth/farmap.git
-cp farmap
+cd farmap
 bash scripts/data-setup.sh
 ```
 
@@ -30,7 +30,7 @@ This should work but the program does not get as much history as it could have s
 
 ```bash
 git clone https://github.com/cazeth/farmap.git
-cp farmap
+cd farmap
 ```
 
 You can now run the program directly...
