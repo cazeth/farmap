@@ -7,6 +7,7 @@ use chrono::Days;
 use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
+use spam_score::SpamScore;
 use std::path::PathBuf;
 use subset::UsersSubset;
 use user::UnprocessedUserLine;
@@ -29,6 +30,10 @@ struct Args {
     /// Only include users with earliest spam score at or before this date.
     #[arg(short,long, default_value = None)]
     before_date: Option<String>,
+
+    /// Only include users with a particular most recent spam score.
+    #[arg(short,long, default_value = None)]
+    current_spam_score: Option<usize>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -92,6 +97,13 @@ fn main() {
             user.created_at_or_before_date(
                 NaiveDate::parse_from_str(&before_date, "%Y-%m-%d").unwrap(),
             )
+        })
+    };
+
+    if let Some(score) = args.current_spam_score {
+        set.filter(|user: &User| {
+            user.latest_spam_record().0
+                == SpamScore::try_from(score).expect("spam score must be 0,1 or 2")
         })
     };
 
