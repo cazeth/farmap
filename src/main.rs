@@ -7,6 +7,8 @@ use chrono::Days;
 use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
+use simple_log::log::warn;
+use simple_log::LogConfigBuilder;
 use spam_score::SpamScore;
 use std::path::PathBuf;
 use subset::UsersSubset;
@@ -71,6 +73,18 @@ enum Commands {
 }
 
 fn main() {
+    let config = LogConfigBuilder::builder()
+        .path("./log/farmap.log")
+        .size(100)
+        .roll_count(10)
+        .time_format("%Y-%m-%d %H:%M:%S") //E.g:%H:%M:%S.%f
+        .level("debug")
+        .unwrap()
+        .output_file()
+        .build();
+
+    simple_log::new(config).unwrap();
+
     let args = Args::parse();
     let path = if let Some(p) = args.path {
         p.to_str().unwrap().to_owned()
@@ -200,7 +214,7 @@ fn import_data(data_dir: &str) -> UserCollection {
         };
 
         if let Err(err) = users.push_with_res(user) {
-            eprintln!(
+            warn!(
                 "got an error of type {:?} when trying to push user to collection.",
                 err
             )
