@@ -63,3 +63,35 @@ To view other options, run
 ```bash
 farmap -h
 ```
+
+### Examples
+
+```bash
+
+# print spam distribution at today's date
+farmap
+
+# print spam distribution at 2025-01-01 of all users that had a spam score at that date
+farmap spam-distribution -d 2025-01-01
+
+# print spam distribution at 2025-02-20 of users who
+# got their first spam score between 7th and 14th of february
+farmap -a 2025-02-07 -b 2025-02-14 spam-distribution -d 2025-02-20
+
+# print spam distribution at 2025-02-14 of users who
+# got their first spam score in january and have a latest spam score of 2
+farmap -a 2025-01-01 -b 2025-01-31 -c 2 spam-distribution -d 2025-02-14
+
+# print a matrix of the spam score changes betwwen 1st and 20th of february,
+# where row represents the spam score at the 1st and the column the spam score at the 20th
+# Do this only for the users created in january
+farmap -a 2025-01-01 -b 2025-01-31 change-matrix --from-date 2025-02-01 --to-date 2025-02-20
+
+# print all fids to output.txt that got their first spam score
+# between 14th and 21st of february and have a latest spam score of 2
+farmap -a 2025-02-14 -b 2025-02-21 -c 2 all-fids > output.txt
+
+# print all spam records for user with fid 11720 (caz.eth)
+farmap fid -f 11720
+
+```
