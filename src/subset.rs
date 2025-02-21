@@ -102,6 +102,10 @@ impl<'a> UsersSubset<'a> {
     pub fn user(&self, fid: usize) -> Option<&User> {
         self.map.get(&fid).copied()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &User> {
+        self.map.values().copied()
+    }
 }
 
 impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
