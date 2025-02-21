@@ -19,6 +19,25 @@ fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserErro
     Ok(users)
 }
 
+fn every_other_user_has_spam_label_one_and_two(n: usize) -> Result<UserCollection, UserError> {
+    let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+    let mut users = UserCollection::default();
+    let mut date = start_date;
+
+    for i in 0..n {
+        date = date.checked_add_signed(Duration::days(1)).unwrap();
+        if i % 2 == 0 {
+            let user = User::new(i, (SpamScore::One, date));
+            users.push_with_res(user)?;
+        } else {
+            let user = User::new(i, (SpamScore::Two, date));
+            users.push_with_res(user)?;
+        }
+    }
+
+    Ok(users)
+}
+
 #[allow(deprecated)]
 fn create_users_with_spam_label_one_with_deprecated_methods(n: usize) -> UserCollection {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
@@ -95,6 +114,42 @@ fn distribution_should_be_ones_with_deprecated_methods() {
     assert_eq!(
         subset.current_spam_score_distribution().unwrap(),
         [0.0, 1.0, 0.0]
+    );
+}
+
+#[test]
+fn distribution_should_be_ones_and_twos() {
+    let n: u64 = 2;
+    let users = every_other_user_has_spam_label_one_and_two(n as usize).unwrap();
+    let subset = UsersSubset::from(&users);
+    assert_eq!(subset.user_count(), n as usize);
+    assert_eq!(
+        subset.current_spam_score_distribution().unwrap(),
+        [0.0, 0.5, 0.5]
+    );
+}
+
+#[test]
+fn distribution_should_be_ones_and_twos_with_n_100() {
+    let n: u64 = 100;
+    let users = every_other_user_has_spam_label_one_and_two(n as usize).unwrap();
+    let subset = UsersSubset::from(&users);
+    assert_eq!(subset.user_count(), n as usize);
+    assert_eq!(
+        subset.current_spam_score_distribution().unwrap(),
+        [0.0, 0.5, 0.5]
+    );
+}
+
+#[test]
+fn distribution_should_be_ones_and_twos_with_n_5() {
+    let n: u64 = 5;
+    let users = every_other_user_has_spam_label_one_and_two(n as usize).unwrap();
+    let subset = UsersSubset::from(&users);
+    assert_eq!(subset.user_count(), n as usize);
+    assert_eq!(
+        subset.current_spam_score_distribution().unwrap(),
+        [0.0, 0.6, 0.4]
     );
 }
 
