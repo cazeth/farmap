@@ -65,6 +65,9 @@ enum Commands {
         #[arg(short, long)]
         fid: usize,
     },
+
+    /// Print all fids that are not filtered out.
+    AllFids,
 }
 
 fn main() {
@@ -139,6 +142,15 @@ fn main() {
         Some(Commands::Fid { fid }) => {
             print_fid_history(&set, &fid);
         }
+        Some(Commands::AllFids) => {
+            print_all(&set);
+        }
+    }
+}
+
+fn print_all(set: &UsersSubset) {
+    for user in set.iter() {
+        println!("{:?}", user.fid())
     }
 }
 
