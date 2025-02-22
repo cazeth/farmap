@@ -73,8 +73,18 @@ enum Commands {
 }
 
 fn main() {
+    let args = Args::parse();
+    let path = if let Some(p) = args.path {
+        p.to_str().unwrap().to_owned()
+    } else {
+        let home_dir = std::env::var("HOME").unwrap();
+        home_dir + "/.local/share/farmap"
+    };
+
+    let log_path = format!("{}/log/farmap.log", &path);
+
     let config = LogConfigBuilder::builder()
-        .path("./log/farmap.log")
+        .path(&log_path)
         .size(100)
         .roll_count(10)
         .time_format("%Y-%m-%d %H:%M:%S") //E.g:%H:%M:%S.%f
@@ -84,14 +94,6 @@ fn main() {
         .build();
 
     simple_log::new(config).unwrap();
-
-    let args = Args::parse();
-    let path = if let Some(p) = args.path {
-        p.to_str().unwrap().to_owned()
-    } else {
-        let home_dir = std::env::var("HOME").unwrap();
-        home_dir + "/.local/share/farmap"
-    };
 
     let users = import_data(&path);
 
