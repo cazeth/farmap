@@ -24,6 +24,16 @@ impl User {
         }
     }
 
+    /// Returns the fid of the user
+    /// # Examples
+    /// ```rust
+    /// use farmap::User;
+    /// use chrono::NaiveDate;
+    /// use farmap::SpamScore;
+    ///
+    /// let user = User::new(1, (SpamScore::Zero, NaiveDate::from_ymd_opt(2020,1,1).unwrap()) );
+    /// assert_eq!(user.fid(), 1);
+    /// ````
     pub fn fid(&self) -> usize {
         self.fid
     }
@@ -48,6 +58,9 @@ impl User {
         self.earliest_spam_record().1 <= date
     }
 
+    // Adds a new spam record to a user. If the user already has a spam record with a different
+    // spam score at the same date the method returns an error. If the user has a spamrecord at the
+    // same date with the spam score the method does nothing.
     fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
         let mut label_iter = self.labels.iter().enumerate();
         let label_iter_len = self.labels.iter().len();
@@ -92,6 +105,7 @@ impl User {
         Ok(())
     }
 
+    #[doc(hidden)]
     #[deprecated(note = "use merge_user instead")]
     pub fn update_user(&mut self, other: Self) {
         assert_eq!(self.fid(), other.fid());
