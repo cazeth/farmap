@@ -1,20 +1,15 @@
-pub mod spam_score;
-pub mod subset;
-pub mod user;
-pub mod user_collection;
-pub mod utils;
 use chrono::Days;
 use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
+use farmap::SpamScore;
+use farmap::UnprocessedUserLine;
+use farmap::User;
+use farmap::UserCollection;
+use farmap::UsersSubset;
 use simple_log::log::warn;
 use simple_log::LogConfigBuilder;
-use spam_score::SpamScore;
 use std::path::PathBuf;
-use subset::UsersSubset;
-use user::UnprocessedUserLine;
-use user::User;
-use user_collection::UserCollection;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
 #[derive(Parser, Debug)]
