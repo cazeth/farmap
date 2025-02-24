@@ -9,6 +9,7 @@ use farmap::UserCollection;
 use farmap::UsersSubset;
 use simple_log::log::warn;
 use simple_log::LogConfigBuilder;
+use std::iter::zip;
 use std::path::PathBuf;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
@@ -31,6 +32,11 @@ struct Args {
     /// Only include users with a particular most recent spam score.
     #[arg(short,long, default_value = None)]
     current_spam_score: Option<usize>,
+
+    /// Only include users with a particular spam score at a particular date. Can be run multiple
+    /// times to apply multiple filters
+    #[arg(short,long,default_value = None , number_of_values=2, value_names = &["STRING", "NUMBER"])]
+    spam_score_at_date: Option<Vec<String>>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -113,6 +119,37 @@ fn main() {
             )
         })
     };
+
+    // filter on spam score at date.
+    if let Some(raw_spam_score_filters) = args.spam_score_at_date {
+        // turn into Date and usize format.
+
+        let mut dates: Vec<NaiveDate> = Vec::new();
+        let mut scores: Vec<SpamScore> = Vec::new();
+
+        // parse raw strings into dates and scores.
+        for (i, input) in raw_spam_score_filters.into_iter().enumerate() {
+            if i % 2 == 0 {
+                dates.push(
+                    NaiveDate::parse_from_str(&input, "%Y-%m-%d").expect("couldn't pass date"),
+                );
+            } else {
+                scores.push(
+                    input
+                        .parse::<usize>()
+                        .expect("couldn't parse into numbes")
+                        .try_into()
+                        .expect("number is not valid spam score"),
+                );
+            }
+        }
+
+        assert_eq!(dates.len(), scores.len());
+
+        for records in zip(dates, scores) {
+            set.filter(|user: &User| user.spam_score_at_date(&records.0) == Some(&records.1))
+        }
+    }
 
     if let Some(score) = args.current_spam_score {
         set.filter(|user: &User| {
@@ -252,5 +289,57 @@ pub mod tests {
             .stdout(
                 "Spam score distribution at date 2025-01-23: \n 0: 50.00% \n 1: 0.00% \n 2: 50.00% \n User count in set is 2\n",
             );
+    }
+
+    #[test]
+    fn test_spam_score_at_filter_on_dummy_data() {
+        let current_dir = env::current_dir().unwrap();
+        let path_arg = format!("-p{}{}", current_dir.to_str().unwrap(), "/data/dummy-data/");
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("-s")
+            .arg("2024-01-01")
+            .arg("1")
+            .arg("all-fids")
+            .assert()
+            .stdout("1\n");
+
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("-s")
+            .arg("2024-01-01")
+            .arg("1")
+            .arg("-s")
+            .arg("2025-01-23")
+            .arg("0")
+            .arg("all-fids")
+            .assert()
+            .stdout("1\n");
+
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("-s")
+            .arg("2025-01-20")
+            .arg("2")
+            .arg("all-fids")
+            .assert()
+            .stdout("");
+
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("-s")
+            .arg("2025-01-23")
+            .arg("2")
+            .arg("all-fids")
+            .assert()
+            .stdout("2\n");
     }
 }
