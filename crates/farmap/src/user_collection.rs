@@ -19,6 +19,7 @@ type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreatio
 impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
     #[deprecated(note = "use push_with_res instead")]
+    #[doc(hidden)]
     #[allow(deprecated)]
     pub fn push(&mut self, user: User) -> bool {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
@@ -43,7 +44,7 @@ impl UserCollection {
         }
     }
 
-    /// Return Some<SpamScore> if the fid exists, otherwise returns none.
+    /// Return `Some(SpamScore)` if the fid exists, otherwise returns none.
     pub fn spam_score_by_fid(&self, fid: usize) -> Option<SpamScore> {
         let user = self.map.get(&fid)?;
         Some(user.latest_spam_record().0)
@@ -73,9 +74,9 @@ impl UserCollection {
         Ok(users)
     }
 
-    /// A data importer that returns an error if there are any in terms of finding the files or
-    /// having invalid JSON. If there errors on any particular line, such a spam_collision or invalid parameter data, the import
-    /// continues to run and returns the errors in a vec alongside the return data.
+    /// A data importer that keeps running in case of nonfatal errors.
+    /// Nonfatal errors are spam collision errors or invalid parameter data. In case of such error
+    /// the import continues to run and returns the errors in a vec alongside the return data.
     pub fn create_from_dir_and_collect_non_fatal_errors(dir: &str) -> CreateResult {
         // these errors are considered fatal for now.
         let lines = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
@@ -84,6 +85,7 @@ impl UserCollection {
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
+    /// Like create_from_dir ... but for a single file.
     pub fn create_from_file_and_collect_non_fatal_errors(file: &str) -> CreateResult {
         // these errors are considered fatal for now.
         let lines = UnprocessedUserLine::import_data_from_file_with_res(file)?;
@@ -117,6 +119,7 @@ impl UserCollection {
     }
 
     #[deprecated(note = "use create_from_dir_with_res instead")]
+    #[doc(hidden)]
     #[allow(deprecated)]
     pub fn create_from_dir(dir: &str) -> Self {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
@@ -128,6 +131,7 @@ impl UserCollection {
     }
 
     #[deprecated(note = "use create_from_file_with_res_instead")]
+    #[doc(hidden)]
     #[allow(deprecated)]
     pub fn create_from_file(path: &str) -> Self {
         let mut users = UserCollection::default();
