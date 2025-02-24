@@ -3,6 +3,7 @@ pub mod subset;
 pub mod user;
 pub mod user_collection;
 mod utils;
+pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
 pub use subset::UsersSubset;
 pub use user::UnprocessedUserLine;

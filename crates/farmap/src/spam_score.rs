@@ -1,4 +1,5 @@
 use crate::user::InvalidInputError;
+use chrono::NaiveDate;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SpamScore {
@@ -6,6 +7,8 @@ pub enum SpamScore {
     One,
     Two,
 }
+
+pub type SpamRecord = (SpamScore, NaiveDate);
 
 impl TryFrom<usize> for SpamScore {
     type Error = InvalidInputError;
