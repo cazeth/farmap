@@ -7,6 +7,7 @@ use farmap::UnprocessedUserLine;
 use farmap::User;
 use farmap::UserCollection;
 use farmap::UsersSubset;
+use simple_log::log::info;
 use simple_log::log::warn;
 use simple_log::LogConfigBuilder;
 use std::iter::zip;
@@ -15,7 +16,7 @@ use std::path::PathBuf;
 /// Returns the spam score distribution of warpcast label data at a certain date.
 #[derive(Parser, Debug)]
 struct Args {
-    /// Path to data directory. If no path is provided the program checks $HOME/.local/share/farmap. It is necessary to
+    /// Path to data directory or file. If no path is provided the program checks $HOME/.local/share/farmap. It is necessary to
     /// either populate that directory with farcaster label data in .jsonl files or provide a path
     /// to a directory with such data
     #[arg(short, long, default_value = None)]
@@ -75,14 +76,24 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    let path = if let Some(p) = args.path {
-        p.to_str().unwrap().to_owned()
+    let (dir_path, file_path) = if let Some(p) = args.path {
+        let dir_path = if p.is_file() {
+            p.parent().unwrap().to_str().unwrap().to_owned()
+        } else {
+            p.to_str().unwrap().to_owned()
+        };
+
+        if p.is_file() {
+            (dir_path, Some(p.to_str().unwrap().to_owned()))
+        } else {
+            (dir_path, None)
+        }
     } else {
         let home_dir = std::env::var("HOME").unwrap();
-        home_dir + "/.local/share/farmap"
+        (home_dir + "/.local/share/farmap/", None)
     };
 
-    let log_path = format!("{}/log/farmap.log", &path);
+    let log_path = format!("{}/log/farmap.log", &dir_path);
 
     let config = LogConfigBuilder::builder()
         .path(&log_path)
@@ -96,7 +107,17 @@ fn main() {
 
     simple_log::new(config).unwrap();
 
-    let users = import_data(&path);
+    if let Some(p) = &file_path {
+        info!("using data from file {}", p);
+    } else {
+        info!("using data from dir {:?}", dir_path)
+    }
+
+    let users = if let Some(p) = file_path {
+        import_data_from_file(&p)
+    } else {
+        import_data_from_dir(&dir_path)
+    };
 
     // If after_date is some, create a subset by that filter.
     // If after_date is none, create a set with all users
@@ -231,10 +252,37 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
     }
 }
 
-fn import_data(data_dir: &str) -> UserCollection {
+fn import_data_from_dir(data_dir: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
     let unprocessed_user_lines =
         UnprocessedUserLine::import_data_from_dir_with_res(data_dir).unwrap();
+
+    let mut users = UserCollection::default();
+
+    for line in unprocessed_user_lines {
+        let user = match User::try_from(line) {
+            Ok(user) => user,
+            Err(err) => {
+                eprintln!("got an error of type {:?}. Skipping line...", err);
+                continue;
+            }
+        };
+
+        if let Err(err) = users.push_with_res(user) {
+            warn!(
+                "got an error of type {:?} when trying to push user to collection.",
+                err
+            )
+        }
+    }
+
+    users
+}
+
+fn import_data_from_file(data_dir: &str) -> UserCollection {
+    // for now just panic if the path doesn't exist or is not jsonl.
+    let unprocessed_user_lines =
+        UnprocessedUserLine::import_data_from_file_with_res(data_dir).unwrap();
 
     let mut users = UserCollection::default();
 
@@ -263,6 +311,24 @@ pub mod tests {
     use std::env;
 
     use assert_cmd::Command;
+
+    #[test]
+    fn test_read_from_file_with_all_fids_on_dummy_data() {
+        let current_dir = env::current_dir().unwrap();
+        let path_arg = format!(
+            "-p{}{}",
+            current_dir.to_str().unwrap(),
+            "/data/dummy-data/spam_2.jsonl"
+        );
+
+        Command::new("cargo")
+            .arg("run")
+            .arg("--")
+            .arg(path_arg.clone())
+            .arg("all-fids")
+            .assert()
+            .stdout("1\n");
+    }
 
     #[test]
     fn test_distribution_on_dummy_data() {
