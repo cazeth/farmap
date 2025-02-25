@@ -1,0 +1,14 @@
+[package]
+name = "farmap-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.8.1"
+farmap = {path="../farmap"}
+tokio = { version = "1.43.0", features = ["full"] }
+tower = "0.5.2"
+serde = "1.0.218"
+tracing-subscriber = "0.3.19"
+serde_json = "1.0.139"
+tower-http = {version = "0.6.2", features = ["cors"]}
