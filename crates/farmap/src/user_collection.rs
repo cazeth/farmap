@@ -14,6 +14,8 @@ pub struct UserCollection {
     map: HashMap<usize, User>,
 }
 
+type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
+
 impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
     #[deprecated(note = "use push_with_res instead")]
@@ -69,6 +71,49 @@ impl UserCollection {
             users.push_with_res(User::try_from(line)?)?;
         }
         Ok(users)
+    }
+
+    /// A data importer that returns an error if there are any in terms of finding the files or
+    /// having invalid JSON. If there errors on any particular line, such a spam_collision or invalid parameter data, the import
+    /// continues to run and returns the errors in a vec alongside the return data.
+    pub fn create_from_dir_and_collect_non_fatal_errors(dir: &str) -> CreateResult {
+        // these errors are considered fatal for now.
+        let lines = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
+
+        // if errors occur while importing a particular line the parsing continues and collects the errors.
+        Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
+    }
+
+    pub fn create_from_file_and_collect_non_fatal_errors(file: &str) -> CreateResult {
+        // these errors are considered fatal for now.
+        let lines = UnprocessedUserLine::import_data_from_file_with_res(file)?;
+
+        // if errors occur while importing a particular line the parsing continues and collects the errors.
+        Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
+    }
+
+    fn create_from_unprocessed_user_lines_and_collect_non_fatal_errors(
+        lines: Vec<UnprocessedUserLine>,
+    ) -> (UserCollection, Vec<DataCreationError>) {
+        let mut users = UserCollection::default();
+
+        let mut non_fatal_errors: Vec<DataCreationError> = Vec::new();
+
+        for line in lines {
+            let user = match User::try_from(line) {
+                Ok(user) => user,
+                Err(err) => {
+                    non_fatal_errors.push(DataCreationError::InvalidInputError(err));
+                    continue;
+                }
+            };
+
+            if let Err(err) = users.push_with_res(user) {
+                non_fatal_errors.push(DataCreationError::UserError(err))
+            }
+        }
+
+        (users, non_fatal_errors)
     }
 
     #[deprecated(note = "use create_from_dir_with_res instead")]
@@ -222,6 +267,50 @@ pub mod tests {
     pub fn test_error_on_nonexisting_dir() {
         assert_eq!(
             UserCollection::create_from_dir_with_res("no-data-here"),
+            Err(DataCreationError::DataReadError(
+                DataReadError::InvalidDataPathError {
+                    path: "no-data-here".to_string()
+                }
+            ))
+        )
+    }
+
+    #[test]
+    pub fn test_error_on_invalid_json_with_error_collect() {
+        let users = UserCollection::create_from_file_and_collect_non_fatal_errors(
+            "data/invalid-data/data.jsonl",
+        );
+        match users {
+            Err(DataCreationError::DataReadError(DataReadError::InvalidJsonlError(..))) => (),
+            Err(_) => panic!(),
+            Ok(_) => panic!(),
+        }
+    }
+
+    #[test]
+    pub fn test_spam_score_collision_with_error_collect() {
+        let users = UserCollection::create_from_file_and_collect_non_fatal_errors(
+            "data/invalid-data/collision_data.jsonl",
+        );
+
+        assert!(users.is_ok());
+
+        // assert that errors is of length one and contains a SpamCollisionError.
+        let (data, errors) = users.unwrap();
+        assert_eq!(errors.len(), 1);
+        match errors[0] {
+            DataCreationError::UserError(UserError::SpamScoreCollision { .. }) => (),
+            _ => panic!(),
+        }
+
+        // check that the data contains one user.
+        assert_eq!(data.user_count(), 1);
+    }
+
+    #[test]
+    pub fn test_error_on_nonexisting_dir_with_error_collect() {
+        assert_eq!(
+            UserCollection::create_from_dir_and_collect_non_fatal_errors("no-data-here"),
             Err(DataCreationError::DataReadError(
                 DataReadError::InvalidDataPathError {
                     path: "no-data-here".to_string()
