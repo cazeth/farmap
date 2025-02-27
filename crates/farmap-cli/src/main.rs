@@ -3,7 +3,6 @@ use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
 use farmap::SpamScore;
-use farmap::UnprocessedUserLine;
 use farmap::User;
 use farmap::UserCollection;
 use farmap::UsersSubset;
@@ -254,53 +253,23 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
 
 fn import_data_from_dir(data_dir: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
-    let unprocessed_user_lines =
-        UnprocessedUserLine::import_data_from_dir_with_res(data_dir).unwrap();
 
-    let mut users = UserCollection::default();
-
-    for line in unprocessed_user_lines {
-        let user = match User::try_from(line) {
-            Ok(user) => user,
-            Err(err) => {
-                eprintln!("got an error of type {:?}. Skipping line...", err);
-                continue;
-            }
-        };
-
-        if let Err(err) = users.push_with_res(user) {
-            warn!(
-                "got an error of type {:?} when trying to push user to collection.",
-                err
-            )
-        }
+    let (users, non_fatal_errors) =
+        UserCollection::create_from_dir_and_collect_non_fatal_errors(data_dir).unwrap();
+    for error in non_fatal_errors {
+        warn!("non-fatal error on import: {:?}", error)
     }
 
     users
 }
 
-fn import_data_from_file(data_dir: &str) -> UserCollection {
+fn import_data_from_file(data_path: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
-    let unprocessed_user_lines =
-        UnprocessedUserLine::import_data_from_file_with_res(data_dir).unwrap();
 
-    let mut users = UserCollection::default();
-
-    for line in unprocessed_user_lines {
-        let user = match User::try_from(line) {
-            Ok(user) => user,
-            Err(err) => {
-                eprintln!("got an error of type {:?}. Skipping line...", err);
-                continue;
-            }
-        };
-
-        if let Err(err) = users.push_with_res(user) {
-            warn!(
-                "got an error of type {:?} when trying to push user to collection.",
-                err
-            )
-        }
+    let (users, non_fatal_errors) =
+        UserCollection::create_from_file_and_collect_non_fatal_errors(data_path).unwrap();
+    for error in non_fatal_errors {
+        warn!("non-fatal error on import: {:?}", error)
     }
 
     users
