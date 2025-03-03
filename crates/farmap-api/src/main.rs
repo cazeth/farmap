@@ -1,10 +1,12 @@
 use axum::{
-    extract::State,
-    http::{HeaderValue, Method},
+    extract::{Path, State},
+    http::{HeaderValue, Method, StatusCode},
     routing::get,
     Json, Router,
 };
-use farmap::{UserCollection, UsersSubset};
+use chrono::Months;
+use chrono::NaiveDate;
+use farmap::{User, UserCollection, UsersSubset};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -25,6 +27,11 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/{fid}", get(fid))
+        .route(
+            "/spam_score_distributions/{year}/{month}",
+            get(spam_score_distributions_for_cohort),
+        )
         .route(
             "/spam_score_distribution",
             get(current_spam_score_distribution),
@@ -70,4 +77,47 @@ async fn weekly_spam_score_distributions(State(users): State<Arc<UserCollection>
         .map(|(date, y)| (date.to_string(), *y))
         .collect::<Vec<(String, [f32; 3])>>();
     Json(json!(result))
+}
+
+async fn fid(
+    Path(fid): Path<u64>,
+    State(users): State<Arc<UserCollection>>,
+) -> Result<Json<Value>, StatusCode> {
+    let spam_score = users.spam_score_by_fid(fid as usize);
+    if let Some(score) = spam_score {
+        Ok(Json(json!(score as u8)))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+async fn spam_score_distributions_for_cohort(
+    Path((year, month)): Path<(u64, u64)>,
+    State(users): State<Arc<UserCollection>>,
+) -> Result<Json<Value>, StatusCode> {
+    let users_ref: &UserCollection = &users;
+    let mut set = UsersSubset::from(users_ref);
+    let cohort_start_date =
+        if let Some(date) = NaiveDate::from_ymd_opt(year as i32, month as u32, 1) {
+            date
+        } else {
+            return Err(StatusCode::BAD_REQUEST);
+        };
+
+    println!(
+        "checking spam score distributions for cohort created at of before {:?}",
+        cohort_start_date
+    );
+    let cohort_end_date = cohort_start_date
+        .checked_add_months(Months::new(1))
+        .unwrap();
+    set.filter(|user: &User| user.created_at_or_before_date(cohort_end_date));
+    set.filter(|user: &User| user.created_at_or_after_date(cohort_start_date));
+    let result = set.monthly_spam_score_distributions();
+    let result = result
+        .iter()
+        .map(|(date, y)| (date.to_string(), *y))
+        .collect::<Vec<(String, [f32; 3])>>();
+
+    Ok(Json(json!(result)))
 }
