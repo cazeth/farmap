@@ -2,7 +2,10 @@ use crate::spam_score::SpamScore;
 use crate::user::User;
 use crate::user_collection::UserCollection;
 use crate::utils::distribution_from_counts;
+use chrono::Datelike;
 use chrono::Days;
+use chrono::Duration;
+use chrono::Months;
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
@@ -130,6 +133,50 @@ impl<'a> UsersSubset<'a> {
         }
 
         distribution_from_counts(&counts)
+    }
+
+    /// Checks the distribution at each month from the first spam score that exists in the set to
+    /// the last. The check is done the first of each month.
+    pub fn monthly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
+        // return an empty vec if the set is empty.
+        if self.map.is_empty() {
+            return Vec::new();
+        }
+
+        let mut result: Vec<(NaiveDate, [f32; 3])> = Vec::new();
+        let mut date = self.earliest_spam_score_date.unwrap();
+        let end_date = self.latest_spam_score_date.unwrap();
+        let date_of_month = 1; // determines which date of the month the check is done.
+        while date <= end_date {
+            result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
+            if date.day0() != 0 {
+                date = date.with_day(date_of_month).unwrap();
+            }
+            date = date.checked_add_months(Months::new(1)).unwrap();
+        }
+        result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
+
+        result
+    }
+
+    /// Checks the distribution, starting at the date of the earliest spam score date an
+    /// incrementing by seven days until the last spam score change in the data.
+    pub fn weekly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
+        // return an empty vec if the set is empty.
+        if self.map.is_empty() {
+            return Vec::new();
+        }
+
+        let mut result: Vec<(NaiveDate, [f32; 3])> = Vec::new();
+        let mut date = self.earliest_spam_score_date.unwrap();
+        let end_date = self.latest_spam_score_date.unwrap();
+        while date <= end_date {
+            result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
+            date += Duration::days(7);
+        }
+        result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
+
+        result
     }
 
     pub fn user_count(&self) -> usize {
@@ -281,6 +328,41 @@ mod tests {
         assert_eq!(set.user_count(), 2);
         set.filter(|user: &User| user.fid() == 1);
         assert_eq!(set.user_count(), 1);
+    }
+
+    #[test]
+    fn test_dates_in_monthly_spam_score_distributions() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let monthly_distributions = set.monthly_spam_score_distributions();
+        assert_eq!(
+            monthly_distributions.first().unwrap().0,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+        );
+
+        assert_eq!(
+            monthly_distributions.last().unwrap().0,
+            NaiveDate::from_ymd_opt(2025, 2, 1).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_dates_in_weekly_spam_score_distributions() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let weekly_distributions = set.weekly_spam_score_distributions();
+        assert_eq!(
+            weekly_distributions.first().unwrap().0,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+        );
+
+        assert!(
+            weekly_distributions.last().unwrap().0 >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+        );
+
+        assert!(
+            weekly_distributions.last().unwrap().0 <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
+        );
     }
 
     #[test]
