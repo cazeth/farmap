@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 pub struct UsersSubset<'a> {
     map: HashMap<usize, &'a User>,
+    earliest_spam_score_date: Option<NaiveDate>,
+    latest_spam_score_date: Option<NaiveDate>,
 }
 
 impl<'a> UsersSubset<'a> {
@@ -15,14 +17,31 @@ impl<'a> UsersSubset<'a> {
     where
         F: Fn(&User) -> bool,
     {
+        let mut earliest_spam_score_date: Option<NaiveDate> = None;
+        let mut latest_spam_score_date: Option<NaiveDate> = None;
+
         let mut filtered_map: HashMap<usize, &'a User> = HashMap::new();
         for user in users.iter() {
             if filter(user) {
                 filtered_map.insert(user.fid(), user);
+                if earliest_spam_score_date.unwrap_or(NaiveDate::MAX)
+                    > user.earliest_spam_score_date()
+                {
+                    earliest_spam_score_date = Some(user.earliest_spam_score_date())
+                }
+                if latest_spam_score_date.unwrap_or(NaiveDate::MIN)
+                    < user.last_spam_score_update_date()
+                {
+                    latest_spam_score_date = Some(user.last_spam_score_update_date())
+                }
             }
         }
 
-        Self { map: filtered_map }
+        Self {
+            map: filtered_map,
+            earliest_spam_score_date,
+            latest_spam_score_date,
+        }
     }
 
     /// apply filter to existing subset and mutate subset.
@@ -36,6 +55,24 @@ impl<'a> UsersSubset<'a> {
             .filter(|user| filter(user))
             .map(|user| (user.fid(), *user))
             .collect::<HashMap<usize, &User>>();
+
+        // update earliest_spam_score
+        let mut earliest_spam_score_date: Option<NaiveDate> = None;
+        let mut latest_spam_score_date: Option<NaiveDate> = None;
+
+        for user in self.map.values() {
+            if user.earliest_spam_score_date() < earliest_spam_score_date.unwrap_or(NaiveDate::MAX)
+            {
+                self.earliest_spam_score_date = Some(user.earliest_spam_score_date());
+                earliest_spam_score_date = Some(user.earliest_spam_score_date());
+            };
+
+            if user.last_spam_score_update_date() > latest_spam_score_date.unwrap_or(NaiveDate::MIN)
+            {
+                self.latest_spam_score_date = Some(user.last_spam_score_update_date());
+                latest_spam_score_date = Some(user.last_spam_score_update_date())
+            }
+        }
     }
 
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
@@ -115,7 +152,27 @@ impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
             .iter()
             .map(|(key, value)| (*key, value))
             .collect();
-        Self { map }
+
+        let mut earliest_spam_score_date: Option<NaiveDate> = None;
+        let mut latest_spam_score_date: Option<NaiveDate> = None;
+
+        for user in users.iter() {
+            if user.earliest_spam_score_date() < earliest_spam_score_date.unwrap_or(NaiveDate::MAX)
+            {
+                earliest_spam_score_date = Some(user.earliest_spam_score_date());
+            }
+
+            if user.last_spam_score_update_date() > latest_spam_score_date.unwrap_or(NaiveDate::MIN)
+            {
+                latest_spam_score_date = Some(user.last_spam_score_update_date());
+            }
+        }
+
+        Self {
+            map,
+            earliest_spam_score_date,
+            latest_spam_score_date,
+        }
     }
 }
 
@@ -169,6 +226,34 @@ mod tests {
             !user.created_at_or_after_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
         });
         assert_eq!(set.user_count(), 1);
+    }
+
+    #[test]
+    fn test_earliest_date() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        assert_eq!(set.earliest_spam_score_date.unwrap(), date);
+    }
+
+    #[test]
+    fn test_earliest_date_after_filter() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let mut set = UsersSubset::from(&users);
+        let filter_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        set.filter(|user: &User| user.created_at_or_after_date(filter_date));
+        assert_eq!(
+            set.earliest_spam_score_date.unwrap(),
+            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_latest_data() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
+        assert_eq!(set.latest_spam_score_date.unwrap(), date);
     }
 
     #[test]
