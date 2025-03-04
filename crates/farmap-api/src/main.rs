@@ -4,7 +4,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use farmap::UserCollection;
+use farmap::{UserCollection, UsersSubset};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -29,6 +29,11 @@ async fn main() {
             "/spam_score_distribution",
             get(current_spam_score_distribution),
         )
+        .route(
+            "/monthly_spam_scores",
+            get(monthly_spam_score_distributions),
+        )
+        .route("/weekly_spam_scores", get(weekly_spam_score_distributions))
         .with_state(shared_users)
         .layer(cors_layer);
 
@@ -43,4 +48,26 @@ async fn root() -> &'static str {
 async fn current_spam_score_distribution(State(users): State<Arc<UserCollection>>) -> Json<Value> {
     let spam_score_distribution = users.current_spam_score_distribution().unwrap();
     Json(json!(spam_score_distribution))
+}
+
+async fn monthly_spam_score_distributions(State(users): State<Arc<UserCollection>>) -> Json<Value> {
+    let users_ref: &UserCollection = &users;
+    let set = UsersSubset::from(users_ref);
+    let result = set.monthly_spam_score_distributions();
+    let result = result
+        .iter()
+        .map(|(date, y)| (date.to_string(), *y))
+        .collect::<Vec<(String, [f32; 3])>>();
+    Json(json!(result))
+}
+
+async fn weekly_spam_score_distributions(State(users): State<Arc<UserCollection>>) -> Json<Value> {
+    let users_ref: &UserCollection = &users;
+    let set = UsersSubset::from(users_ref);
+    let result = set.weekly_spam_score_distributions();
+    let result = result
+        .iter()
+        .map(|(date, y)| (date.to_string(), *y))
+        .collect::<Vec<(String, [f32; 3])>>();
+    Json(json!(result))
 }
