@@ -9,6 +9,7 @@ use chrono::Months;
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct UsersSubset<'a> {
     map: HashMap<usize, &'a User>,
     earliest_spam_score_date: Option<NaiveDate>,
@@ -76,6 +77,16 @@ impl<'a> UsersSubset<'a> {
                 latest_spam_score_date = Some(user.last_spam_score_update_date())
             }
         }
+    }
+
+    /// return a new struct with filter applied
+    pub fn filtered<F>(&self, filter: F) -> Self
+    where
+        F: Fn(&User) -> bool,
+    {
+        let mut new = self.clone();
+        new.filter(filter);
+        new
     }
 
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
@@ -241,6 +252,19 @@ mod tests {
             subset.current_spam_score_distribution(),
             Some([0.0, 0.0, 1.0])
         );
+    }
+
+    #[test]
+    fn test_filtered() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let filter = |user: &User| {
+            user.earliest_spam_record().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
+        };
+
+        let mut full_set = UsersSubset::from(&users);
+        let filtered_set = full_set.filtered(filter).current_spam_score_distribution();
+        full_set.filter(filter);
+        assert_eq!(filtered_set, full_set.current_spam_score_distribution());
     }
 
     // this test has been replaced with from_filter_test_new and will be removed once deprecated
