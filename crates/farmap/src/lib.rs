@@ -5,6 +5,7 @@ pub mod user_collection;
 mod utils;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
+pub use spam_score::SpamScoreCount;
 pub use subset::UsersSubset;
 pub use user::UnprocessedUserLine;
 pub use user::User;
