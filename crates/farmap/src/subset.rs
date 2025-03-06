@@ -1,4 +1,5 @@
 use crate::spam_score::SpamScore;
+use crate::spam_score::SpamScoreCount;
 use crate::user::User;
 use crate::user_collection::UserCollection;
 use crate::utils::distribution_from_counts;
@@ -100,6 +101,62 @@ impl<'a> UsersSubset<'a> {
         }
 
         distribution_from_counts(&counts)
+    }
+
+    pub fn weekly_spam_score_counts(&self) -> Vec<SpamScoreCount> {
+        if self.map.is_empty() {
+            return Vec::new();
+        }
+        // since the struct is not empty the unwrap should never trigger.
+        let mut date = self.earliest_spam_score_date.unwrap();
+        let end_date = self.latest_spam_score_date.unwrap();
+        let mut result: Vec<SpamScoreCount> = Vec::new();
+        while date <= end_date {
+            result.push(self.spam_score_count_at_date(date).unwrap());
+            date += Duration::days(7);
+        }
+
+        // always include the last date.
+        if date < end_date {
+            // since end date is a valid date the unwrap should never trigger.
+            result.push(self.spam_score_count_at_date(end_date).unwrap());
+        };
+
+        result
+    }
+
+    pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<SpamScoreCount> {
+        if date < self.earliest_spam_score_date? {
+            return None;
+        };
+
+        let mut counts = [0; 3];
+        for spam_score in self
+            .map
+            .iter()
+            .filter_map(|(_, user)| user.spam_score_at_date(&date))
+        {
+            match spam_score {
+                SpamScore::Zero => counts[0] += 1,
+                SpamScore::One => counts[1] += 1,
+                SpamScore::Two => counts[2] += 1,
+            }
+        }
+        assert!(counts.iter().sum::<u64>() > 0);
+        Some(SpamScoreCount::new(date, counts[0], counts[1], counts[2]))
+    }
+
+    pub fn current_spam_score_count(&self) -> SpamScoreCount {
+        let date = self.latest_spam_score_date.unwrap();
+        let mut counts = [0; 3];
+        for (_, user) in self.map.iter() {
+            match user.latest_spam_record().0 {
+                SpamScore::Zero => counts[0] += 1,
+                SpamScore::One => counts[1] += 1,
+                SpamScore::Two => counts[2] += 1,
+            }
+        }
+        SpamScoreCount::new(date, counts[0], counts[1], counts[2])
     }
 
     /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
@@ -285,6 +342,15 @@ mod tests {
     }
 
     #[test]
+    fn test_current_spam_score_count() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        assert_eq!(set.current_spam_score_count().spam(), 1);
+        assert_eq!(set.current_spam_score_count().non_spam(), 1);
+        assert_eq!(set.current_spam_score_count().maybe_spam(), 0);
+    }
+
+    #[test]
     fn test_user_count_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let mut set = UsersSubset::from(&users);
@@ -368,6 +434,15 @@ mod tests {
             monthly_distributions.last().unwrap().0,
             NaiveDate::from_ymd_opt(2025, 2, 1).unwrap()
         );
+    }
+
+    #[test]
+    fn test_weekly_spam_score_counts() {
+        let users =
+            UserCollection::create_from_file_with_res("data/dummy-data/spam_2.jsonl").unwrap();
+        let set = UsersSubset::from(&users);
+        let result = set.weekly_spam_score_counts();
+        assert_eq!(result.len(), 1);
     }
 
     #[test]
