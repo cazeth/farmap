@@ -3,6 +3,7 @@ use farmap::spam_score::SpamScore;
 use farmap::subset::UsersSubset;
 use farmap::user::{User, UserError};
 use farmap::user_collection::UserCollection;
+use std::collections::HashSet;
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
@@ -312,4 +313,54 @@ fn change_matrix_should_be_n_in_center_with_deprecated_methods() {
         subset.spam_change_matrix(NaiveDate::from_ymd_opt(2020, 12, 5).unwrap(), Days::new(1)),
         [[0, 0, 0], [0, n, 0], [0, 0, 0]]
     );
+}
+
+#[test]
+fn test_weekly_spam_score_count() {
+    let n = 365;
+    let users = create_users_with_spam_label_one(n).unwrap();
+    let set = UsersSubset::from(&users);
+
+    let results = set.weekly_spam_score_counts();
+
+    // check that all dates are unique
+    let mut uniques = HashSet::<NaiveDate>::new();
+    for r in &results {
+        uniques.insert(r.date());
+    }
+    assert_eq!(uniques.len(), results.len());
+
+    //check first date
+    assert_eq!(
+        results[0].date(),
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()
+    );
+
+    let mut previous_date: Option<NaiveDate> = None;
+    //check that the time between each date expect last is seven days.
+    for (i, r) in results.iter().enumerate() {
+        if previous_date.is_none() {
+            previous_date = Some(r.date());
+            continue;
+        } else if i == results.len() - 1 {
+            assert!(
+                r.date()
+                    <= previous_date
+                        .unwrap()
+                        .checked_add_days(Days::new(7))
+                        .unwrap(),
+            );
+
+            break;
+        };
+
+        assert_eq!(
+            r.date(),
+            previous_date
+                .unwrap()
+                .checked_add_days(Days::new(7))
+                .unwrap()
+        );
+        previous_date = Some(r.date());
+    }
 }
