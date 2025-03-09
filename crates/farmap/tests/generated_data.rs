@@ -11,9 +11,9 @@ fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserErro
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
-        date = date.checked_add_signed(Duration::days(1)).unwrap();
         let user = User::new(i, (SpamScore::One, date));
         users.push_with_res(user)?;
+        date = date.checked_add_signed(Duration::days(1)).unwrap();
     }
 
     Ok(users)
@@ -44,9 +44,9 @@ fn create_users_with_spam_label_one_with_deprecated_methods(n: usize) -> UserCol
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
-        date = date.checked_add_signed(Duration::days(1)).unwrap();
         let user = User::new(i, (SpamScore::One, date));
         users.push(user);
+        date = date.checked_add_signed(Duration::days(1)).unwrap();
     }
 
     users
