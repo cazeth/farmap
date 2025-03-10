@@ -1,12 +1,13 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderValue, Method, StatusCode},
     routing::get,
     Json, Router,
 };
-use chrono::Months;
-use chrono::NaiveDate;
+use chrono::prelude::*;
+use chrono::{Days, Months, NaiveDate};
 use farmap::{User, UserCollection, UsersSubset};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -41,6 +42,7 @@ async fn main() {
             get(monthly_spam_score_distributions),
         )
         .route("/weekly_spam_scores", get(weekly_spam_score_distributions))
+        .route("/latest_moves", get(latest_moves))
         .with_state(shared_users)
         .layer(cors_layer);
 
@@ -55,6 +57,44 @@ async fn root() -> &'static str {
 async fn current_spam_score_distribution(State(users): State<Arc<UserCollection>>) -> Json<Value> {
     let spam_score_distribution = users.current_spam_score_distribution().unwrap();
     Json(json!(spam_score_distribution))
+}
+
+async fn latest_moves(
+    Query(filters): Query<Filters>,
+    Query(moves_filter): Query<MovesFilter>,
+    State(users): State<Arc<UserCollection>>,
+) -> Json<Value> {
+    //last week changes.
+    let current_time = Local::now().date_naive();
+    let comparison_time = if let Some(days) = moves_filter.days {
+        current_time.checked_sub_days(Days::new(days)).unwrap()
+    } else {
+        current_time.checked_sub_days(Days::new(14)).unwrap()
+    };
+
+    let users_ref: &UserCollection = &users;
+    let mut set = UsersSubset::from(users_ref);
+    if let Some(to_fid) = filters.to_fid {
+        set.filter(|user: &User| user.fid() as u64 <= to_fid);
+    };
+    if let Some(from_fid) = filters.from_fid {
+        set.filter(|user: &User| user.fid() as u64 >= from_fid);
+    };
+
+    let result = set.spam_changes_with_fid_score_shift(comparison_time, Days::new(21));
+
+    Json(json!(result))
+}
+
+#[derive(Deserialize)]
+struct MovesFilter {
+    days: Option<u64>,
+}
+
+#[derive(Deserialize)]
+struct Filters {
+    from_fid: Option<u64>,
+    to_fid: Option<u64>,
 }
 
 async fn monthly_spam_score_distributions(State(users): State<Arc<UserCollection>>) -> Json<Value> {
