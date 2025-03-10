@@ -292,7 +292,6 @@ impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
 }
 
 #[cfg(test)]
-#[allow(deprecated)]
 mod tests {
 
     use super::*;
