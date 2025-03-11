@@ -1,8 +1,10 @@
+pub mod fid_score_shift;
 pub mod spam_score;
 pub mod subset;
 pub mod user;
 pub mod user_collection;
 mod utils;
+pub use fid_score_shift::FidScoreShift;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreCount;
