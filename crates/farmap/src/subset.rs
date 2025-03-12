@@ -1,8 +1,11 @@
+use crate::fid_score_shift::ShiftSource;
+use crate::fid_score_shift::ShiftTarget;
 use crate::spam_score::SpamScore;
 use crate::spam_score::SpamScoreCount;
 use crate::user::User;
 use crate::user_collection::UserCollection;
 use crate::utils::distribution_from_counts;
+use crate::FidScoreShift;
 use chrono::Datelike;
 use chrono::Days;
 use chrono::Duration;
@@ -174,6 +177,70 @@ impl<'a> UsersSubset<'a> {
         }
 
         result
+    }
+
+    pub fn spam_changes_with_fid_score_shift(
+        &self,
+        initial_date: NaiveDate,
+        days: Days,
+    ) -> Vec<FidScoreShift> {
+        #[allow(deprecated)]
+        let matrix = self.spam_change_matrix(initial_date, days);
+        let mut shifts: Vec<FidScoreShift> = Vec::new();
+        let sources = [
+            ShiftSource::Zero,
+            ShiftSource::One,
+            ShiftSource::Two,
+            ShiftSource::New,
+        ];
+        let targets = [ShiftTarget::Zero, ShiftTarget::One, ShiftTarget::Two];
+        for (i, source) in sources.iter().enumerate().take(3) {
+            for (j, target) in targets.iter().enumerate() {
+                if matrix[i][j] > 0 {
+                    shifts.push(FidScoreShift::new(*source, *target, matrix[i][j]))
+                };
+            }
+        }
+
+        // also add new users.
+
+        let new_users = self.filtered(|user: &User| {
+            user.created_at_or_after_date(initial_date.checked_add_days(Days::new(1)).unwrap())
+        });
+
+        let new_user_counts = new_users.spam_score_count_at_date(
+            initial_date
+                .checked_add_days(days)
+                .unwrap_or(NaiveDate::MAX),
+        );
+
+        if let Some(counts) = new_user_counts {
+            if counts.spam() != 0 {
+                shifts.push(FidScoreShift::new(
+                    ShiftSource::New,
+                    ShiftTarget::Zero,
+                    counts.spam() as usize,
+                ));
+            }
+
+            if counts.maybe_spam() != 0 {
+                shifts.push(FidScoreShift::new(
+                    ShiftSource::New,
+                    ShiftTarget::One,
+                    counts.maybe_spam() as usize,
+                ))
+            }
+
+            if counts.non_spam() != 0 {
+                shifts.push(FidScoreShift::new(
+                    ShiftSource::New,
+                    ShiftTarget::Two,
+                    counts.non_spam() as usize,
+                ))
+            }
+        }
+
+        shifts
     }
 
     /// Returns the distribution of spam scores at a certain date. Excludes users that did not
@@ -511,7 +578,8 @@ mod tests {
     }
 
     #[test]
-    fn test_spam_change_matrix_with_new() {
+    #[allow(deprecated)]
+    fn test_spam_change_matrix_with_new_with_deprecated_spam() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
         let change_matrix =
@@ -522,6 +590,27 @@ mod tests {
             Days::new(700),
         );
         assert_eq!(change_matrix, [[1, 0, 0], [0, 0, 0], [0, 0, 1]]);
+    }
+
+    #[test]
+    fn test_spam_change_with_new() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let shifts = set.spam_changes_with_fid_score_shift(
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Days::new(700),
+        );
+        let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::Zero, 1);
+        let expected_new = FidScoreShift::new(ShiftSource::New, ShiftTarget::Two, 1);
+        assert!(shifts.contains(&expected_shift));
+        assert!(shifts.contains(&expected_new));
+        assert_eq!(shifts.len(), 2);
+        let change_matrix = set.spam_changes_with_fid_score_shift(
+            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
+            Days::new(700),
+        );
+        let expected_shift = FidScoreShift::new(ShiftSource::Zero, ShiftTarget::Zero, 1);
+        assert_eq!(change_matrix[0], expected_shift);
     }
 
     #[test]
