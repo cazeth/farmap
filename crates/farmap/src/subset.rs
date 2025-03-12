@@ -150,15 +150,7 @@ impl<'a> UsersSubset<'a> {
 
     pub fn current_spam_score_count(&self) -> SpamScoreCount {
         let date = self.latest_spam_score_date.unwrap();
-        let mut counts = [0; 3];
-        for (_, user) in self.map.iter() {
-            match user.latest_spam_record().0 {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-        SpamScoreCount::new(date, counts[0], counts[1], counts[2])
+        self.spam_score_count_at_date(date).unwrap()
     }
 
     /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
