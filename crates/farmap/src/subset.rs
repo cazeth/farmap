@@ -129,6 +129,9 @@ impl<'a> UsersSubset<'a> {
         if date < self.earliest_spam_score_date? {
             return None;
         };
+        if self.user_count() == 0 {
+            return None;
+        };
 
         let mut counts = [0; 3];
         for spam_score in self
@@ -142,7 +145,6 @@ impl<'a> UsersSubset<'a> {
                 SpamScore::Two => counts[2] += 1,
             }
         }
-        assert!(counts.iter().sum::<u64>() > 0);
         Some(SpamScoreCount::new(date, counts[0], counts[1], counts[2]))
     }
 
