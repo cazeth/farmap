@@ -1,11 +1,14 @@
 use chrono::{Days, Duration, NaiveDate};
+use farmap::fid_score_shift::ShiftSource;
+use farmap::fid_score_shift::ShiftTarget;
 use farmap::spam_score::SpamScore;
 use farmap::subset::UsersSubset;
 use farmap::user::{User, UserError};
 use farmap::user_collection::UserCollection;
+use farmap::FidScoreShift;
 use std::collections::HashSet;
 
-/// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
+/// Create n users by incrementing fid and incrementing one day from 20200101, all with spam label
 /// one.
 fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserError> {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
@@ -238,6 +241,62 @@ fn distribution_should_be_twos_with_deprecated_methods() {
 }
 
 #[test]
+fn fid_shift_test_for_one_then_two_data() {
+    let n: u64 = 10;
+
+    let users = create_users_with_spam_label_one_then_two(n as usize).unwrap();
+    let subset = UsersSubset::from(&users);
+    let shifts = subset.spam_changes_with_fid_score_shift(
+        NaiveDate::from_ymd_opt(2020, 1, 1)
+            .unwrap()
+            .checked_add_days(Days::new(n - 1))
+            .unwrap(),
+        Days::new(0),
+    );
+
+    let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::One, n as usize);
+    assert_eq!(shifts[0], expected_shift);
+    assert_eq!(shifts.len(), 1);
+
+    let shifts = subset.spam_changes_with_fid_score_shift(
+        NaiveDate::from_ymd_opt(2020, 1, 1)
+            .unwrap()
+            .checked_add_days(Days::new(n - 1))
+            .unwrap(),
+        Days::new(n),
+    );
+    let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::Two, n as usize);
+    assert_eq!(expected_shift, shifts[0]);
+    //assert_eq!(matrix, [[0, 0, 0], [0, 0, n as usize], [0, 0, 0]]);
+}
+
+#[test]
+fn shift_struct_should_be_n_in_one_to_one() {
+    let n = 10;
+    let users = create_users_with_spam_label_one(n).unwrap();
+    let subset = UsersSubset::from(&users);
+    assert_eq!(
+        subset.spam_changes_with_fid_score_shift(
+            NaiveDate::from_ymd_opt(2020, 12, 5).unwrap(),
+            Days::new(1)
+        )[0],
+        FidScoreShift::new(ShiftSource::One, ShiftTarget::One, n)
+    );
+    assert_eq!(
+        subset
+            .spam_changes_with_fid_score_shift(
+                NaiveDate::from_ymd_opt(2020, 12, 5).unwrap(),
+                Days::new(1)
+            )
+            .len(),
+        1
+    )
+}
+
+/// This test uses change matrix, which is deprecated. The tests will be removed once the method is
+/// removed.
+#[test]
+#[allow(deprecated)]
 fn change_matrix_test_for_one_then_two_data() {
     let n: u64 = 10;
 
@@ -266,6 +325,7 @@ fn change_matrix_test_for_one_then_two_data() {
 
 // this test has been replaced and will be removed once deprecated methods are removed
 #[test]
+#[allow(deprecated)]
 fn change_matrix_test_for_one_then_two_data_with_deprecated_methods() {
     let n: u64 = 10;
 
@@ -293,7 +353,8 @@ fn change_matrix_test_for_one_then_two_data_with_deprecated_methods() {
 }
 
 #[test]
-fn change_matrix_should_be_n_in_center() {
+#[allow(deprecated)]
+fn change_matrix_should_be_n_in_center_with_deprecated_spam_matrix() {
     let n = 10;
     let users = create_users_with_spam_label_one(n).unwrap();
     let subset = UsersSubset::from(&users);
@@ -305,6 +366,7 @@ fn change_matrix_should_be_n_in_center() {
 
 // this test has been replaced and will be removed once deprecated methods are removed
 #[test]
+#[allow(deprecated)]
 fn change_matrix_should_be_n_in_center_with_deprecated_methods() {
     let n = 10;
     let users = create_users_with_spam_label_one_with_deprecated_methods(n);
