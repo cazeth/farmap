@@ -158,6 +158,7 @@ impl<'a> UsersSubset<'a> {
 
     /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
     /// it means that 1 user has moved from spam score i to spam score j during the period.
+    #[deprecated(note = "use spam changes with fid score shift instead")]
     pub fn spam_change_matrix(&self, initial_date: NaiveDate, days: Days) -> [[usize; 3]; 3] {
         let end_date = initial_date
             .checked_add_days(days)

@@ -242,6 +242,8 @@ fn print_spam_score_distribution(set: &UsersSubset, date: NaiveDate) {
 }
 
 fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
+    //TODO: should be phased out.
+    #[allow(deprecated)]
     let matrix = subset.spam_change_matrix(from_date, days);
     for row in matrix {
         for element in row {
