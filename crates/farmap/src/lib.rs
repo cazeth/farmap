@@ -20,7 +20,6 @@ pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreCount;
 #[doc(inline)]
 pub use subset::UsersSubset;
-pub use user::UnprocessedUserLine;
 pub use user::User;
 #[doc(inline)]
 pub use user_collection::UserCollection;
