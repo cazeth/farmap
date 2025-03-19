@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Serialize, PartialEq, Debug)]
+#[derive(Serialize, Clone, Copy, PartialEq, Debug)]
 pub struct FidScoreShift {
     source: ShiftSource,
     target: ShiftTarget,
