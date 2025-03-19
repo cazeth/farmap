@@ -20,6 +20,8 @@ pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreCount;
 #[doc(inline)]
 pub use subset::UsersSubset;
+pub use user::InvalidInputError;
 pub use user::User;
+pub use user::UserError;
 #[doc(inline)]
 pub use user_collection::UserCollection;
