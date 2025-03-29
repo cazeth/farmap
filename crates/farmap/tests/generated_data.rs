@@ -426,3 +426,13 @@ fn test_weekly_spam_score_count() {
         previous_date = Some(r.date());
     }
 }
+
+#[test]
+pub fn update_count_should_be_one_per_day() {
+    let n = 365;
+    let users = create_users_with_spam_label_one(n).unwrap();
+    let set = UsersSubset::from(&users);
+    let sum: usize = set.count_updates().values().sum();
+    assert_eq!(sum, n);
+    assert!(set.count_updates().values().all(|n| *n == 1));
+}

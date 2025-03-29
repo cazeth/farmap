@@ -270,6 +270,23 @@ impl<'a> UsersSubset<'a> {
         distribution_from_counts(&counts)
     }
 
+    /// Returns a hashmap of the update count that occured at each date.
+    pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
+        let mut result: HashMap<NaiveDate, usize> = HashMap::new();
+        for date in self
+            .iter()
+            .flat_map(|user| user.all_spam_records())
+            .map(|(_, date)| date)
+        {
+            if let Some(current_count) = result.get_mut(date) {
+                *current_count += 1;
+            } else {
+                result.insert(*date, 1);
+            }
+        }
+        result
+    }
+
     /// Checks the distribution at each month from the first spam score that exists in the set to
     /// the last. The check is done the first of each month.
     pub fn monthly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
@@ -680,5 +697,14 @@ mod tests {
         let users = UserCollection::create_from_dir("data/dummy-data");
         let set = UsersSubset::from(&users);
         assert_eq!(users.user_count(), set.user_count());
+    }
+
+    #[test]
+    fn test_update_counts() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let result = set.count_updates();
+        let sum: usize = result.values().sum();
+        assert_eq!(sum, 3);
     }
 }
