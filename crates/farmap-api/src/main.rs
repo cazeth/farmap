@@ -11,10 +11,14 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 
     let cors_layer = CorsLayer::new()
         .allow_origin(vec![HeaderValue::from_static("http://localhost:5173")]) // Open access to selected route
@@ -44,6 +48,11 @@ async fn main() {
         .route("/weekly_spam_scores", get(weekly_spam_score_distributions))
         .route("/weekly_spam_scores_counts", get(weekly_spam_score_counts))
         .route("/latest_moves", get(latest_moves))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+        )
         .with_state(shared_users)
         .layer(cors_layer);
 
