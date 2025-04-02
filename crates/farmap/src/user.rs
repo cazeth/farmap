@@ -120,15 +120,7 @@ impl User {
     }
 
     pub fn earliest_spam_score_date(&self) -> NaiveDate {
-        let mut labels_iter = self.labels.iter();
-
-        let mut earliest_date = labels_iter.next().unwrap().1;
-        for (_, date) in labels_iter {
-            if date < &earliest_date {
-                earliest_date = *date;
-            }
-        }
-        earliest_date
+        *self.labels.iter().map(|(_, date)| date).min().unwrap()
     }
 
     /// If the user didn't exist at the date, the function returns none.
