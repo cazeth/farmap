@@ -70,34 +70,40 @@ impl User {
         self.earliest_spam_record().1 <= date
     }
 
-    // Adds a new spam record to a user. If the user already has a spam record with a different
-    // spam score at the same date the method returns an error. If the user has a spamrecord at the
-    // same date with the spam score the method does nothing.
+    /// Adds a new spam record to a user. There are three scenarios that may happen:
+    ///
+    /// The user already has a spam record with the same date and the same record. The method
+    /// returns Ok without doing anything.
+    ///
+    /// The user already has a spam record with a different spam score at the same date.
+    /// The method does not change the struct and returns an error.
+    ///
+    /// There is no collision and the list is updated while remaining sorted.
+    ///
     fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
-        let mut label_iter = self.labels.iter().enumerate();
-        let label_iter_len = self.labels.iter().len();
+        let position_closest_and_smaller: Option<usize> =
+            self.labels.iter().position(|(_, d)| *d >= new_record.1);
 
-        let index = loop {
-            if let Some((i, (score, date))) = label_iter.next() {
-                if new_record.1 < *date {
-                    break i;
-                } else if new_record.1 == *date && new_record.0 == *score {
-                    return Ok(());
-                } else if new_record.1 == *date && new_record.0 != *score {
-                    return Err(UserError::SpamScoreCollision {
-                        fid: self.fid(),
-                        date: *date,
-                        old_spam_score: *score,
-                        new_spam_score: new_record.0,
-                    });
-                };
-            } else {
-                break label_iter_len;
-            };
-        };
+        let record_closest_and_smaller = position_closest_and_smaller.map(|p| self.labels[p]);
 
-        self.labels.insert(index, new_record);
-        Ok(())
+        match record_closest_and_smaller {
+            Some((value, date)) if date == new_record.1 && value == new_record.0 => Ok(()),
+            None => {
+                self.labels.push(new_record);
+                Ok(())
+            }
+            Some((_, date)) if date != new_record.1 => {
+                self.labels
+                    .insert(position_closest_and_smaller.unwrap(), new_record);
+                Ok(())
+            }
+            Some(_) => Err(UserError::SpamScoreCollision {
+                fid: self.fid,
+                date: new_record.1,
+                old_spam_score: record_closest_and_smaller.unwrap().0,
+                new_spam_score: new_record.0,
+            }),
+        }
     }
 
     /// Merges two user objects into one. Both must have the same FID and no contradictory spam
