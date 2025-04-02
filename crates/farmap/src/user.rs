@@ -127,23 +127,12 @@ impl User {
     pub fn spam_score_at_date(&self, date: &NaiveDate) -> Option<&SpamScore> {
         if date < &self.earliest_spam_record().1 {
             return None;
-        } else if date >= &self.latest_spam_record().1 {
-            return Some(&self.latest_spam_record().0);
         };
-
-        let mut labels_iter = self.labels.iter();
-
-        let result_spam_record = loop {
-            if let Some(current_spam_record) = labels_iter.next() {
-                if current_spam_record.1 <= *date {
-                    break current_spam_record;
-                }
-            } else {
-                panic!();
-            }
-        };
-
-        Some(&result_spam_record.0)
+        self.labels
+            .iter()
+            .rev()
+            .find(|(_, d)| d <= date)
+            .map(|(score, _)| score)
     }
 }
 
