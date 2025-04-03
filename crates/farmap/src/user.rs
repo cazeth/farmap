@@ -321,6 +321,23 @@ impl UnprocessedUserLine {
         Ok(result)
     }
 
+    /// collects error on a line-by-line basis and sends them with an ok. Other fatal errors invoke
+    /// an error.
+    pub fn import_data_from_file_with_collected_res(
+        path: &str,
+    ) -> Result<Vec<Result<UnprocessedUserLine, InvalidJsonlError>>, DataReadError> {
+        Ok(json_lines::<UnprocessedUserLine, _>(path)
+            .map_err(|_| DataReadError::InvalidDataPathError {
+                path: path.to_owned(),
+            })?
+            .map(|x| {
+                x.map_err(|_| InvalidJsonlError {
+                    path: "test".to_string(),
+                })
+            })
+            .collect::<Vec<_>>())
+    }
+
     pub fn import_data_from_dir_with_res(
         data_dir: &str,
     ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
