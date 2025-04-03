@@ -324,39 +324,18 @@ impl UnprocessedUserLine {
     pub fn import_data_from_dir_with_res(
         data_dir: &str,
     ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
-        let paths = if let Ok(paths) = read_dir(data_dir) {
-            paths
-        } else {
-            return Err(DataReadError::InvalidDataPathError {
-                path: data_dir.to_string(),
-            });
-        };
+        let paths = read_dir(data_dir).map_err(|_| DataReadError::InvalidDataPathError {
+            path: data_dir.to_string(),
+        })?;
 
-        let mut result: Vec<UnprocessedUserLine> = Vec::new();
-
-        for path in paths.flatten() {
-            if path.path().extension().unwrap_or_default() == "jsonl" {
-                let new_jsonl_lines =
-                    if let Ok(lines) = json_lines::<UnprocessedUserLine, _>(path.path()) {
-                        lines
-                    } else {
-                        return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
-                            path: path.path().to_str().unwrap().to_owned(),
-                        }));
-                    };
-
-                for line in new_jsonl_lines {
-                    result.push(if let Ok(line) = line {
-                        line
-                    } else {
-                        return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
-                            path: path.path().to_str().unwrap().to_owned(),
-                        }));
-                    })
-                }
-            }
-        }
-        Ok(result)
+        paths
+            .flatten()
+            .filter(|paths| paths.path().extension().unwrap_or_default() == "jsonl")
+            .map(|path| Self::import_data_from_file_with_res(path.path().to_str().unwrap()))
+            .fold_ok(Vec::<UnprocessedUserLine>::new(), |mut acc, mut x| {
+                acc.append(&mut x);
+                acc
+            })
     }
 
     //TODO it's probably must for efficient to check the dates of the first line of each file and
