@@ -1,9 +1,8 @@
-use crate::user::InvalidInputError;
+use crate::{user::InvalidInputError, utils::distribution_from_counts};
 use chrono::NaiveDate;
 use serde::Serialize;
-use std::collections::HashMap;
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Hash, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub enum SpamScore {
     Zero,
     One,
@@ -28,44 +27,51 @@ impl TryFrom<usize> for SpamScore {
 #[derive(Serialize, Debug)]
 pub struct SpamScoreCount {
     date: NaiveDate,
-    #[serde(flatten)]
-    counts: HashMap<SpamScore, u64>,
-    #[serde(skip)]
-    total: u64,
+    nonspam: u64,
+    maybe: u64,
+    spam: u64,
 }
 
 impl SpamScoreCount {
     pub fn new(date: NaiveDate, spam_count: u64, maybe_count: u64, nonspam_count: u64) -> Self {
-        let mut map: HashMap<SpamScore, u64> = HashMap::new();
-        use SpamScore::*;
-        map.insert(Zero, spam_count);
-        map.insert(One, maybe_count);
-        map.insert(Two, nonspam_count);
-
         Self {
             date,
-            counts: map,
-            total: spam_count + maybe_count + nonspam_count,
+            nonspam: nonspam_count,
+            maybe: maybe_count,
+            spam: spam_count,
         }
     }
+
     pub fn date(&self) -> NaiveDate {
         self.date
     }
 
     pub fn spam(&self) -> u64 {
-        *self.counts.get(&SpamScore::Zero).unwrap()
+        self.spam
     }
 
     pub fn maybe_spam(&self) -> u64 {
-        *self.counts.get(&SpamScore::One).unwrap()
+        self.maybe
     }
 
     pub fn non_spam(&self) -> u64 {
-        *self.counts.get(&SpamScore::Two).unwrap()
+        self.nonspam
+    }
+
+    pub fn add(&mut self, score: &SpamScore) {
+        match score {
+            SpamScore::Zero => self.spam += 1,
+            SpamScore::One => self.maybe += 1,
+            SpamScore::Two => self.nonspam += 1,
+        }
     }
 
     pub fn total(&self) -> u64 {
-        self.total
+        self.spam + self.maybe + self.nonspam
+    }
+
+    pub fn distributions(&self) -> Option<[f32; 3]> {
+        distribution_from_counts(&[self.spam, self.maybe, self.nonspam])
     }
 }
 
