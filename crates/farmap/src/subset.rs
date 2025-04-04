@@ -1,6 +1,5 @@
 use crate::fid_score_shift::ShiftSource;
 use crate::fid_score_shift::ShiftTarget;
-use crate::spam_score::SpamScore;
 use crate::spam_score::{SpamScoreCount, SpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
@@ -118,23 +117,20 @@ impl<'a> UsersSubset<'a> {
         if date < self.earliest_spam_score_date? {
             return None;
         };
+
         if self.user_count() == 0 {
             return None;
         };
 
-        let mut counts = [0; 3];
-        for spam_score in self
-            .map
-            .iter()
-            .filter_map(|(_, user)| user.spam_score_at_date(&date))
-        {
-            match spam_score {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-        Some(SpamScoreCount::new(date, counts[0], counts[1], counts[2]))
+        Some(
+            self.map
+                .iter()
+                .filter_map(|(_, user)| user.spam_score_at_date(&date))
+                .fold(SpamScoreCount::new(date, 0, 0, 0), |mut acc, user| {
+                    acc.add(user);
+                    acc
+                }),
+        )
     }
 
     /// Returns none when the set is empty
