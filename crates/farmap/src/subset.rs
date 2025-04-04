@@ -259,21 +259,7 @@ impl<'a> UsersSubset<'a> {
     /// exist at the given date.
     /// Returns none if the struct contains no users or if no users existed at the provided date.
     pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
-        let mut counts = [0; 3];
-
-        for spam_score in self
-            .map
-            .iter()
-            .filter_map(|(_, user)| user.spam_score_at_date(&date))
-        {
-            match spam_score {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-
-        distribution_from_counts(&counts)
+        self.spam_score_count_at_date(date)?.distributions()
     }
 
     /// Returns the average total casts of the users in the group along with the fraction of users
