@@ -65,23 +65,24 @@ impl<'a> UsersSubset<'a> {
             .map(|user| (user.fid(), *user))
             .collect::<HashMap<usize, &User>>();
 
-        // update earliest_spam_score
-        let mut earliest_spam_score_date: Option<NaiveDate> = None;
-        let mut latest_spam_score_date: Option<NaiveDate> = None;
+        self.update_earliest_spam_score_date();
+        self.update_latest_spam_score_date();
+    }
 
-        for user in self.map.values() {
-            if user.earliest_spam_score_date() < earliest_spam_score_date.unwrap_or(NaiveDate::MAX)
-            {
-                self.earliest_spam_score_date = Some(user.earliest_spam_score_date());
-                earliest_spam_score_date = Some(user.earliest_spam_score_date());
-            };
+    fn update_earliest_spam_score_date(&mut self) {
+        self.earliest_spam_score_date = self
+            .map
+            .values()
+            .min_by_key(|user| user.earliest_spam_score_date())
+            .map(|x| x.earliest_spam_score_date());
+    }
 
-            if user.last_spam_score_update_date() > latest_spam_score_date.unwrap_or(NaiveDate::MIN)
-            {
-                self.latest_spam_score_date = Some(user.last_spam_score_update_date());
-                latest_spam_score_date = Some(user.last_spam_score_update_date())
-            }
-        }
+    fn update_latest_spam_score_date(&mut self) {
+        self.latest_spam_score_date = self
+            .map
+            .values()
+            .max_by_key(|user| user.last_spam_score_update_date())
+            .map(|x| x.last_spam_score_update_date());
     }
 
     /// return a new struct with filter applied
