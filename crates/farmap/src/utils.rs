@@ -1,5 +1,5 @@
-pub fn distribution_from_counts<const N: usize>(counts: &[usize; N]) -> Option<[f32; N]> {
-    let total: usize = counts.iter().sum();
+pub fn distribution_from_counts<const N: usize>(counts: &[u64; N]) -> Option<[f32; N]> {
+    let total: u64 = counts.iter().sum();
     let mut result = [0f32; N];
     if total == 0 {
         return None;
