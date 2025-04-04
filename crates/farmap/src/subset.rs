@@ -25,31 +25,21 @@ impl<'a> UsersSubset<'a> {
     where
         F: Fn(&User) -> bool,
     {
-        let mut earliest_spam_score_date: Option<NaiveDate> = None;
-        let mut latest_spam_score_date: Option<NaiveDate> = None;
+        let filtered_map: HashMap<usize, &'a User> = users
+            .iter()
+            .filter(|user| filter(user))
+            .map(|user| (user.fid(), user))
+            .collect();
 
-        let mut filtered_map: HashMap<usize, &'a User> = HashMap::new();
-        for user in users.iter() {
-            if filter(user) {
-                filtered_map.insert(user.fid(), user);
-                if earliest_spam_score_date.unwrap_or(NaiveDate::MAX)
-                    > user.earliest_spam_score_date()
-                {
-                    earliest_spam_score_date = Some(user.earliest_spam_score_date())
-                }
-                if latest_spam_score_date.unwrap_or(NaiveDate::MIN)
-                    < user.last_spam_score_update_date()
-                {
-                    latest_spam_score_date = Some(user.last_spam_score_update_date())
-                }
-            }
-        }
-
-        Self {
+        let mut res = Self {
             map: filtered_map,
-            earliest_spam_score_date,
-            latest_spam_score_date,
-        }
+            earliest_spam_score_date: None,
+            latest_spam_score_date: None,
+        };
+
+        res.update_earliest_spam_score_date();
+        res.update_latest_spam_score_date();
+        res
     }
 
     /// apply filter to existing subset and mutate subset.
