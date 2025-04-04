@@ -155,6 +155,11 @@ impl<'a> UsersSubset<'a> {
         Some(SpamScoreCount::new(date, counts[0], counts[1], counts[2]))
     }
 
+    /// Returns none when the set is empty
+    pub fn current_spam_score_count_with_opt(&self) -> Option<SpamScoreCount> {
+        self.spam_score_count_at_date(self.latest_spam_score_date?)
+    }
+
     pub fn current_spam_score_count(&self) -> SpamScoreCount {
         let date = self.latest_spam_score_date.unwrap();
         self.spam_score_count_at_date(date).unwrap()
