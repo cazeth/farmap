@@ -4,7 +4,6 @@ use crate::spam_score::SpamScore;
 use crate::spam_score::{SpamScoreCount, SpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
-use crate::utils::distribution_from_counts;
 use crate::FidScoreShift;
 use chrono::Datelike;
 use chrono::Days;
@@ -97,16 +96,7 @@ impl<'a> UsersSubset<'a> {
 
     /// Returns none if the subset is empty
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
-        let mut counts = [0; 3];
-        for (_, user) in self.map.iter() {
-            match user.latest_spam_record().0 {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-
-        distribution_from_counts(&counts)
+        self.current_spam_score_count_with_opt()?.distributions()
     }
 
     /// Returns the spam score count for a set at a weekly cadence. The first value is at the
