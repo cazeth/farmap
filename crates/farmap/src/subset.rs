@@ -436,6 +436,17 @@ mod tests {
     }
 
     #[test]
+    fn empty_set() {
+        let users = UserCollection::default();
+        let set = UsersSubset::from(&users);
+        assert_eq!(set.user_count(), 0);
+        assert!(set.earliest_spam_score_date.is_none());
+        assert!(set.latest_spam_score_date.is_none());
+        assert!(set.current_spam_score_distribution().is_none());
+        assert!(set.current_spam_score_count_with_opt().is_none());
+    }
+
+    #[test]
     fn test_filtered() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let filter = |user: &User| {
