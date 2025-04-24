@@ -6,10 +6,17 @@ use crate::user::User;
 use crate::user::UserError;
 use crate::utils::distribution_from_counts;
 use chrono::NaiveDate;
+use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
+use std::error::Error;
+use std::fs::File;
+use std::io::ErrorKind;
+use std::io::Write;
+use std::path::Path;
 use thiserror::Error;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     map: HashMap<usize, User>,
 }
@@ -92,6 +99,34 @@ impl UserCollection {
 
         // if errors occur while importing a particular line the parsing continues and collects the errors.
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
+    }
+
+    pub fn create_from_db(db: &Path) -> Result<Self, Box<dyn Error>> {
+        let db_result = std::fs::read_to_string(db);
+        match db_result {
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(Self::default()),
+            Err(e) => Err(Box::new(e)),
+            Ok(data) => {
+                let users: Self = serde_json::from_str(&data)?;
+                Ok(users)
+            }
+        }
+    }
+
+    pub fn save_to_db(&self, db: &Path) -> Result<(), Box<dyn Error>> {
+        let mut file = File::create(db)?;
+        let json_text = serde_json::to_string(self)?;
+        file.write_all(json_text.as_bytes())?;
+        Ok(())
+    }
+
+    pub fn push_unprocessed_user_line(
+        &mut self,
+        line: UnprocessedUserLine,
+    ) -> Result<(), Box<dyn Error>> {
+        let new_user = User::try_from(line)?;
+        self.push_with_res(new_user)?;
+        Ok(())
     }
 
     fn create_from_unprocessed_user_lines_and_collect_non_fatal_errors(

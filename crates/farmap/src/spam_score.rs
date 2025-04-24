@@ -1,8 +1,8 @@
 use crate::{user::InvalidInputError, utils::distribution_from_counts};
 use chrono::NaiveDate;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SpamScore {
     Zero,
     One,

@@ -6,7 +6,7 @@ use serde_jsonlines::json_lines;
 use std::fs::read_dir;
 use thiserror::Error;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct User {
     fid: usize,
     labels: Vec<SpamRecord>,

@@ -8,13 +8,18 @@
 //! you likely want to create a subset of this data with various filters applied and do analysis on
 //! it and use it in other applications.
 pub mod fid_score_shift;
+pub mod github_importer;
+pub mod import;
 pub mod spam_score;
+pub mod standard_importer;
 pub mod subset;
 pub mod user;
 pub mod user_collection;
 mod utils;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
+pub use github_importer::new_github_importer;
+pub use import::Importer;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreCount;
