@@ -6,26 +6,156 @@ use axum::{
 };
 use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
+use farmap::{new_github_importer, user::UnprocessedUserLine};
 use farmap::{User, UserCollection, UsersSubset};
+use log::{error, info};
 use serde::Deserialize;
 use serde_json::{json, Value};
+use serde_jsonlines::JsonLinesReader;
+use std::cell::Cell;
+use std::fs::File;
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::{collections::HashSet, io::Write};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+    let local_data_dir = PathBuf::from("./data/auto-import/".to_string());
+    let users_db_path = PathBuf::from("./data/auto-import/user-db.json".to_string());
+    let names_data_path = PathBuf::from("./data/app_data/names".to_string());
+
+    let names_data_dir = names_data_path.parent().unwrap();
+    let readwrite_to_filesystem: Cell<bool> = Cell::new(true);
+
+    let handle_rw_error = || {
+        error! {"read-write error - using application without reading or writing to local filesystem"};
+        readwrite_to_filesystem.set(false);
+    };
+
+    if readwrite_to_filesystem.get()
+        && !std::fs::exists(names_data_dir).unwrap_or_else(|_| {
+            handle_rw_error();
+            false
+        })
+    {
+        std::fs::create_dir_all(names_data_dir).unwrap_or_else(|_| handle_rw_error());
+    };
+
+    if readwrite_to_filesystem.get()
+        && !std::fs::exists(&local_data_dir).unwrap_or_else(|_| {
+            handle_rw_error();
+            false
+        })
+    {
+        std::fs::create_dir_all(&local_data_dir).unwrap_or_else(|_| handle_rw_error());
+    };
+
+    simple_logger::SimpleLogger::new()
+        .with_level(tracing::log::LevelFilter::Trace)
+        .init()
+        .unwrap();
+
+    let local_names: HashSet<String> = if readwrite_to_filesystem.get()
+        && std::fs::exists(&names_data_path).unwrap_or_else(|_| {
+            handle_rw_error();
+            false
+        }) {
+        HashSet::from_iter(
+            std::fs::read_to_string(&names_data_path)
+                .unwrap_or_else(|_| {
+                    handle_rw_error();
+                    "".to_string()
+                })
+                .lines()
+                .filter(|x| !x.is_empty())
+                .map(|x| x.to_string()),
+        )
+    } else {
+        HashSet::new()
+    };
+
+    info!("tried reading local names: local_names is {local_names:#?}");
+
+    let importer = if readwrite_to_filesystem.get() {
+        new_github_importer()
+            .with_local_data_dir(local_data_dir)
+            .unwrap_or_else(|_| {
+                handle_rw_error();
+                new_github_importer()
+            })
+    } else {
+        new_github_importer()
+    };
+
+    let api_names = importer.name_strings_from_api().await.unwrap();
+    let api_names_set = HashSet::from_iter(api_names.iter().map(|x| x.to_string()));
+    let missing_names = api_names_set.difference(&local_names);
+    let mut updated_local_names: HashSet<String> = local_names.clone();
+
+    let mut users = if readwrite_to_filesystem.get() {
+        UserCollection::create_from_db(&users_db_path).unwrap_or_default()
+    } else {
+        UserCollection::default()
+    };
+
+    for name in missing_names {
+        let body = importer.body_from_name(name).await.unwrap();
+        let lines = JsonLinesReader::new(body.as_bytes());
+        for line in lines.read_all::<UnprocessedUserLine>().flatten() {
+            users.push_unprocessed_user_line(line).unwrap_or(());
+        }
+        updated_local_names.insert(name.clone());
+    }
+
+    if readwrite_to_filesystem.get() {
+        users
+            .save_to_db(&users_db_path)
+            .unwrap_or_else(|_| handle_rw_error());
+    };
+
+    let local_names_file: Option<File> = if readwrite_to_filesystem.get() {
+        std::fs::File::create(&names_data_path)
+            .inspect_err(|_| {
+                handle_rw_error();
+            })
+            .ok()
+    } else {
+        None
+    };
+
+    info!("update local names: local names file is {updated_local_names:?}");
+
+    let local_names_output = updated_local_names
+        .iter()
+        .fold("".to_string(), |acc, x| format!("{acc}\n{x}"))
+        .lines()
+        .filter(|x| !x.is_empty())
+        .collect::<Vec<&str>>()
+        .join("\n");
+    info!("writing names: {local_names_output:#?}");
+
+    if let Some(mut local_names_file) = local_names_file {
+        local_names_file
+            .write_all(local_names_output.as_bytes())
+            .unwrap_or(());
+    }
+
+    let env_var = std::env::var("FARMAP_ALLOWED_URLS").unwrap_or_default();
+
+    let allowed_urls: Vec<HeaderValue> = env_var
+        .split(',')
+        .map(|x| HeaderValue::from_str(x).unwrap())
+        .collect::<Vec<_>>();
+    info!("allowed urls are : {allowed_urls:#?}");
 
     let cors_layer = CorsLayer::new()
-        .allow_origin(vec![HeaderValue::from_static("http://localhost:5173")]) // Open access to selected route
+        .allow_origin(allowed_urls)
         .allow_methods([Method::GET, Method::POST]);
 
-    let (users, _) =
-        UserCollection::create_from_dir_and_collect_non_fatal_errors("./data/data/").unwrap();
+    println!("number of users are {}", users.user_count());
     println!("data import done!");
 
     let shared_users = Arc::new(users);
