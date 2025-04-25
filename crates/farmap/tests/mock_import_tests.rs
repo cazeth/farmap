@@ -1,5 +1,6 @@
 use farmap::import::ConversionError;
 use farmap::import::Importer;
+use farmap::import::ImporterError;
 use mockito::Server;
 use std::path::Path;
 use std::path::PathBuf;
@@ -61,7 +62,7 @@ fn create_mock_standard_importer(
     base_url: Url,
     status_url: Url,
 ) -> Importer {
-    fn parse_status(_: &str) -> Result<Vec<String>, ConversionError> {
+    fn parse_status(_: &str) -> Result<Vec<String>, ImporterError> {
         Ok(vec!["1".to_string(), "2".to_string(), "3".to_string()])
     }
 

@@ -17,7 +17,7 @@ pub struct Importer {
     base_url: Url,
     status_url: Url,
     build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
-    strings_from_api_data: fn(&str) -> Result<Vec<String>, ConversionError>,
+    strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
     extension: Option<String>,
 }
 
@@ -25,7 +25,7 @@ impl Importer {
     pub fn new(
         base_url: Url,
         build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
-        strings_from_api_data: fn(&str) -> Result<Vec<String>, ConversionError>,
+        strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
         status_url: Url,
     ) -> Self {
         Self {
@@ -148,11 +148,11 @@ impl Importer {
         Ok(res?.text().await?)
     }
 
-    pub async fn name_strings_from_api(&self) -> Result<Vec<String>, ConversionError> {
+    pub async fn name_strings_from_api(&self) -> Result<Vec<String>, ImporterError> {
         let api_response = self
             .api_call(self.status_url.clone())
             .await
-            .map_err(|_| ConversionError::ConversionError)?;
+            .map_err(|_| ImporterError::FailedApiRequest)?;
         (self.strings_from_api_data)(&api_response)
     }
 
@@ -231,6 +231,12 @@ pub enum ImporterError {
 
     #[error("StatusChecker Error")]
     StatusChecker,
+
+    #[error("Bad API Response: `{0}`")]
+    BadApiResponse(String),
+
+    #[error("Failed API Request")]
+    FailedApiRequest,
 }
 
 #[derive(Error, Debug)]
@@ -262,7 +268,7 @@ pub mod tests {
 
     // these function are not used in the tests since they only test the functionality against the
     // local data without making any api calls.
-    fn parse_status(_: &str) -> Result<Vec<String>, ConversionError> {
+    fn parse_status(_: &str) -> Result<Vec<String>, ImporterError> {
         panic!();
     }
 
