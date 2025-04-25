@@ -37,7 +37,7 @@ async fn simple_mockito_test() {
 async fn mock_with_existing_file() {
     let server = create_mock_server();
     let url = Url::parse(&server.url()).unwrap();
-    let status_url = Url::parse(&format!("{url}/status")).unwrap();
+    let status_url = Url::parse(&format!("{url}status")).unwrap();
     let data_dir_path = PathBuf::from("data/mock-tests-2");
     let mut existing_file_path = data_dir_path.clone();
     existing_file_path.push("1");
@@ -66,8 +66,8 @@ fn create_mock_standard_importer(
         Ok(vec!["1".to_string(), "2".to_string(), "3".to_string()])
     }
 
-    fn build_path(base_url: &Url, input: &str) -> Result<Url, ConversionError> {
-        let url_string = format!("{}{}", base_url, input);
+    fn build_path(base_url: &Url, _input: &str) -> Result<Url, ConversionError> {
+        let url_string = format!("{}", base_url);
         Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)
     }
 

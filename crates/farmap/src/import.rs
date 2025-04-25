@@ -1,4 +1,4 @@
-use log::{info, trace};
+use log::{error, info, trace};
 use reqwest::ClientBuilder;
 use std::collections::HashSet;
 use std::fs;
@@ -144,8 +144,16 @@ impl Importer {
     async fn api_call(&self, api_call: Url) -> Result<String, ImporterError> {
         trace!("making api call to {api_call}");
         let client = ClientBuilder::new().user_agent("farmap").build()?;
-        let res = client.get(api_call).send().await;
-        Ok(res?.text().await?)
+        let res = client.get(api_call.to_string()).send().await?;
+        trace!("header of response: {:?}", res.headers());
+
+        info!("response with statuscode {}", res.status());
+        if !res.status().is_success() {
+            error!("api call {} failed: {}", api_call, res.status());
+            return Err(ImporterError::FailedApiRequest);
+        }
+
+        res.text().await.map_err(ImporterError::NetworkError)
     }
 
     pub async fn name_strings_from_api(&self) -> Result<Vec<String>, ImporterError> {
