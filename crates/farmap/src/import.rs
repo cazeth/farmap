@@ -1,4 +1,5 @@
 use log::{error, info, trace};
+use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
 use std::collections::HashSet;
 use std::fs;
@@ -19,6 +20,7 @@ pub struct Importer {
     build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
     strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
     extension: Option<String>,
+    header_map: Option<HeaderMap>,
 }
 
 impl Importer {
@@ -36,6 +38,7 @@ impl Importer {
             build_path,
             strings_from_api_data,
             extension: None,
+            header_map: None,
         }
     }
 
@@ -134,6 +137,13 @@ impl Importer {
         }
     }
 
+    pub fn with_api_header(self, map: HeaderMap) -> Self {
+        Self {
+            header_map: Some(map),
+            ..self
+        }
+    }
+
     /// this method is used to show what the url would be for a particual call. Its primary use
     /// case is for testing.
     pub fn api_call_from_endpoint(&self, endpoint: &str) -> Result<Url, ImporterError> {
@@ -143,7 +153,14 @@ impl Importer {
     /// method used internally to make all api calls.
     async fn api_call(&self, api_call: Url) -> Result<String, ImporterError> {
         trace!("making api call to {api_call}");
-        let client = ClientBuilder::new().user_agent("farmap").build()?;
+        let client = if let Some(map) = &self.header_map {
+            ClientBuilder::new()
+                .user_agent("farmap")
+                .default_headers(map.clone())
+                .build()?
+        } else {
+            ClientBuilder::new().user_agent("farmap").build()?
+        };
         let res = client.get(api_call.to_string()).send().await?;
         trace!("header of response: {:?}", res.headers());
 
