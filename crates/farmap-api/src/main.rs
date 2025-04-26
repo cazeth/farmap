@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
-    http::{HeaderValue, Method, StatusCode},
+    http::{HeaderMap, HeaderValue, Method, StatusCode},
     routing::get,
     Json, Router,
 };
@@ -88,6 +88,20 @@ async fn main() {
             })
     } else {
         new_github_importer()
+    };
+
+    let importer = if let Ok(gh_auth_token) = std::env::var("GH_AUTH_TOKEN") {
+        let header_name = "authorization";
+        let mut header_value: HeaderValue =
+            HeaderValue::from_str(format!("Bearer {gh_auth_token}").as_str())
+                .expect("invalid auth token");
+
+        header_value.set_sensitive(true);
+        let mut map = HeaderMap::new();
+        map.insert(header_name, header_value);
+        importer.with_api_header(map)
+    } else {
+        importer
     };
 
     let api_names = importer.name_strings_from_api().await.unwrap();
