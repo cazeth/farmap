@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
-    http::{HeaderMap, HeaderValue, Method, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode},
     routing::get,
     Json, Router,
 };
@@ -17,8 +17,8 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{collections::HashSet, io::Write};
-use tower_http::cors::CorsLayer;
 use tower_http::trace::{self, TraceLayer};
+use tower_http::validate_request::ValidateRequestHeaderLayer;
 use tracing::Level;
 
 #[tokio::main]
@@ -157,22 +157,16 @@ async fn main() {
             .unwrap_or(());
     }
 
-    let env_var = std::env::var("FARMAP_ALLOWED_URLS").unwrap_or_default();
-
-    let allowed_urls: Vec<HeaderValue> = env_var
-        .split(',')
-        .map(|x| HeaderValue::from_str(x).unwrap())
-        .collect::<Vec<_>>();
-    info!("allowed urls are : {allowed_urls:#?}");
-
-    let cors_layer = CorsLayer::new()
-        .allow_origin(allowed_urls)
-        .allow_methods([Method::GET, Method::POST]);
-
     println!("number of users are {}", users.user_count());
     println!("data import done!");
 
     let shared_users = Arc::new(users);
+    let allow_token = std::env::var("ALLOW_TOKEN").ok();
+    if allow_token.is_some() {
+        info!("found api token in env var. restricting api access.");
+    } else {
+        info!("no api token found. Allowing access for anyone.");
+    };
 
     let app = Router::new()
         .route("/", get(root))
@@ -197,8 +191,13 @@ async fn main() {
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         )
-        .with_state(shared_users)
-        .layer(cors_layer);
+        .with_state(shared_users);
+
+    let app = if let Some(allow_token) = allow_token {
+        app.layer(ValidateRequestHeaderLayer::bearer(&allow_token))
+    } else {
+        app
+    };
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
