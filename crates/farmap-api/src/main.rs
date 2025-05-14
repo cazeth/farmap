@@ -273,11 +273,7 @@ async fn weekly_spam_score_distributions(
     if let Some(from_fid) = filters.from_fid {
         set.filter(|user: &User| user.fid() as u64 >= from_fid);
     };
-    let result = set.weekly_spam_score_distributions();
-    let result = result
-        .iter()
-        .map(|(date, y)| (date.to_string(), *y))
-        .collect::<Vec<(String, [f32; 3])>>();
+    let result = set.weekly_spam_score_distributions_with_dedicated_type();
     Json(json!(result))
 }
 
