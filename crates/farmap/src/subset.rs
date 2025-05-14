@@ -331,6 +331,10 @@ impl<'a> UsersSubset<'a> {
 
     /// Checks the distribution, starting at the date of the earliest spam score date an
     /// incrementing by seven days until the last spam score change in the data.
+    #[deprecated(
+        since = "0.1.2",
+        note = "use weekly_spam_score_distribution_with_dedicated_type instead"
+    )]
     pub fn weekly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
         // return an empty vec if the set is empty.
         if self.map.is_empty() {
@@ -570,6 +574,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_dates_in_weekly_spam_score_distributions() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
