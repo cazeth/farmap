@@ -1,7 +1,7 @@
 use crate::fid_score_shift::ShiftSource;
 use crate::fid_score_shift::ShiftTarget;
 use crate::spam_score::SpamScore;
-use crate::spam_score::SpamScoreCount;
+use crate::spam_score::{SpamScoreCount, SpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
 use crate::utils::distribution_from_counts;
@@ -314,6 +314,19 @@ impl<'a> UsersSubset<'a> {
         result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
 
         result
+    }
+
+    #[allow(deprecated)]
+    pub fn weekly_spam_score_distributions_with_dedicated_type(
+        &self,
+    ) -> Vec<SpamScoreDistribution> {
+        self.weekly_spam_score_distributions()
+            .into_iter()
+            .map(|(x, y)| {
+                SpamScoreDistribution::new(x, y[0] as f64, y[1] as f64, y[2] as f64)
+                    .expect("Internal error - distributions do not sum to 1")
+            })
+            .collect::<Vec<_>>()
     }
 
     /// Checks the distribution, starting at the date of the earliest spam score date an
