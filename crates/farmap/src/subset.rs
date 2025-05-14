@@ -549,6 +549,27 @@ mod tests {
     }
 
     #[test]
+    fn test_dates_in_weekly_spam_score_distributions_with_dedicated_type() {
+        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let set = UsersSubset::from(&users);
+        let weekly_distributions = set.weekly_spam_score_distributions_with_dedicated_type();
+        assert_eq!(
+            weekly_distributions.first().unwrap().date(),
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+        );
+
+        assert!(
+            weekly_distributions.last().unwrap().date()
+                >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+        );
+
+        assert!(
+            weekly_distributions.last().unwrap().date()
+                <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
+        );
+    }
+
+    #[test]
     fn test_dates_in_weekly_spam_score_distributions() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let set = UsersSubset::from(&users);
