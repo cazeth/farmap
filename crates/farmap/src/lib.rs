@@ -23,6 +23,7 @@ pub use import::Importer;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreCount;
+pub use spam_score::SpamScoreDistribution;
 #[doc(inline)]
 pub use subset::UsersSubset;
 pub use user::InvalidInputError;

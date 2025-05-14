@@ -75,6 +75,46 @@ impl SpamScoreCount {
     }
 }
 
+#[derive(Serialize, Debug)]
+pub struct SpamScoreDistribution {
+    date: NaiveDate,
+    nonspam: f64,
+    maybe: f64,
+    spam: f64,
+}
+
+impl SpamScoreDistribution {
+    pub fn new(date: NaiveDate, spam: f64, maybe: f64, nonspam: f64) -> Result<Self, String> {
+        let sum = spam + maybe + nonspam;
+        if !(0.99..=1.01).contains(&sum) {
+            Err("provided values are not a distribution".to_string())
+        } else {
+            Ok(Self {
+                date,
+                nonspam,
+                maybe,
+                spam,
+            })
+        }
+    }
+
+    pub fn date(&self) -> NaiveDate {
+        self.date
+    }
+
+    pub fn spam(&self) -> f64 {
+        self.spam
+    }
+
+    pub fn maybe_spam(&self) -> f64 {
+        self.maybe
+    }
+
+    pub fn non_spam(&self) -> f64 {
+        self.nonspam
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
