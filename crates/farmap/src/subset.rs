@@ -385,6 +385,14 @@ mod tests {
 
     use super::*;
 
+    fn check_current_spam_score_distribution(result: &UsersSubset, expected: &[f64; 3]) {
+        let distribution = result.current_spam_score_distribution().unwrap();
+        let [spam, maybe, nonspam] = distribution;
+        assert_eq!(spam as f64, expected[0]);
+        assert_eq!(maybe as f64, expected[1]);
+        assert_eq!(nonspam as f64, expected[2]);
+    }
+
     #[test]
     fn from_filter_test_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
@@ -393,10 +401,7 @@ mod tests {
         };
 
         let subset = UsersSubset::from_filter(&users, filter);
-        assert_eq!(
-            subset.current_spam_score_distribution(),
-            Some([0.0, 0.0, 1.0])
-        );
+        check_current_spam_score_distribution(&subset, &[0.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -423,10 +428,7 @@ mod tests {
         };
 
         let subset = UsersSubset::from_filter(&users, filter);
-        assert_eq!(
-            subset.current_spam_score_distribution(),
-            Some([0.0, 0.0, 1.0])
-        );
+        check_current_spam_score_distribution(&subset, &[0.0, 0.0, 1.0]);
     }
 
     #[test]
