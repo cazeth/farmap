@@ -10,6 +10,7 @@
 pub mod fid_score_shift;
 pub mod github_importer;
 pub mod import;
+pub mod pinata_importer;
 pub mod spam_score;
 pub mod standard_importer;
 pub mod subset;
