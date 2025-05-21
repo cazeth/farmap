@@ -1,9 +1,10 @@
 use farmap::pinata_importer::PinataFetcher;
+use farmap::pinata_parser::number_of_casts_from_response;
 use std::fs::read_to_string;
 use url::Url;
 
 #[tokio::test]
-async fn test_commit_call_against_mock_github_data() {
+async fn test_commit_call_against_mock_pinata_data() {
     let mut server = mockito::Server::new_async().await;
     let url = Url::parse(&format!("{}/v1/castsByFid", server.url()))
         .expect("mock server should be valid url");
@@ -22,11 +23,5 @@ async fn test_commit_call_against_mock_github_data() {
         .await
         .expect("Mock API call should not fail");
     println!("{:?}", response);
-    assert_eq!(
-        1,
-        fetcher
-            .number_of_casts_from_response(response)
-            .await
-            .unwrap()
-    );
+    assert_eq!(1, number_of_casts_from_response(response).await.unwrap());
 }

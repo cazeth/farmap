@@ -34,27 +34,4 @@ impl PinataFetcher {
             .await
             .map_err(|_| ImporterError::FailedApiRequest)
     }
-
-    pub async fn number_of_casts_from_response(
-        &self,
-        response: Response,
-    ) -> Result<u64, ImporterError> {
-        if !response.status().is_success() {
-            return Err(ImporterError::FailedApiRequest);
-        };
-        let response_text = response
-            .text()
-            .await
-            .map_err(|_| ImporterError::FailedApiRequest)?;
-
-        let json: serde_json::Value = serde_json::from_str(&response_text)
-            .map_err(|_| ImporterError::BadApiResponse(response_text.clone()))?;
-
-        let number_of_casts = json["messages"]
-            .as_array()
-            .ok_or(ImporterError::BadApiResponse(response_text.clone()))?
-            .len();
-
-        Ok(number_of_casts as u64)
-    }
 }
