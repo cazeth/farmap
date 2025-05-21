@@ -1,4 +1,3 @@
-#![allow(unused)]
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 

@@ -1,3 +1,4 @@
+use crate::cast_meta::CastMeta;
 use crate::spam_score::SpamScore;
 use chrono::DateTime;
 use chrono::NaiveDate;
@@ -10,6 +11,8 @@ use thiserror::Error;
 pub struct User {
     fid: usize,
     labels: Vec<SpamRecord>,
+    cast_records: Option<Vec<CastMeta>>,
+    latest_cast_record_check_date: Option<NaiveDate>,
 }
 
 type SpamRecord = (SpamScore, NaiveDate);
@@ -21,7 +24,14 @@ impl User {
         Self {
             fid,
             labels: vec![labels],
+            cast_records: None,
+            latest_cast_record_check_date: None,
         }
+    }
+
+    pub fn add_cast_records(&mut self, records: Vec<CastMeta>, check_date: NaiveDate) {
+        self.cast_records = Some(records);
+        self.latest_cast_record_check_date = Some(check_date);
     }
 
     /// Returns the fid of the user
@@ -105,6 +115,10 @@ impl User {
         Ok(())
     }
 
+    pub fn cast_count(&self) -> Option<u64> {
+        Some(self.cast_records.as_ref()?.len() as u64)
+    }
+
     #[doc(hidden)]
     #[deprecated(note = "use merge_user instead")]
     pub fn update_user(&mut self, other: Self) {
@@ -166,7 +180,12 @@ impl TryFrom<UnprocessedUserLine> for User {
 
         let labels: Vec<(SpamScore, NaiveDate)> = vec![(label_value, date)];
 
-        Ok(Self { fid, labels })
+        Ok(Self {
+            fid,
+            labels,
+            cast_records: None,
+            latest_cast_record_check_date: None,
+        })
     }
 }
 
@@ -341,6 +360,8 @@ pub mod tests {
         let mut user = User {
             fid: 1,
             labels: vec![spam_record],
+            cast_records: None,
+            latest_cast_record_check_date: None,
         };
 
         assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
