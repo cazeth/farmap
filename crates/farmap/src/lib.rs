@@ -7,6 +7,7 @@
 //! want to use one of the available create methods in UserCollections to import this data. Then
 //! you likely want to create a subset of this data with various filters applied and do analysis on
 //! it and use it in other applications.
+pub mod cast_meta;
 pub mod fid_score_shift;
 pub mod github_importer;
 pub mod import;
