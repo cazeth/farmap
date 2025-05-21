@@ -57,6 +57,10 @@ impl UserCollection {
         Some(user.latest_spam_record().0)
     }
 
+    pub fn user_mut(&mut self, fid: usize) -> Option<&mut User> {
+        self.map.get_mut(&fid)
+    }
+
     pub fn user(&self, fid: usize) -> Option<&User> {
         self.map.get(&fid)
     }
