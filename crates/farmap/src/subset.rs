@@ -275,6 +275,22 @@ impl<'a> UsersSubset<'a> {
         distribution_from_counts(&counts)
     }
 
+    /// Returns the average total casts of the users in the group along with the fraction of users
+    /// in the group where this data is available. If no data is available or if the set is empty the option is none.
+    pub fn average_total_casts(&self) -> Option<[f32; 2]> {
+        let total = self.map.len();
+        let [sum, count] = self
+            .map
+            .values()
+            .filter_map(|x| x.cast_count())
+            .fold([0, 0], |acc, x| [acc[0] + x, acc[1] + 1]);
+        if count > 0 {
+            Some([sum as f32 / count as f32, count as f32 / total as f32])
+        } else {
+            None
+        }
+    }
+
     /// Returns a hashmap of the update count that occured at each date.
     pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
         let mut result: HashMap<NaiveDate, usize> = HashMap::new();
