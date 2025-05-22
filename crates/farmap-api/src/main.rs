@@ -6,7 +6,9 @@ use axum::{
 };
 use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
+use farmap::pinata_parser::cast_meta_from_pinata_response;
 use farmap::{new_github_importer, user::UnprocessedUserLine};
+use farmap::{pinata_importer::PinataFetcher, SpamScore};
 use farmap::{User, UserCollection, UsersSubset};
 use log::{error, info};
 use serde::Deserialize;
@@ -124,6 +126,69 @@ async fn main() {
         updated_local_names.insert(name.clone());
     }
 
+    // call pinataimporter for all users that have moved from one label to another and there are
+    // no records.
+    let current_time = Local::now().date_naive();
+    let two_weeks_ago = current_time.checked_sub_days(Days::new(14)).unwrap();
+    let move_subset = UsersSubset::from(&users).filtered(|x| {
+        x.latest_spam_record().0 == SpamScore::Two
+            && x.spam_score_at_date(&two_weeks_ago)
+                .map(|x| *x == SpamScore::One || *x == SpamScore::Zero)
+                .unwrap_or(false)
+    });
+
+    {
+        let pinata_fetcher = PinataFetcher::default();
+
+        let fres = move_subset
+            .iter()
+            .filter(|x| {
+                if x.latest_cast_record_check_date()
+                    .is_some_and(|x| x > two_weeks_ago)
+                {
+                    if let Some(val) = x.cast_count() {
+                        val == 0
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+            .inspect(|x| info!("making call for {x:?})"))
+            .map(|x| async {
+                if let Ok(response) = pinata_fetcher.api_request_for_id(x.fid() as u64).await {
+                    cast_meta_from_pinata_response(response).await.ok()
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let results: Vec<_> = futures::future::join_all(fres)
+            .await
+            .into_iter()
+            .flatten()
+            .collect();
+
+        for cast_metas in results {
+            let cast_meta = cast_metas.first();
+
+            let fid = if let Some(cast_meta) = cast_meta {
+                cast_meta.fid()
+            } else {
+                continue;
+            };
+
+            if let Some(user) = users.user_mut(fid as usize) {
+                user.add_cast_records(cast_metas, current_time);
+                info!("adding cast records to fid {fid}");
+            } else {
+                continue;
+            };
+        }
+    }
+
     if readwrite_to_filesystem.get() {
         users
             .save_to_db(&users_db_path)
@@ -159,7 +224,6 @@ async fn main() {
 
     println!("number of users are {}", users.user_count());
     println!("data import done!");
-
     let shared_users = Arc::new(users);
     let allow_token = std::env::var("ALLOW_TOKEN").ok();
     if allow_token.is_some() {
@@ -186,6 +250,10 @@ async fn main() {
         .route("/weekly_spam_scores", get(weekly_spam_score_distributions))
         .route("/weekly_spam_scores_counts", get(weekly_spam_score_counts))
         .route("/latest_moves", get(latest_moves))
+        .route(
+            "/casts_for_moved/{from}/{to}/{timespan}",
+            get(casts_for_moved),
+        )
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
@@ -210,6 +278,37 @@ async fn root() -> &'static str {
 async fn current_spam_score_distribution(State(users): State<Arc<UserCollection>>) -> Json<Value> {
     let spam_score_distribution = users.current_spam_score_distribution().unwrap();
     Json(json!(spam_score_distribution))
+}
+
+async fn casts_for_moved(
+    State(users): State<Arc<UserCollection>>,
+    Path((from, to, timespan)): Path<(u64, u64, u64)>,
+) -> Json<Value> {
+    if from > 2 || to > 2 || timespan > 100 {
+        // return some sort of error herer since the input is invalid.
+        todo!();
+    };
+
+    let current_time = Local::now().date_naive();
+    let begin_date: NaiveDate = current_time.checked_sub_days(Days::new(timespan)).unwrap();
+
+    let users_ref: &UserCollection = &users;
+    let mut set = UsersSubset::from(users_ref);
+
+    info!("checking with begin date {}", begin_date);
+    info!("checking with current time {}", current_time);
+
+    set.filter(|user: &User| {
+        user.spam_score_at_date(&begin_date)
+            .is_some_and(|u| Ok(*u) == (from as usize).try_into())
+    });
+
+    let set_size = set.user_count();
+    info!("set size after begin_date filtering is {set_size}");
+
+    set.filter(|user: &User| Ok(user.latest_spam_record().0) == (to as usize).try_into());
+    info!("set size is {set_size}");
+    Json(json!(set.average_total_casts()))
 }
 
 async fn latest_moves(
