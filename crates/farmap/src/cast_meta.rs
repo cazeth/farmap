@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct CastMeta {
     cast_fid: u64,
-    cast_time: NaiveDate,
+    cast_date: NaiveDate,
     cast_type: CastType,
 }
 impl CastMeta {
-    pub fn new(cast_time: NaiveDate, cast_type: CastType, cast_fid: u64) -> Self {
+    pub fn new(cast_date: NaiveDate, cast_type: CastType, cast_fid: u64) -> Self {
         Self {
-            cast_time,
+            cast_date,
             cast_type,
             cast_fid,
         }
@@ -18,6 +18,10 @@ impl CastMeta {
 
     pub fn fid(&self) -> u64 {
         self.cast_fid
+    }
+
+    pub fn cast_date(&self) -> NaiveDate {
+        self.cast_date
     }
 }
 
