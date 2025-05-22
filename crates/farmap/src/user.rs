@@ -1,7 +1,9 @@
 use crate::cast_meta::CastMeta;
 use crate::spam_score::SpamScore;
 use chrono::DateTime;
+use chrono::Datelike;
 use chrono::NaiveDate;
+use itertools::*;
 use serde::{Deserialize, Serialize};
 use serde_jsonlines::json_lines;
 use std::fs::read_dir;
@@ -117,6 +119,39 @@ impl User {
 
     pub fn cast_count(&self) -> Option<u64> {
         Some(self.cast_records.as_ref()?.len() as u64)
+    }
+
+    pub fn average_monthly_cast_rate(&self) -> Option<f32> {
+        let [sum, count] = self
+            .monthly_cast_counts()?
+            .iter()
+            .fold([0, 0], |acc, (x, _)| [acc[0] + x, acc[1] + 1]);
+
+        Some(sum as f32 / count as f32)
+    }
+
+    pub fn monthly_cast_counts(&self) -> Option<Vec<(usize, NaiveDate)>> {
+        let cast_records = if let Some(cast_records) = &self.cast_records {
+            cast_records
+        } else {
+            return None;
+        };
+
+        Some(
+            cast_records
+                .iter()
+                .map(|x| {
+                    NaiveDate::from_ymd_opt(x.cast_date().year(), x.cast_date().month(), 1)
+                        .expect("date parsing inside monthly_cast_count should work")
+                })
+                .sorted()
+                .dedup_with_count()
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    pub fn latest_cast_record_check_date(&self) -> Option<NaiveDate> {
+        self.latest_cast_record_check_date
     }
 
     #[doc(hidden)]
