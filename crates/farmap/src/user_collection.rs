@@ -11,7 +11,6 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::io::ErrorKind;
 use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
@@ -105,16 +104,8 @@ impl UserCollection {
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
-    pub fn create_from_db(db: &Path) -> Result<Self, Box<dyn Error>> {
-        let db_result = std::fs::read_to_string(db);
-        match db_result {
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(Self::default()),
-            Err(e) => Err(Box::new(e)),
-            Ok(data) => {
-                let users: Self = serde_json::from_str(&data)?;
-                Ok(users)
-            }
-        }
+    pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
+        Ok(serde_json::from_str(&std::fs::read_to_string(db)?)?)
     }
 
     pub fn save_to_db(&self, db: &Path) -> Result<(), Box<dyn Error>> {
@@ -281,6 +272,15 @@ pub enum DataCreationError {
 
     #[error("Input is not readable or accessible")]
     DataReadError(#[from] DataReadError),
+}
+
+#[derive(Error, Debug)]
+pub enum DbReadError {
+    #[error("fs error")]
+    FSError(#[from] std::io::Error),
+
+    #[error("json error")]
+    JSONError(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
