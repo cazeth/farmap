@@ -179,10 +179,10 @@ async fn weekly_spam_score_counts(
 async fn casts_for_moved(
     State(users): State<Arc<UserCollection>>,
     Path((from, to, timespan)): Path<(u64, u64, u64)>,
-) -> Json<Value> {
+) -> Result<Json<Value>, StatusCode> {
     if from > 2 || to > 2 || timespan > 100 {
-        // return some sort of error herer since the input is invalid.
-        todo!();
+        // return some sort of error here since the input is invalid.
+        return Err(StatusCode::BAD_REQUEST);
     };
 
     let current_time = Local::now().date_naive();
@@ -204,7 +204,7 @@ async fn casts_for_moved(
 
     set.filter(|user: &User| Ok(user.latest_spam_record().0) == (to as usize).try_into());
     info!("set size is {set_size}");
-    Json(json!(set.average_total_casts()))
+    Ok(Json(json!(set.average_total_casts())))
 }
 
 #[derive(Deserialize)]
