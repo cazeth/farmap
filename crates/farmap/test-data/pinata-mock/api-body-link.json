@@ -1,0 +1,41 @@
+{
+  "messages": [
+    {
+      "data": {
+        "type": "MESSAGE_TYPE_LINK_ADD",
+        "fid": 1,
+        "timestamp": 71405061,
+        "network": "FARCASTER_NETWORK_MAINNET",
+        "linkBody": {
+          "type": "follow",
+          "displayTimestamp": null,
+          "targetFid": 11720
+        }
+      },
+      "hash": "0xd205001baf59dc30b6cc4632ac8d507a4c12d887",
+      "hashScheme": "HASH_SCHEME_BLAKE3",
+      "signature": "2TbblvsgqMW7dVL26u4OilOpUzSDfeo0CtsSxjiirB0gHwY1Ig0h8NY3WjYeYPLfm+KEV6BiD4OUdkk28VggBw==",
+      "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+      "signer": "0x977e6981155dfb9fbb5fe9c6aa50d74d0d4f840bb1bce575fee353711951e6cd"
+    },
+    {
+      "data": {
+        "type": "MESSAGE_TYPE_LINK_ADD",
+        "fid": 2,
+        "timestamp": 71431107,
+        "network": "FARCASTER_NETWORK_MAINNET",
+        "linkBody": {
+          "type": "follow",
+          "displayTimestamp": null,
+          "targetFid": 11720
+        }
+      },
+      "hash": "0xa984a9e1ee090fbc85d9b886ddcf3989fa6490ce",
+      "hashScheme": "HASH_SCHEME_BLAKE3",
+      "signature": "OFN6kH2xj6F6BU+j64VrWEZbVUCd+NNSJttzOVNVf02JV15GTz5jG2Uz4qllhxfoz8nyPutCdF4JO/vRnKb2DQ==",
+      "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+      "signer": "0x6075449d861f5e342d69d44f55891819ac81a003104cc47f231c9a03c67473df"
+    }
+  ],
+  "nextPageToken": "W251bGwsbnVsbF0="
+}
