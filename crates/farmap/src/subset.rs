@@ -291,6 +291,12 @@ impl<'a> UsersSubset<'a> {
         }
     }
 
+    pub fn casts_data_fill_rate(&self) -> f32 {
+        let filled_count = self.iter().filter(|user| user.has_cast_data()).count();
+        let total = self.user_count();
+        filled_count as f32 / total as f32
+    }
+
     /// Returns a hashmap of the update count that occured at each date.
     pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
         let mut result: HashMap<NaiveDate, usize> = HashMap::new();
