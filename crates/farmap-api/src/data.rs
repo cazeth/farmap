@@ -8,6 +8,7 @@ use farmap::{pinata_importer::PinataFetcher, SpamScore};
 use farmap::{UserCollection, UsersSubset};
 use futures::stream::{self, StreamExt};
 use futures::TryStreamExt;
+use itertools::iproduct;
 use log::trace;
 use log::{error, info};
 use serde_jsonlines::JsonLinesReader;
@@ -242,4 +243,81 @@ pub async fn import_github_data(
 fn handle_rw_error(readwrite_to_filesystem: &Cell<bool>) {
     error! {"read-write error - using application without reading or writing to local filesystem"};
     readwrite_to_filesystem.set(false);
+}
+
+#[allow(unused)]
+fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
+    let spam_scores = [SpamScore::Zero, SpamScore::One, SpamScore::Two];
+    let current_time = Local::now().date_naive();
+    let previous_date = current_time.checked_sub_days(Days::new(14)).unwrap();
+    let threshold: f32 = 0.01;
+    let mut result_fids: HashSet<u64> = HashSet::new();
+
+    // we simply check the one with the lowest fill rate and make 10k requests to this one.
+    // is this really ten k currently???
+    let fill_rates = iproduct!(spam_scores, spam_scores)
+        .map(|(from, to)| {
+            let mut subset = UsersSubset::from(users);
+            subset.filter(|user| {
+                user.spam_score_at_date(&previous_date)
+                    .map(|x| *x == from)
+                    .unwrap_or(false)
+            });
+            subset.filter(|user| {
+                user.spam_score_at_date(&previous_date)
+                    .map(|x| *x == to)
+                    .unwrap_or(false)
+            });
+            (subset.casts_data_fill_rate(), from, to)
+        })
+        .collect::<Vec<_>>();
+
+    let lowest_fill_rate = fill_rates
+        .iter()
+        .min_by(|(rate_x, _, _), (rate_y, _, _)| rate_x.total_cmp(rate_y))
+        .unwrap();
+
+    let fill_rates_below_threshold = fill_rates
+        .iter()
+        .filter(|(rate, _, _)| *rate <= threshold)
+        .collect::<Vec<_>>();
+
+    let add_fids_rate_for_from_two_pair =
+        |result_fids: &mut HashSet<u64>, from: SpamScore, to: SpamScore| {
+            let mut subset = UsersSubset::from(users);
+            subset.filter(|user| {
+                user.spam_score_at_date(&previous_date)
+                    .map(|x| *x == from)
+                    .unwrap_or(false)
+            });
+            subset.filter(|user| {
+                user.spam_score_at_date(&previous_date)
+                    .map(|x| *x == to)
+                    .unwrap_or(false)
+            });
+
+            subset.iter().map(|x| x.fid()).for_each(|x| {
+                result_fids.insert(x as u64);
+            });
+        };
+
+    add_fids_rate_for_from_two_pair(&mut result_fids, lowest_fill_rate.1, lowest_fill_rate.2);
+    fill_rates_below_threshold.iter().for_each(|(_, from, to)| {
+        add_fids_rate_for_from_two_pair(&mut result_fids, *from, *to);
+    });
+
+    trace!("result_fids list length is {}", result_fids.len());
+
+    let result_fids = result_fids
+        .iter()
+        .copied()
+        .take(100)
+        .collect::<HashSet<u64>>();
+
+    trace!(
+        "result_fids list length is {} after shortening",
+        result_fids.len()
+    );
+
+    result_fids
 }
