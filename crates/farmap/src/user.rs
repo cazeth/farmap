@@ -150,6 +150,10 @@ impl User {
         )
     }
 
+    pub fn has_cast_data(&self) -> bool {
+        self.cast_records.is_some()
+    }
+
     pub fn latest_cast_record_check_date(&self) -> Option<NaiveDate> {
         self.latest_cast_record_check_date
     }
