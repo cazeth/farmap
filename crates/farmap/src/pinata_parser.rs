@@ -7,10 +7,7 @@ use chrono::NaiveDate;
 use reqwest::Response;
 use serde_json::Value;
 
-/// a collection of functions to parse data from the pinata farcaster api.
-pub async fn cast_meta_from_pinata_response(
-    response: Response,
-) -> Result<Vec<CastMeta>, ImporterError> {
+async fn raw_json_from_response(response: Response) -> Result<Value, ImporterError> {
     if !response.status().is_success() {
         return Err(ImporterError::FailedApiRequest);
     };
@@ -23,16 +20,7 @@ pub async fn cast_meta_from_pinata_response(
     let json: Value = serde_json::from_str(&response_text)
         .map_err(|_| ImporterError::BadApiResponse(response_text.clone()))?;
 
-    let json_vec = json["messages"].as_array().unwrap();
-    json_vec
-        .iter()
-        .map(|x| {
-            date_from_object(x)
-                .and_then(|date| type_from_object(x).map(|cast_type| (date, cast_type)))
-                .and_then(|(date, cast_type)| fid_from_object(x).map(|fid| (date, cast_type, fid)))
-                .map(|x| CastMeta::new(x.0, x.1, x.2))
-        })
-        .collect::<Result<Vec<CastMeta>, ImporterError>>()
+    Ok(json)
 }
 
 fn date_from_object(input: &Value) -> Result<NaiveDate, ImporterError> {
@@ -62,4 +50,36 @@ fn type_from_object(input: &Value) -> Result<CastType, ImporterError> {
 
 pub async fn number_of_casts_from_response(response: Response) -> Result<u64, ImporterError> {
     Ok(cast_meta_from_pinata_response(response).await?.len() as u64)
+}
+
+pub async fn cast_meta_from_pinata_response(
+    response: Response,
+) -> Result<Vec<CastMeta>, ImporterError> {
+    let json = raw_json_from_response(response).await?;
+    let json_vec = json["messages"].as_array().unwrap();
+    json_vec
+        .iter()
+        .map(|x| {
+            date_from_object(x)
+                .and_then(|date| type_from_object(x).map(|cast_type| (date, cast_type)))
+                .and_then(|(date, cast_type)| fid_from_object(x).map(|fid| (date, cast_type, fid)))
+                .map(|x| CastMeta::new(x.0, x.1, x.2))
+        })
+        .collect::<Result<Vec<CastMeta>, ImporterError>>()
+}
+
+pub async fn followers_from_pinata_response(response: Response) -> Result<Vec<u64>, ImporterError> {
+    let json = raw_json_from_response(response).await?;
+    let json_vec = json["messages"]
+        .as_array()
+        .ok_or(ImporterError::BadApiResponse(json.to_string()))?;
+
+    json_vec
+        .iter()
+        .map(|x| {
+            x["data"]["fid"]
+                .as_u64()
+                .ok_or(ImporterError::BadApiResponse(x.to_string()))
+        })
+        .collect::<Result<Vec<u64>, ImporterError>>()
 }
