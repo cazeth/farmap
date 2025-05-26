@@ -1,4 +1,3 @@
-#![allow(unused)]
 use crate::cast_meta::CastMeta;
 use crate::cast_meta::CastType;
 use crate::import::ImporterError;
