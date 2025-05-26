@@ -77,35 +77,15 @@ pub async fn get_data() -> UserCollection {
 
 pub async fn import_pinata_data(users: &mut UserCollection) {
     let current_time = Local::now().date_naive();
-    let two_weeks_ago = current_time.checked_sub_days(Days::new(14)).unwrap();
-
-    let move_subset = UsersSubset::from(&*users).filtered(|x| {
-        x.latest_spam_record().0 == SpamScore::Two
-            && x.spam_score_at_date(&two_weeks_ago)
-                .map(|x| *x == SpamScore::One || *x == SpamScore::Zero)
-                .unwrap_or(false)
-    });
+    let fetch_list = pinata_fetch_list(&*users);
 
     let pinata_fetcher = PinataFetcher::default();
+    info!("fetching cast data for {} fids", fetch_list.len());
 
-    let fres = move_subset
+    let fres = fetch_list
         .iter()
-        .filter(|x| {
-            if x.latest_cast_record_check_date()
-                .is_some_and(|x| x > two_weeks_ago)
-            {
-                if let Some(val) = x.cast_count() {
-                    val == 0
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
-        })
-        .inspect(|x| info!("making call for {x:?})"))
         .map(|x| async {
-            if let Ok(response) = pinata_fetcher.api_request_for_id(x.fid() as u64).await {
+            if let Ok(response) = pinata_fetcher.api_request_for_id(*x).await {
                 cast_meta_from_pinata_response(response).await.ok()
             } else {
                 None
@@ -245,7 +225,6 @@ fn handle_rw_error(readwrite_to_filesystem: &Cell<bool>) {
     readwrite_to_filesystem.set(false);
 }
 
-#[allow(unused)]
 fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
     let spam_scores = [SpamScore::Zero, SpamScore::One, SpamScore::Two];
     let current_time = Local::now().date_naive();
