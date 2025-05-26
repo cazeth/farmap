@@ -13,6 +13,9 @@ use thiserror::Error;
 pub struct User {
     fid: usize,
     labels: Vec<SpamRecord>,
+
+    /// Some(Empty vec): has been checked and there were no cast records.
+    /// None: Has not been checked.
     cast_records: Option<Vec<CastMeta>>,
     latest_cast_record_check_date: Option<NaiveDate>,
 }
