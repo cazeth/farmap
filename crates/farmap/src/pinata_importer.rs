@@ -48,14 +48,36 @@ impl PinataFetcher {
             .map_err(|_| ImporterError::FailedApiRequest)
     }
 
-    pub async fn reactions_by_fid(&self, fid: u64) -> Result<Response, ImporterError> {
+    async fn reactions_by_fid(
+        &self,
+        fid: u64,
+        reaction: Reaction,
+    ) -> Result<Response, ImporterError> {
+        let reaction_str = match reaction {
+            Reaction::Like => "Like",
+            Reaction::Recast => "Recast",
+        };
+
         let extension = "reactionsByFid";
         let mut url = self.base_url.clone().join(extension).unwrap();
-        url.set_query(Some(&format!("fid={fid}")));
+        url.set_query(Some(&format!("reaction_type={reaction_str}&fid={fid}")));
         self.client
             .get(url)
             .send()
             .await
             .map_err(|_| ImporterError::FailedApiRequest)
     }
+
+    pub async fn likes_by_fid(&self, fid: u64) -> Result<Response, ImporterError> {
+        self.reactions_by_fid(fid, Reaction::Like).await
+    }
+
+    pub async fn recasts_by_fid(&self, fid: u64) -> Result<Response, ImporterError> {
+        self.reactions_by_fid(fid, Reaction::Recast).await
+    }
+}
+
+enum Reaction {
+    Like,
+    Recast,
 }
