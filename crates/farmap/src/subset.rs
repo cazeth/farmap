@@ -11,6 +11,7 @@ use chrono::Days;
 use chrono::Duration;
 use chrono::Months;
 use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -295,6 +296,20 @@ impl<'a> UsersSubset<'a> {
         let filled_count = self.iter().filter(|user| user.has_cast_data()).count();
         let total = self.user_count();
         filled_count as f32 / total as f32
+    }
+
+    pub fn reaction_times(&self) -> Option<Vec<&NaiveDateTime>> {
+        if self.iter().map(|x| x.reaction_times()).all(|x| x.is_none()) {
+            return None;
+        };
+
+        Some(
+            self.iter()
+                .map(|x| x.reaction_times())
+                .flatten()
+                .flat_map(|x| x.iter())
+                .collect(),
+        )
     }
 
     /// Returns a hashmap of the update count that occured at each date.
