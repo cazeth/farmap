@@ -3,6 +3,7 @@ use crate::spam_score::SpamScore;
 use chrono::DateTime;
 use chrono::Datelike;
 use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 use itertools::*;
 use serde::{Deserialize, Serialize};
 use serde_jsonlines::json_lines;
@@ -17,6 +18,7 @@ pub struct User {
     /// Some(Empty vec): has been checked and there were no cast records.
     /// None: Has not been checked.
     cast_records: Option<Vec<CastMeta>>,
+    reaction_times: Option<Vec<NaiveDateTime>>,
     latest_cast_record_check_date: Option<NaiveDate>,
 }
 
@@ -31,12 +33,17 @@ impl User {
             labels: vec![labels],
             cast_records: None,
             latest_cast_record_check_date: None,
+            reaction_times: None,
         }
     }
 
     pub fn add_cast_records(&mut self, records: Vec<CastMeta>, check_date: NaiveDate) {
         self.cast_records = Some(records);
         self.latest_cast_record_check_date = Some(check_date);
+    }
+
+    pub fn add_reaction_times(&mut self, reaction_times: Vec<NaiveDateTime>) {
+        self.reaction_times = Some(reaction_times);
     }
 
     /// Returns the fid of the user
@@ -128,6 +135,10 @@ impl User {
 
     pub fn cast_count(&self) -> Option<u64> {
         Some(self.cast_records.as_ref()?.len() as u64)
+    }
+
+    pub fn reaction_times(&self) -> &Option<Vec<NaiveDateTime>> {
+        &self.reaction_times
     }
 
     pub fn average_monthly_cast_rate(&self) -> Option<f32> {
@@ -233,6 +244,7 @@ impl TryFrom<UnprocessedUserLine> for User {
             labels,
             cast_records: None,
             latest_cast_record_check_date: None,
+            reaction_times: None,
         })
     }
 }
@@ -406,6 +418,7 @@ pub mod tests {
             labels: vec![spam_record],
             cast_records: None,
             latest_cast_record_check_date: None,
+            reaction_times: None,
         };
 
         assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
