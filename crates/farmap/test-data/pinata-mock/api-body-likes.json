@@ -1,0 +1,44 @@
+{
+  "messages": [
+    {
+      "data": {
+        "type": "MESSAGE_TYPE_REACTION_ADD",
+        "fid": 11720,
+        "timestamp": 86400,
+        "network": "FARCASTER_NETWORK_MAINNET",
+        "reactionBody": {
+          "type": "REACTION_TYPE_LIKE",
+          "targetCastId": {
+            "fid": 1,
+            "hash": "0xa3f2b89c45d7e912fa6850cb984e32bdb69cc523"
+          }
+        }
+      },
+      "hash": "0x7d4a8f2e3b9c6a5d8e1f0c7b4a9e2d3f5c8b1a6e",
+      "hashScheme": "HASH_SCHEME_BLAKE3",
+      "signature": "kPmN8xR2VtLqYzWn4e7QhXUZpTM6Y3jnZHDb8XVmyt/ZwqeRpS2gmKzqE1/8FQDYpVsjzNPHmpWKgVwGSczHBg==",
+      "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+      "signer": "0x9e8e2cd7f7c101e73e69c9a7abf6892584d621236bded92d0667c45ef4c14dcd"
+    },
+    {
+      "data": {
+        "type": "MESSAGE_TYPE_REACTION_ADD",
+        "fid": 11720,
+        "timestamp": 31536000,
+        "network": "FARCASTER_NETWORK_MAINNET",
+        "reactionBody": {
+          "type": "REACTION_TYPE_LIKE",
+          "targetCastId": {
+            "fid": 1,
+            "hash": "0x5c8d3fa7291e50b9g742bb9d891a254f947e7gh3"
+          }
+        }
+      },
+      "hash": "0x2e5f9a1c8d3b7e4a6f0c5d8b1e7a3c9f2d5b8e4a",
+      "hashScheme": "HASH_SCHEME_BLAKE3",
+      "signature": "tRyF36DtBp2mXQ585NEjbGCfSt3stpF4vz1jzGomKI87b5LUvziV4hYd8SWupNLpO8JPTzPPZhhUPnRpYQyMDx==",
+      "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+      "signer": "0x9e8e2cd7f7c101e73e69c9a7abf6892584d621236bded92d0667c45ef4c14dcd"
+    }
+  ]
+}

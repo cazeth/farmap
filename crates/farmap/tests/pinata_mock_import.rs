@@ -1,5 +1,10 @@
+use chrono::NaiveDate;
+use chrono::NaiveDateTime;
+use chrono::NaiveTime;
 use farmap::pinata_importer::PinataFetcher;
-use farmap::pinata_parser::{followers_from_pinata_response, number_of_casts_from_response};
+use farmap::pinata_parser::{
+    followers_from_pinata_response, number_of_casts_from_response, reaction_times_from_response,
+};
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use url::Url;
@@ -53,4 +58,40 @@ async fn test_followers_from_pinata_data() {
         .collect::<HashSet<u64>>();
     assert!(result.contains(&1));
     assert!(result.contains(&2));
+}
+
+#[tokio::test]
+async fn test_likes_from_pinata_data() {
+    let mut server = mockito::Server::new_async().await;
+    let mock_data = read_to_string("./test-data/pinata-mock/api-body-likes.json")
+        .expect("api file should exist in data dir");
+    let _ = server
+        .mock("GET", "/v1/reactionsByFid?reaction_type=Like&fid=11720")
+        .with_body(mock_data)
+        .create_async()
+        .await;
+
+    let fetcher = PinataFetcher::default()
+        .with_base_url(Url::parse(&format!("{}/v1/", &server.url())).unwrap());
+    let response = fetcher
+        .likes_by_fid(11720)
+        .await
+        .expect("Mock API call should not fail");
+    dbg!(&response);
+    let result = reaction_times_from_response(response)
+        .await
+        .unwrap()
+        .into_iter()
+        .collect::<HashSet<NaiveDateTime>>();
+    let expected_result = HashSet::from([
+        NaiveDateTime::new(
+            NaiveDate::from_ymd_opt(2021, 1, 2).unwrap(),
+            NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+        ),
+        NaiveDateTime::new(
+            NaiveDate::from_ymd_opt(2022, 1, 1).unwrap(),
+            NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+        ),
+    ]);
+    assert_eq!(result, expected_result);
 }
