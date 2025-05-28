@@ -3,6 +3,8 @@ use crate::cast_meta::CastType;
 use crate::import::ImporterError;
 use chrono::Duration;
 use chrono::NaiveDate;
+use chrono::NaiveDateTime;
+use chrono::NaiveTime;
 use reqwest::Response;
 use serde_json::Value;
 
@@ -31,6 +33,19 @@ fn date_from_object(input: &Value) -> Result<NaiveDate, ImporterError> {
         .map(|x| farcaster_epoch + Duration::seconds(x))
 }
 
+fn date_time_from_object(input: &Value) -> Result<NaiveDateTime, ImporterError> {
+    let farcaster_epoch = NaiveDateTime::new(
+        NaiveDate::from_ymd_opt(2021, 1, 1).unwrap(),
+        NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+    );
+
+    input["data"]["timestamp"]
+        .to_string()
+        .parse::<i64>()
+        .map_err(|_| ImporterError::BadApiResponse(input.to_string()))
+        .map(|x| farcaster_epoch + Duration::seconds(x))
+}
+
 fn fid_from_object(input: &Value) -> Result<u64, ImporterError> {
     input["data"]["fid"]
         .as_number()
@@ -49,6 +64,14 @@ fn type_from_object(input: &Value) -> Result<CastType, ImporterError> {
 
 pub async fn number_of_casts_from_response(response: Response) -> Result<u64, ImporterError> {
     Ok(cast_meta_from_pinata_response(response).await?.len() as u64)
+}
+
+pub async fn reaction_times_from_response(
+    response: Response,
+) -> Result<Vec<NaiveDateTime>, ImporterError> {
+    let json = raw_json_from_response(response).await?;
+    let json_vec = json["messages"].as_array().unwrap();
+    json_vec.iter().map(date_time_from_object).collect()
 }
 
 pub async fn cast_meta_from_pinata_response(
