@@ -25,11 +25,13 @@ pub async fn get_data() -> UserCollection {
     let names_data_dir = names_data_path.parent().unwrap();
     let readwrite_to_filesystem: Cell<bool> = Cell::new(true);
 
+    info!("reacreating user data from local database...");
     let mut users = if readwrite_to_filesystem.get() {
         UserCollection::create_from_db(&users_db_path).unwrap_or_default()
     } else {
         UserCollection::default()
     };
+    info!("finished...");
 
     if readwrite_to_filesystem.get()
         && !std::fs::exists(names_data_dir).unwrap_or_else(|_| {
@@ -110,7 +112,7 @@ pub async fn import_pinata_data(users: &mut UserCollection) {
 
         if let Some(user) = users.user_mut(fid as usize) {
             user.add_cast_records(cast_metas, current_time);
-            info!("adding cast records to fid {fid}");
+            trace!("adding cast records to fid {fid}");
         } else {
             continue;
         };
