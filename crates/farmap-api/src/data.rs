@@ -1,10 +1,14 @@
 use axum::http::{HeaderMap, HeaderValue};
 use chrono::prelude::*;
 use chrono::Days;
+use farmap::import::ImporterError;
 use farmap::pinata_parser::cast_meta_from_pinata_response;
 use farmap::{new_github_importer, user::UnprocessedUserLine};
 use farmap::{pinata_importer::PinataFetcher, SpamScore};
 use farmap::{UserCollection, UsersSubset};
+use futures::stream::{self, StreamExt};
+use futures::TryStreamExt;
+use log::trace;
 use log::{error, info};
 use serde_jsonlines::JsonLinesReader;
 use std::cell::Cell;
@@ -46,13 +50,18 @@ pub async fn get_data() -> UserCollection {
             .unwrap_or_else(|_| handle_rw_error(&readwrite_to_filesystem));
     };
 
-    import_github_data(
+    info!("starting to fetch github data");
+
+    let _ = import_github_data(
         &local_data_dir,
         &names_data_path,
         &readwrite_to_filesystem,
         &mut users,
     )
     .await;
+
+    info!("finished with github data");
+    info!("number of users are {:?}", users.user_count());
 
     import_pinata_data(&mut users).await;
 
@@ -132,7 +141,7 @@ pub async fn import_github_data(
     names_data_path: &Path,
     readwrite_to_filesystem: &Cell<bool>,
     users: &mut UserCollection,
-) {
+) -> Result<(), ImporterError> {
     let importer = if readwrite_to_filesystem.get() {
         new_github_importer()
             .with_local_data_dir(local_data_dir.to_path_buf())
@@ -142,16 +151,6 @@ pub async fn import_github_data(
             })
     } else {
         new_github_importer()
-    };
-
-    let local_names_file: Option<File> = if readwrite_to_filesystem.get() {
-        std::fs::File::create(names_data_path)
-            .inspect_err(|_| {
-                handle_rw_error(readwrite_to_filesystem);
-            })
-            .ok()
-    } else {
-        None
     };
 
     let importer = if let Ok(gh_auth_token) = std::env::var("GH_AUTH_TOKEN") {
@@ -187,21 +186,41 @@ pub async fn import_github_data(
         HashSet::new()
     };
 
-    info!("tried reading local names: local_names is {local_names:#?}");
+    trace!("tried reading local names: local_names is {local_names:#?}");
 
     let api_names = importer.name_strings_from_api().await.unwrap();
     let api_names_set = HashSet::from_iter(api_names.iter().map(|x| x.to_string()));
     let missing_names = api_names_set.difference(&local_names);
-    let mut updated_local_names: HashSet<String> = local_names.clone();
+    let missing_names_count = missing_names.clone().count();
+    trace!("There are {} missing names", missing_names_count);
 
-    for name in missing_names {
-        let body = importer.body_from_name(name).await.unwrap();
+    let new_bodies = stream::iter(missing_names)
+        .then(|name| importer.body_from_name(name))
+        .try_collect::<Vec<_>>()
+        .await?;
+
+    for (i, body) in new_bodies.iter().enumerate() {
         let lines = JsonLinesReader::new(body.as_bytes());
         for line in lines.read_all::<UnprocessedUserLine>().flatten() {
             users.push_unprocessed_user_line(line).unwrap_or(());
         }
-        updated_local_names.insert(name.clone());
+        trace!("finished with {i}...");
     }
+
+    let updated_local_names = api_names;
+
+    trace!("updated local names: {:?}", updated_local_names);
+
+    let local_names_file: Option<File> = if readwrite_to_filesystem.get() {
+        std::fs::File::create(names_data_path)
+            .inspect_err(|_| {
+                info!("error on filecreate names_data path");
+                handle_rw_error(readwrite_to_filesystem);
+            })
+            .ok()
+    } else {
+        None
+    };
 
     let local_names_output = updated_local_names
         .iter()
@@ -217,9 +236,7 @@ pub async fn import_github_data(
             .unwrap_or(());
     }
 
-    info!("writing names: {local_names_output:#?}");
-
-    info!("update local names: local names file is {updated_local_names:?}");
+    Ok(())
 }
 
 fn handle_rw_error(readwrite_to_filesystem: &Cell<bool>) {
