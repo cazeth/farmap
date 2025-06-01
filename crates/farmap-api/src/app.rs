@@ -8,6 +8,7 @@ use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
 use farmap::{User, UserCollection, UsersSubset};
 use log::info;
+use log::trace;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -114,7 +115,7 @@ async fn spam_score_distributions_for_cohort(
             return Err(StatusCode::BAD_REQUEST);
         };
 
-    println!(
+    trace!(
         "checking spam score distributions for cohort created at of before {:?}",
         cohort_start_date
     );

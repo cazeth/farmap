@@ -14,8 +14,8 @@ async fn main() {
     info!("starting data import procedure... ");
     let users = get_data().await;
 
-    println!("number of users are {}", users.user_count());
-    println!("data import done!");
+    info!("number of users are {}", users.user_count());
+    info!("data import done!");
     let shared_users = Arc::new(users);
 
     let app = build_app(shared_users);
