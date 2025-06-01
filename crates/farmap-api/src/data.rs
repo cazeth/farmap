@@ -236,10 +236,9 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
     let current_time = Local::now().date_naive();
     let previous_date = current_time.checked_sub_days(Days::new(14)).unwrap();
     let threshold: f32 = 0.01;
+    let maximum_amount_of_calls = 1_000;
     let mut result_fids: HashSet<u64> = HashSet::new();
 
-    // we simply check the one with the lowest fill rate and make 10k requests to this one.
-    // is this really ten k currently???
     let fill_rates = iproduct!(spam_scores, spam_scores)
         .map(|(from, to)| {
             let mut subset = UsersSubset::from(users);
@@ -296,7 +295,7 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
     let result_fids = result_fids
         .iter()
         .copied()
-        .take(100)
+        .take(maximum_amount_of_calls)
         .collect::<HashSet<u64>>();
 
     trace!(
