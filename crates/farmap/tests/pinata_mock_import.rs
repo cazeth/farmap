@@ -7,7 +7,7 @@ use url::Url;
 #[tokio::test]
 async fn test_commit_call_against_mock_pinata_data() {
     let mut server = mockito::Server::new_async().await;
-    let mock_status_data = read_to_string("../data/pinata-mock/api-body.json")
+    let mock_status_data = read_to_string("./test-data/pinata-mock/api-body.json")
         .expect("api file should exist in data dir");
     let _ = server
         .mock("GET", "/v1/castsByFid?fid=11720")
