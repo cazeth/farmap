@@ -14,7 +14,6 @@ pub mod import;
 pub mod pinata_importer;
 pub mod pinata_parser;
 pub mod spam_score;
-pub mod standard_importer;
 pub mod subset;
 pub mod user;
 pub mod user_collection;
