@@ -1,4 +1,5 @@
 use crate::import::ImporterError;
+use crate::pinata_parser::followers_from_pinata_response;
 use crate::pinata_parser::reaction_times_from_response;
 use crate::User;
 use chrono::NaiveDateTime;
@@ -26,6 +27,11 @@ impl PinataFetcher {
             base_url: url,
             ..self
         }
+    }
+
+    pub async fn fetch_followers_for_fid(&self, fid: u64) -> Result<Vec<u64>, ImporterError> {
+        let api_response = self.link_request_for_fid(fid).await?;
+        followers_from_pinata_response(api_response).await
     }
 
     // fetches reaction times (i.e. a collection of times when a user has either recasted or
