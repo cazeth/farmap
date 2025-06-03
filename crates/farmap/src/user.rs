@@ -2,6 +2,7 @@ use crate::cast_meta::CastMeta;
 use crate::spam_score::SpamScore;
 use chrono::DateTime;
 use chrono::Datelike;
+use chrono::Local;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use itertools::*;
@@ -19,6 +20,7 @@ pub struct User {
     /// None: Has not been checked.
     cast_records: Option<Vec<CastMeta>>,
     reaction_times: Option<Vec<NaiveDateTime>>,
+    latest_reaction_time_update_date: Option<NaiveDateTime>,
     latest_cast_record_check_date: Option<NaiveDate>,
 }
 
@@ -34,6 +36,7 @@ impl User {
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
+            latest_reaction_time_update_date: None,
         }
     }
 
@@ -53,6 +56,7 @@ impl User {
         &mut self,
         reaction_times: Vec<NaiveDateTime>,
     ) -> Option<Vec<NaiveDateTime>> {
+        self.latest_reaction_time_update_date = Some(Local::now().naive_utc());
         self.reaction_times.replace(reaction_times)
     }
 
@@ -88,6 +92,10 @@ impl User {
 
     pub fn created_at_or_before_date(&self, date: NaiveDate) -> bool {
         self.earliest_spam_record().1 <= date
+    }
+
+    pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
+        self.latest_reaction_time_update_date
     }
 
     /// Adds a new spam record to a user. There are three scenarios that may happen:
@@ -255,6 +263,7 @@ impl TryFrom<UnprocessedUserLine> for User {
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
+            latest_reaction_time_update_date: None,
         })
     }
 }
@@ -429,6 +438,7 @@ pub mod tests {
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
+            latest_reaction_time_update_date: None,
         };
 
         assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
