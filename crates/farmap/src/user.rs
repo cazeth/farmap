@@ -46,6 +46,13 @@ impl User {
         self.reaction_times = Some(reaction_times);
     }
 
+    pub fn update_reaction_times(
+        &mut self,
+        reaction_times: Vec<NaiveDateTime>,
+    ) -> Option<Vec<NaiveDateTime>> {
+        self.reaction_times.replace(reaction_times)
+    }
+
     /// Returns the fid of the user
     /// # Examples
     /// ```rust
