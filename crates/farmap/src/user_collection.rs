@@ -148,32 +148,6 @@ impl UserCollection {
         (users, non_fatal_errors)
     }
 
-    #[deprecated(note = "use create_from_dir_with_res instead")]
-    #[doc(hidden)]
-    #[allow(deprecated)]
-    pub fn create_from_dir(dir: &str) -> Self {
-        let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir(dir);
-        let mut users = UserCollection::default();
-        for line in unprocessed_user_line {
-            users.push(User::try_from(line).unwrap());
-        }
-        users
-    }
-
-    #[deprecated(note = "use create_from_file_with_res_instead")]
-    #[doc(hidden)]
-    #[allow(deprecated)]
-    pub fn create_from_file(path: &str) -> Self {
-        let mut users = UserCollection::default();
-        let unprocessed_user_line = UnprocessedUserLine::import_data_from_file(path);
-
-        for line in unprocessed_user_line {
-            users.push(User::try_from(line).unwrap());
-        }
-
-        users
-    }
-
     pub fn create_from_file_with_res(path: &str) -> Result<Self, DataCreationError> {
         let mut users = UserCollection::default();
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_file_with_res(path)?;
