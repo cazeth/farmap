@@ -396,17 +396,6 @@ pub mod tests {
         }
     }
 
-    /// this test has been replaced with test_users_count_on_file_with_res and will be removed once
-    /// fn create_from_file_is_removed.
-    #[test]
-    #[allow(deprecated)]
-    pub fn test_user_count_on_file() {
-        let users = UserCollection::create_from_file("data/dummy-data/spam.jsonl");
-        assert_eq!(users.user_count(), 2);
-        let users = UserCollection::create_from_dir("data/dummy-data/");
-        assert_eq!(users.user_count(), 2);
-    }
-
     #[test]
     pub fn test_user_count_on_dir_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
@@ -414,43 +403,8 @@ pub mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
-    pub fn test_user_count_on_dir() {
-        let users = UserCollection::create_from_dir("data/dummy-data/");
-        assert_eq!(users.user_count(), 2);
-    }
-
-    #[test]
     pub fn test_user_count_at_date_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
-            0
-        );
-
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()),
-            0
-        );
-
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
-            1
-        );
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 5, 1).unwrap()),
-            1
-        );
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()),
-            2
-        );
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    pub fn test_user_count_at_date() {
-        let users = UserCollection::create_from_dir("data/dummy-data/");
         assert_eq!(
             users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
             0
@@ -488,19 +442,6 @@ pub mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
-    fn test_spam_distribution_for_users_created_at_or_after_date() {
-        let users = UserCollection::create_from_dir("data/dummy-data");
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        let closure = |user: &User| user.created_at_or_after_date(date);
-
-        assert_eq!(
-            users.spam_score_distribution_for_subset(closure),
-            Some([0.0, 0.0, 1.0])
-        );
-    }
-
-    #[test]
     fn test_apply_filter_for_one_fid_with_new() {
         let mut users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let closure = |user: &User| user.fid() == 2;
@@ -512,29 +453,8 @@ pub mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
-    fn test_apply_filter_for_one_fid() {
-        let mut users = UserCollection::create_from_dir("data/dummy-data");
-        let closure = |user: &User| user.fid() == 2;
-        users.apply_filter(closure);
-        assert_eq!(
-            users.current_spam_score_distribution(),
-            Some([0.0, 0.0, 1.0])
-        )
-    }
-
-    #[test]
     fn test_none_for_filtered_spam_distribution_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
-        let closure = |user: &User| user.fid() == 3;
-
-        assert_eq!(users.spam_score_distribution_for_subset(closure), None);
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn test_none_for_filtered_spam_distribution() {
-        let users = UserCollection::create_from_dir("data/dummy-data");
         let closure = |user: &User| user.fid() == 3;
 
         assert_eq!(users.spam_score_distribution_for_subset(closure), None);

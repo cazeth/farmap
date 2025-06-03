@@ -483,47 +483,10 @@ pub mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
-    pub fn test_dummy_data_import() {
-        let fid = 1;
-        let users = UserCollection::create_from_dir("data/dummy-data");
-        assert_eq!(users.spam_score_by_fid(fid).unwrap(), SpamScore::Zero);
-        let user = users.user(fid).unwrap();
-        assert_eq!(
-            user.earliest_spam_score_date(),
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-        );
-
-        assert_eq!(
-            user.last_spam_score_update_date(),
-            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
-        );
-    }
-
-    #[test]
     pub fn test_user_created_after_date_on_dummy_data_with_new() {
         let fid = 1;
         let date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
-
-        assert!(users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
-        assert!(users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2024, 6, 1).unwrap();
-        assert!(!users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
-        assert!(!users.user(fid).unwrap().created_at_or_after_date(date));
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    pub fn test_user_created_after_date_on_dummy_data() {
-        let fid = 1;
-        let date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-        let users = UserCollection::create_from_dir("data/dummy-data");
 
         assert!(users.user(fid).unwrap().created_at_or_after_date(date));
 
@@ -561,53 +524,8 @@ pub mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
-    pub fn test_spam_score_by_date_on_dummy_data() {
-        let users = UserCollection::create_from_dir("data/dummy-data");
-        let date = NaiveDate::from_ymd_opt(2023, 1, 25).unwrap();
-        let user = users.user(1).unwrap();
-
-        assert!(user.spam_score_at_date(&date).is_none());
-
-        let user = users.user(1).unwrap();
-
-        let date = NaiveDate::from_ymd_opt(2024, 1, 25).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::One);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 20).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::One);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::Zero);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 25).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::Zero);
-    }
-
-    #[test]
     fn test_created_by_before_date_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
-
-        let user = users.user(1).unwrap();
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
-
-        let user = users.user(2).unwrap();
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 1, 31).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 22).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 24).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn test_created_by_before_date() {
-        let users = UserCollection::create_from_dir("data/dummy-data");
 
         let user = users.user(1).unwrap();
         assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
