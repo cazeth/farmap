@@ -24,7 +24,7 @@ async fn test_commit_call_against_mock_pinata_data() {
         .with_base_url(Url::parse(&format!("{}/v1/", &server.url())).unwrap());
 
     let response = fetcher
-        .api_request_for_id(11720)
+        .casts_by_fid(11720)
         .await
         .expect("Mock API call should not fail");
     println!("{:?}", response);

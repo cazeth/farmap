@@ -87,7 +87,7 @@ pub async fn import_pinata_data(users: &mut UserCollection) {
     let fres = fetch_list
         .iter()
         .map(|x| async {
-            if let Ok(response) = pinata_fetcher.api_request_for_id(*x).await {
+            if let Ok(response) = pinata_fetcher.casts_by_fid(*x).await {
                 cast_meta_from_pinata_response(response).await.ok()
             } else {
                 None

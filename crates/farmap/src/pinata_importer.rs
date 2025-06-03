@@ -53,7 +53,7 @@ impl PinataFetcher {
         Ok(user.update_reaction_times(reaction_times))
     }
 
-    pub async fn api_request_for_id(&self, id: u64) -> Result<Response, ImporterError> {
+    pub async fn casts_by_fid(&self, id: u64) -> Result<Response, ImporterError> {
         let extension = "castsByFid";
         let mut url = self.base_url.clone().join(extension).unwrap();
         url.set_query(Some(&format!("fid={id}")));
