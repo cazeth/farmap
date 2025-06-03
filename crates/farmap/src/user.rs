@@ -42,6 +42,9 @@ impl User {
         self.latest_cast_record_check_date = Some(check_date);
     }
 
+    #[deprecated(
+        note = "use update rection times instead, as it prevents acccidentally overriding old values"
+    )]
     pub fn add_reaction_times(&mut self, reaction_times: Vec<NaiveDateTime>) {
         self.reaction_times = Some(reaction_times);
     }
