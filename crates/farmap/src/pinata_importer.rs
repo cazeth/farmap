@@ -1,4 +1,7 @@
 use crate::import::ImporterError;
+use crate::pinata_parser::reaction_times_from_response;
+use crate::User;
+use chrono::NaiveDateTime;
 use reqwest::{Client, Response};
 use url::Url;
 
@@ -23,6 +26,31 @@ impl PinataFetcher {
             base_url: url,
             ..self
         }
+    }
+
+    // fetches reaction times (i.e. a collection of times when a user has either recasted or
+    // liked)
+    pub async fn fetch_reaction_times_for_fid(
+        &self,
+        fid: u64,
+    ) -> Result<Vec<NaiveDateTime>, ImporterError> {
+        let likes = self.likes_by_fid(fid).await?;
+        let recasts = self.recasts_by_fid(fid).await?;
+        let mut reaction_times = reaction_times_from_response(likes).await?;
+        let mut recast_reaction_times = reaction_times_from_response(recasts).await?;
+        reaction_times.append(&mut recast_reaction_times);
+        Ok(reaction_times)
+    }
+
+    /// update a user with reaction times from pinata.
+    /// The function returns the existing reaction_times, if the field was populated prior to the
+    /// method call.
+    pub async fn fetch_reaction_times_for_user(
+        &self,
+        user: &mut User,
+    ) -> Result<Option<Vec<NaiveDateTime>>, ImporterError> {
+        let reaction_times = self.fetch_reaction_times_for_fid(user.fid() as u64).await?;
+        Ok(user.update_reaction_times(reaction_times))
     }
 
     pub async fn api_request_for_id(&self, id: u64) -> Result<Response, ImporterError> {
