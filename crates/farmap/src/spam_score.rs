@@ -125,6 +125,15 @@ pub mod tests {
     }
 
     #[test]
+    pub fn test_label_value_invalid_input() {
+        assert!(SpamScore::try_from(0).is_ok());
+        assert!(SpamScore::try_from(1).is_ok());
+        assert!(SpamScore::try_from(2).is_ok());
+        assert!(SpamScore::try_from(3).is_err());
+        assert!(SpamScore::try_from(100).is_err());
+    }
+
+    #[test]
     pub fn basic_spam_score_count_test() {
         let count = basic_spam_score_count();
         assert_eq!(count.spam(), 100);

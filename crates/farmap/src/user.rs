@@ -417,15 +417,6 @@ pub mod tests {
     use crate::user_collection::UserCollection;
 
     #[test]
-    pub fn test_label_value_invalid_input() {
-        assert!(SpamScore::try_from(0).is_ok());
-        assert!(SpamScore::try_from(1).is_ok());
-        assert!(SpamScore::try_from(2).is_ok());
-        assert!(SpamScore::try_from(3).is_err());
-        assert!(SpamScore::try_from(100).is_err());
-    }
-
-    #[test]
     pub fn test_spam_score_collision_error_for_invalid_record_add() {
         let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
         let later_date = NaiveDate::from_ymd_opt(2020, 1, 3).unwrap();
