@@ -60,6 +60,14 @@ impl User {
         self.reaction_times.replace(reaction_times)
     }
 
+    pub fn latest_reaction_time(&self) -> Option<&NaiveDateTime> {
+        if let Some(reaction_times) = &self.reaction_times {
+            Some(reaction_times.iter().max()?)
+        } else {
+            None
+        }
+    }
+
     /// Returns the fid of the user
     /// # Examples
     /// ```rust
@@ -413,6 +421,8 @@ impl UnprocessedUserLine {
 #[cfg(test)]
 #[allow(deprecated)]
 pub mod tests {
+    use chrono::NaiveTime;
+
     use super::*;
     use crate::user_collection::UserCollection;
 
@@ -435,6 +445,51 @@ pub mod tests {
             user.spam_score_at_date(&NaiveDate::from_ymd_opt(year as i32, month, date).unwrap()),
             spam_score.as_ref()
         )
+    }
+
+    fn check_latest_reaction_time(user: &User, time: NaiveDateTime) {
+        assert_eq!(*user.latest_reaction_time().unwrap(), time);
+    }
+
+    fn dummy_data_users_with_reaction_times() -> UserCollection {
+        let mut users = UserCollection::default();
+        let label = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let reaction_date = NaiveDate::from_ymd_opt(2025, 2, 1).unwrap();
+        let reaction_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
+        let reaction_datetime = NaiveDateTime::new(reaction_date, reaction_time);
+        let check_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
+        let check_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
+        let check_datetime = NaiveDateTime::new(check_date, check_time);
+        let user = User {
+            fid: 1,
+            labels: vec![(SpamScore::Zero, label)],
+            reaction_times: Some(vec![reaction_datetime]),
+            latest_reaction_time_update_date: Some(check_datetime),
+            cast_records: None,
+            latest_cast_record_check_date: None,
+        };
+        users.push_with_res(user).unwrap();
+        let label = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let first_reaction_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
+        let first_reaction_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
+        let first_reaction_datetime = NaiveDateTime::new(first_reaction_date, first_reaction_time);
+        let second_reaction_date = NaiveDate::from_ymd_opt(2025, 5, 2).unwrap();
+        let second_reaction_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
+        let second_reaction_datetime =
+            NaiveDateTime::new(second_reaction_date, second_reaction_time);
+        let check_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
+        let check_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
+        let check_datetime = NaiveDateTime::new(check_date, check_time);
+        let user = User {
+            fid: 2,
+            labels: vec![(SpamScore::Zero, label)],
+            reaction_times: Some(vec![first_reaction_datetime, second_reaction_datetime]),
+            latest_reaction_time_update_date: Some(check_datetime),
+            cast_records: None,
+            latest_cast_record_check_date: None,
+        };
+        users.push_with_res(user).unwrap();
+        users
     }
 
     #[test]
@@ -534,5 +589,27 @@ pub mod tests {
         assert!(check_created_at_or_before_date(user, 2025, 1, 23));
         assert!(check_created_at_or_before_date(user, 2025, 1, 24));
         assert!(check_created_at_or_before_date(user, 2025, 12, 31));
+    }
+
+    #[test]
+    fn test_latest_reaction_time() {
+        let users = dummy_data_users_with_reaction_times();
+        let user = users.user(1).unwrap();
+        check_latest_reaction_time(
+            user,
+            NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(2025, 2, 1).unwrap(),
+                NaiveTime::from_hms_opt(10, 1, 10).unwrap(),
+            ),
+        );
+
+        let user = users.user(2).unwrap();
+        check_latest_reaction_time(
+            user,
+            NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(2025, 5, 2).unwrap(),
+                NaiveTime::from_hms_opt(10, 1, 10).unwrap(),
+            ),
+        );
     }
 }
