@@ -3,6 +3,7 @@ use crate::pinata_parser::followers_from_pinata_response;
 use crate::pinata_parser::reaction_times_from_response;
 use crate::User;
 use chrono::NaiveDateTime;
+use log::trace;
 use reqwest::{Client, Response};
 use url::Url;
 
@@ -74,7 +75,7 @@ impl PinataFetcher {
         let extension = "linksByTargetFid";
         let mut url = self.base_url.clone().join(extension).unwrap();
         url.set_query(Some(&format!("link_type=follow&target_fid={fid}")));
-        println!("{}", url);
+        trace!("{}", url);
         self.client
             .get(url)
             .send()
