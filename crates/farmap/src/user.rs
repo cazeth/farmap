@@ -419,7 +419,6 @@ impl UnprocessedUserLine {
 }
 
 #[cfg(test)]
-#[allow(deprecated)]
 pub mod tests {
     use chrono::NaiveTime;
 
