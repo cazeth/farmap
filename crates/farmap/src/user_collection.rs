@@ -11,6 +11,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
+use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
@@ -106,6 +107,12 @@ impl UserCollection {
 
     pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
         Ok(serde_json::from_str(&std::fs::read_to_string(db)?)?)
+    }
+
+    pub fn create_from_file(file: &mut std::fs::File) -> Result<Self, DbReadError> {
+        let mut result = String::new();
+        file.read_to_string(&mut result)?;
+        Ok(serde_json::from_str(&result)?)
     }
 
     pub fn save_to_db(&self, db: &Path) -> Result<(), Box<dyn Error>> {
