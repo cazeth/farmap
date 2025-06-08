@@ -416,6 +416,14 @@ pub mod tests {
     use super::*;
     use crate::user_collection::UserCollection;
 
+    fn check_created_at_or_before_date(user: &User, year: u32, month: u32, date: u32) -> bool {
+        user.created_at_or_before_date(NaiveDate::from_ymd_opt(year as i32, month, date).unwrap())
+    }
+
+    fn check_created_at_or_after_date(user: &User, year: u32, month: u32, date: u32) -> bool {
+        user.created_at_or_after_date(NaiveDate::from_ymd_opt(year as i32, month, date).unwrap())
+    }
+
     #[test]
     pub fn test_spam_score_collision_error_for_invalid_record_add() {
         let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
@@ -475,20 +483,13 @@ pub mod tests {
 
     #[test]
     pub fn test_user_created_after_date_on_dummy_data_with_new() {
-        let fid = 1;
-        let date = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let user = users.user(1).unwrap();
 
-        assert!(users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
-        assert!(users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2024, 6, 1).unwrap();
-        assert!(!users.user(fid).unwrap().created_at_or_after_date(date));
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
-        assert!(!users.user(fid).unwrap().created_at_or_after_date(date));
+        assert!(check_created_at_or_after_date(user, 2023, 1, 1));
+        assert!(check_created_at_or_after_date(user, 2024, 1, 1));
+        assert!(!check_created_at_or_after_date(user, 2024, 6, 1));
+        assert!(!check_created_at_or_after_date(user, 2025, 1, 1));
     }
 
     #[test]
@@ -517,20 +518,20 @@ pub mod tests {
     #[test]
     fn test_created_by_before_date_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
-
         let user = users.user(1).unwrap();
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
+        assert!(!check_created_at_or_before_date(user, 2023, 12, 31));
+        assert!(check_created_at_or_before_date(user, 2024, 1, 1));
+        assert!(check_created_at_or_before_date(user, 2024, 1, 2));
+        assert!(check_created_at_or_before_date(user, 2024, 1, 2));
+        assert!(check_created_at_or_before_date(user, 2025, 12, 31));
 
         let user = users.user(2).unwrap();
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2023, 1, 31).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap()));
-        assert!(!user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 22).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 1, 24).unwrap()));
-        assert!(user.created_at_or_before_date(NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()));
+        assert!(!check_created_at_or_before_date(user, 2023, 1, 31));
+        assert!(!check_created_at_or_before_date(user, 2024, 1, 1));
+        assert!(!check_created_at_or_before_date(user, 2024, 1, 2));
+        assert!(!check_created_at_or_before_date(user, 2025, 1, 22));
+        assert!(check_created_at_or_before_date(user, 2025, 1, 23));
+        assert!(check_created_at_or_before_date(user, 2025, 1, 24));
+        assert!(check_created_at_or_before_date(user, 2025, 12, 31));
     }
 }
