@@ -424,6 +424,19 @@ pub mod tests {
         user.created_at_or_after_date(NaiveDate::from_ymd_opt(year as i32, month, date).unwrap())
     }
 
+    fn check_spam_score_at_date(
+        user: &User,
+        year: u32,
+        month: u32,
+        date: u32,
+        spam_score: Option<SpamScore>,
+    ) {
+        assert_eq!(
+            user.spam_score_at_date(&NaiveDate::from_ymd_opt(year as i32, month, date).unwrap()),
+            spam_score.as_ref()
+        )
+    }
+
     #[test]
     pub fn test_spam_score_collision_error_for_invalid_record_add() {
         let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
@@ -495,24 +508,12 @@ pub mod tests {
     #[test]
     pub fn test_spam_score_by_date_on_dummy_data_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
-        let date = NaiveDate::from_ymd_opt(2023, 1, 25).unwrap();
         let user = users.user(1).unwrap();
-
-        assert!(user.spam_score_at_date(&date).is_none());
-
-        let user = users.user(1).unwrap();
-
-        let date = NaiveDate::from_ymd_opt(2024, 1, 25).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::One);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 20).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::One);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::Zero);
-
-        let date = NaiveDate::from_ymd_opt(2025, 1, 25).unwrap();
-        assert_eq!(user.spam_score_at_date(&date).unwrap(), &SpamScore::Zero);
+        check_spam_score_at_date(user, 2023, 1, 25, None);
+        check_spam_score_at_date(user, 2024, 1, 25, Some(SpamScore::One));
+        check_spam_score_at_date(user, 2025, 1, 20, Some(SpamScore::One));
+        check_spam_score_at_date(user, 2025, 1, 23, Some(SpamScore::Zero));
+        check_spam_score_at_date(user, 2025, 1, 25, Some(SpamScore::Zero));
     }
 
     #[test]
