@@ -92,19 +92,18 @@ impl UserCollection {
         // these errors are considered fatal for now.
         let lines = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
 
-        // if errors occur while importing a particular line the parsing continues and collects the errors.
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
     /// Like create_from_dir ... but for a single file.
     pub fn create_from_file_and_collect_non_fatal_errors(file: &str) -> CreateResult {
-        // these errors are considered fatal for now.
         let lines = UnprocessedUserLine::import_data_from_file_with_res(file)?;
 
-        // if errors occur while importing a particular line the parsing continues and collects the errors.
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
+    // the problem with this is that when the file does not exist the program will fail because
+    // there isn't really a way for the caller to anticipate this...
     pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
         Ok(serde_json::from_str(&std::fs::read_to_string(db)?)?)
     }
