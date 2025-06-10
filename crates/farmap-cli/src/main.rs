@@ -124,9 +124,10 @@ fn main() {
         || UsersSubset::from(&users),
         |after_date| {
             UsersSubset::from_filter(&users, |user: &User| {
-                user.created_at_or_after_date(
+                user.created_at_or_after_date_with_opt(
                     NaiveDate::parse_from_str(&after_date, "%Y-%m-%d").unwrap(),
                 )
+                .unwrap_or(false)
             })
         },
     );
@@ -134,9 +135,10 @@ fn main() {
     // Filter on before_date if that input was provided.
     if let Some(before_date) = args.before_date {
         set.filter(|user: &User| {
-            user.created_at_or_before_date(
+            user.created_at_or_before_date_with_opt(
                 NaiveDate::parse_from_str(&before_date, "%Y-%m-%d").unwrap(),
             )
+            .unwrap_or(false)
         })
     };
 
@@ -173,8 +175,12 @@ fn main() {
 
     if let Some(score) = args.current_spam_score {
         set.filter(|user: &User| {
-            user.latest_spam_record().0
-                == SpamScore::try_from(score).expect("spam score must be 0,1 or 2")
+            if let Some(latest_spam_record) = user.latest_spam_record_with_opt() {
+                latest_spam_record.0
+                    == SpamScore::try_from(score).expect("spam score must be 0,1 or 2")
+            } else {
+                false
+            }
         })
     };
 
@@ -197,7 +203,10 @@ fn main() {
             } else {
                 chrono::Local::now().naive_local().date()
             };
-            set.filter(|user: &User| user.created_at_or_before_date(analysis_date));
+            set.filter(|user: &User| {
+                user.created_at_or_before_date_with_opt(analysis_date)
+                    .unwrap_or(false)
+            });
             print_spam_score_distribution(&set, analysis_date);
         }
 

@@ -75,10 +75,20 @@ impl User {
         self.fid
     }
 
+    #[deprecated(since = "0.4.1", note = "use latest_spam_record_with_opt instead")]
     pub fn latest_spam_record(&self) -> &SpamRecord {
         self.labels.last().unwrap()
     }
 
+    pub fn latest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
+        self.labels.last()
+    }
+
+    pub fn earliest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
+        self.labels.first()
+    }
+
+    #[deprecated(since = "0.4.1", note = "use earliest_spam_record_with_opt instead")]
     pub fn earliest_spam_record(&self) -> &SpamRecord {
         self.labels.first().unwrap()
     }
@@ -87,10 +97,29 @@ impl User {
         &self.labels
     }
 
+    /// None: there is no spam_score data in the dataset.
+    pub fn created_at_or_after_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
+        Some(self.earliest_spam_record_with_opt()?.1 >= date)
+    }
+
+    #[deprecated(
+        since = "0.4.1",
+        note = "use created_at_or_after_date_with_opt instead"
+    )]
+    #[allow(deprecated)]
     pub fn created_at_or_after_date(&self, date: NaiveDate) -> bool {
         self.earliest_spam_record().1 >= date
     }
 
+    pub fn created_at_or_before_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
+        Some(self.earliest_spam_record_with_opt()?.1 <= date)
+    }
+
+    #[deprecated(
+        since = "0.4.1",
+        note = "use created_at_or_before_date_with_opt instead"
+    )]
+    #[allow(deprecated)]
     pub fn created_at_or_before_date(&self, date: NaiveDate) -> bool {
         self.earliest_spam_record().1 <= date
     }
@@ -197,19 +226,40 @@ impl User {
         self.latest_cast_record_check_date
     }
 
+    #[deprecated(
+        since = "0.4.1",
+        note = "latest_spam_score_update_date_with_opt instead"
+    )]
     pub fn last_spam_score_update_date(&self) -> NaiveDate {
         self.labels.last().unwrap().1
     }
 
+    pub fn latest_spam_score_update_date_with_opt(&self) -> Option<NaiveDate> {
+        Some(self.labels.last()?.1)
+    }
+
+    #[deprecated(
+        since = "0.4.1",
+        note = "earliest_spam_score_update_date_with_opt instead"
+    )]
     pub fn earliest_spam_score_date(&self) -> NaiveDate {
         *self.labels.iter().map(|(_, date)| date).min().unwrap()
     }
 
+    pub fn earliest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
+        self.labels.iter().map(|(_, date)| date).min().copied()
+    }
+
+    pub fn latest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
+        self.labels.iter().map(|(_, date)| date).max().copied()
+    }
+
     /// If the user didn't exist at the date, the function returns none.
     pub fn spam_score_at_date(&self, date: &NaiveDate) -> Option<&SpamScore> {
-        if date < &self.earliest_spam_record().1 {
+        if date < &self.earliest_spam_record_with_opt()?.1 {
             return None;
         };
+
         self.labels
             .iter()
             .rev()
@@ -389,11 +439,17 @@ pub mod tests {
     use crate::user_collection::UserCollection;
 
     fn check_created_at_or_before_date(user: &User, year: u32, month: u32, date: u32) -> bool {
-        user.created_at_or_before_date(NaiveDate::from_ymd_opt(year as i32, month, date).unwrap())
+        user.created_at_or_before_date_with_opt(
+            NaiveDate::from_ymd_opt(year as i32, month, date).unwrap(),
+        )
+        .unwrap()
     }
 
     fn check_created_at_or_after_date(user: &User, year: u32, month: u32, date: u32) -> bool {
-        user.created_at_or_after_date(NaiveDate::from_ymd_opt(year as i32, month, date).unwrap())
+        user.created_at_or_after_date_with_opt(
+            NaiveDate::from_ymd_opt(year as i32, month, date).unwrap(),
+        )
+        .unwrap()
     }
 
     fn check_spam_score_at_date(
@@ -501,12 +557,12 @@ pub mod tests {
         assert_eq!(users.spam_score_by_fid(fid).unwrap(), SpamScore::Zero);
         let user = users.user(fid).unwrap();
         assert_eq!(
-            user.earliest_spam_score_date(),
+            user.earliest_spam_score_date_with_opt().unwrap(),
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
         );
 
         assert_eq!(
-            user.last_spam_score_update_date(),
+            user.latest_spam_score_update_date_with_opt().unwrap(),
             NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
         );
     }

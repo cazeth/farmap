@@ -119,11 +119,21 @@ async fn spam_score_distributions_for_cohort(
         "checking spam score distributions for cohort created at of before {:?}",
         cohort_start_date
     );
+
     let cohort_end_date = cohort_start_date
         .checked_add_months(Months::new(1))
         .unwrap();
-    set.filter(|user: &User| user.created_at_or_before_date(cohort_end_date));
-    set.filter(|user: &User| user.created_at_or_after_date(cohort_start_date));
+
+    set.filter(|user: &User| {
+        user.created_at_or_before_date_with_opt(cohort_end_date)
+            .unwrap_or(false)
+    });
+
+    set.filter(|user: &User| {
+        user.created_at_or_after_date_with_opt(cohort_start_date)
+            .unwrap_or(false)
+    });
+
     let result = set.monthly_spam_score_distributions();
     let result = result
         .iter()
@@ -203,7 +213,13 @@ async fn casts_for_moved(
     let set_size = set.user_count();
     info!("set size after begin_date filtering is {set_size}");
 
-    set.filter(|user: &User| Ok(user.latest_spam_record().0) == (to as usize).try_into());
+    set.filter(|user: &User| {
+        if let Some(latest_spam_record) = user.latest_spam_record_with_opt() {
+            Ok(latest_spam_record.0) == (to as usize).try_into()
+        } else {
+            false
+        }
+    });
     info!("set size is {set_size}");
     Ok(Json(json!(set.average_total_casts())))
 }

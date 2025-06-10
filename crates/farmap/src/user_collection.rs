@@ -38,9 +38,10 @@ impl UserCollection {
     }
 
     /// Return `Some(SpamScore)` if the fid exists, otherwise returns none.
+    /// Return None if the user if exists but has no spam record.
     pub fn spam_score_by_fid(&self, fid: usize) -> Option<SpamScore> {
         let user = self.map.get(&fid)?;
-        Some(user.latest_spam_record().0)
+        Some(user.latest_spam_record_with_opt()?.0)
     }
 
     pub fn user_mut(&mut self, fid: usize) -> Option<&mut User> {
@@ -189,6 +190,9 @@ impl UserCollection {
 
     /// Returns the spam_score_distribution after applying a filter. The function returns None if
     /// the subset is empty.
+    // TODO: This function will be deprecated in the future, as it seems better to just create a
+    // subset and calculate from it.
+    #[allow(deprecated)]
     pub fn spam_score_distribution_for_subset<F>(&self, filter: F) -> Option<[f32; 3]>
     where
         F: Fn(&User) -> bool,
@@ -206,6 +210,7 @@ impl UserCollection {
         distribution_from_counts(&counts)
     }
 
+    #[allow(deprecated)]
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
@@ -399,7 +404,7 @@ pub mod tests {
     fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
         let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
         let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        let closure = |user: &User| user.created_at_or_after_date(date);
+        let closure = |user: &User| user.created_at_or_after_date_with_opt(date).unwrap();
 
         assert_eq!(
             users.spam_score_distribution_for_subset(closure),
