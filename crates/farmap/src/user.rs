@@ -197,16 +197,6 @@ impl User {
         self.latest_cast_record_check_date
     }
 
-    #[doc(hidden)]
-    #[deprecated(note = "use merge_user instead")]
-    pub fn update_user(&mut self, other: Self) {
-        assert_eq!(self.fid(), other.fid());
-        //self.labels.push(*other.labels.first().unwrap())
-        if let Err(err) = self.add_spam_record(*other.labels.first().unwrap()) {
-            println!("{:?}", err);
-        }
-    }
-
     pub fn last_spam_score_update_date(&self) -> NaiveDate {
         self.labels.last().unwrap().1
     }
