@@ -389,26 +389,6 @@ impl UnprocessedUserLine {
                 acc
             })
     }
-
-    //TODO it's probably must for efficient to check the dates of the first line of each file and
-    //abort when it reaches a data that has already been checked. There is probably a lot of
-    //duplicate checking right now.
-    #[deprecated(note = "use import_data_from_dir_with_res instead")]
-    pub fn import_data_from_dir(data_dir: &str) -> Vec<UnprocessedUserLine> {
-        let paths = read_dir(data_dir).unwrap();
-        let mut result: Vec<UnprocessedUserLine> = Vec::new();
-
-        for path in paths.flatten() {
-            if path.path().extension().unwrap_or_default() == "jsonl" {
-                let mut new_lines = json_lines(path.path())
-                    .unwrap()
-                    .collect::<Result<Vec<UnprocessedUserLine>, _>>()
-                    .unwrap();
-                result.append(&mut new_lines);
-            }
-        }
-        result
-    }
 }
 
 #[cfg(test)]
