@@ -32,6 +32,7 @@ impl PinataFetcher {
 
     pub async fn fetch_followers_for_fid(&self, fid: u64) -> Result<Vec<u64>, ImporterError> {
         let api_response = self.link_request_for_fid(fid).await?;
+        trace!("api response: {api_response:?}");
         followers_from_pinata_response(api_response).await
     }
 
@@ -75,7 +76,7 @@ impl PinataFetcher {
         let extension = "linksByTargetFid";
         let mut url = self.base_url.clone().join(extension).unwrap();
         url.set_query(Some(&format!("link_type=follow&target_fid={fid}")));
-        trace!("{}", url);
+        trace!("url: {}", url);
         self.client
             .get(url)
             .send()
