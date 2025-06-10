@@ -1,7 +1,8 @@
 //! # Farmap
-//! A library to parse and analyze [farcaster](https://www.farcaster.xyz/) data. For now, the
-//! library is focused on [Warpcast Spam Labels](https://github.com/warpcast/labels) but may add
-//! other type of data in the future.
+//! A library to parse and analyze [farcaster](https://www.farcaster.xyz/) data. The ambition is to
+//! be the simplest gateway to farcaster data for your rust application. For now, the
+//! library is focused on [Warpcast Spam Labels](https://github.com/warpcast/labels) and farcaster
+//! protocol data via Pinata, but may other types of data may be added in the future.
 //! # Quickstart
 //! In order to get started, you likely want to store Warpcast Spam Labels data locally. Then you
 //! want to use one of the available create methods in UserCollections to import this data. Then
