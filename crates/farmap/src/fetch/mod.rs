@@ -12,7 +12,7 @@ pub mod pinata_parser;
 mod wield_importer;
 mod wield_parser;
 pub use import::ConversionError;
-pub use import::Importer;
+pub use import::GithubFetcher;
 pub use import::ImporterError;
 pub use pinata_importer::PinataFetcher;
 pub use wield_importer::WieldFetcher;

@@ -1,10 +1,10 @@
 use super::ConversionError;
-use super::Importer;
+use super::GithubFetcher;
 use super::ImporterError;
 use serde_json::Value;
 use url::Url;
 
-pub fn new_github_importer() -> Importer {
+pub fn new_github_importer() -> GithubFetcher {
     let base_url = Url::parse("https://raw.githubusercontent.com/warpcast/labels/").unwrap();
     let status_check_url =
         Url::parse("https://api.github.com/repos/warpcast/labels/commits").unwrap();
@@ -15,7 +15,7 @@ pub fn new_github_importer() -> Importer {
 pub fn new_github_importer_with_specific_status_url_and_base_url(
     base_url: Url,
     status_check_url: Url,
-) -> Importer {
+) -> GithubFetcher {
     fn parse_status(input: &str) -> Result<Vec<String>, ImporterError> {
         let json_value: Value = serde_json::from_str(input)
             .map_err(|_| ImporterError::BadApiResponse(input.to_string()))?;
@@ -44,7 +44,7 @@ pub fn new_github_importer_with_specific_status_url_and_base_url(
         Ok(url)
     }
 
-    Importer::new(base_url, build_path, parse_status, status_check_url)
+    GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
 }
 
 #[cfg(test)]

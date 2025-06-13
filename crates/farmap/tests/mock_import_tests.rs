@@ -1,5 +1,5 @@
 use farmap::fetch::ConversionError;
-use farmap::fetch::Importer;
+use farmap::fetch::GithubFetcher;
 use farmap::fetch::ImporterError;
 use mockito::Server;
 use std::path::Path;
@@ -61,7 +61,7 @@ fn create_mock_standard_importer(
     data_dir_path: PathBuf,
     base_url: Url,
     status_url: Url,
-) -> Importer {
+) -> GithubFetcher {
     fn parse_status(_: &str) -> Result<Vec<String>, ImporterError> {
         Ok(vec!["1".to_string(), "2".to_string(), "3".to_string()])
     }
@@ -71,7 +71,7 @@ fn create_mock_standard_importer(
         Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)
     }
 
-    Importer::new(base_url, build_path, parse_status, status_url)
+    GithubFetcher::new(base_url, build_path, parse_status, status_url)
         .with_local_data_dir(data_dir_path)
         .unwrap()
 }

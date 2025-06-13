@@ -12,7 +12,7 @@ use url::Url;
 /// This struct ensures that all necessary files are available to the program.
 /// It does so by checking the local file system or, if those files are unavailable or outdated,
 /// the github api.
-pub struct Importer {
+pub struct GithubFetcher {
     local_data_files: Option<Vec<PathBuf>>,
     local_data_dir: Option<PathBuf>,
     base_url: Url,
@@ -23,7 +23,7 @@ pub struct Importer {
     header_map: Option<HeaderMap>,
 }
 
-impl Importer {
+impl GithubFetcher {
     pub fn new(
         base_url: Url,
         build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
@@ -282,9 +282,9 @@ pub mod tests {
         base_dir: PathBuf,
         base_url: Url,
         status_check_url: Url,
-    ) -> Result<Importer, ImporterError> {
+    ) -> Result<GithubFetcher, ImporterError> {
         Ok(
-            Importer::new(base_url, build_path, parse_status, status_check_url)
+            GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
                 .with_local_data_dir(base_dir)?
                 .with_local_file_name_validation(validate_file_name)?,
         )
@@ -313,7 +313,7 @@ pub mod tests {
     fn check_names_from_local_data(dir: PathBuf, expected_result: Vec<&str>) {
         let base_url = Url::parse("https://caz.pub").unwrap();
         let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = Importer::new(base_url, build_path, parse_status, status_url)
+        let importer = GithubFetcher::new(base_url, build_path, parse_status, status_url)
             .with_local_data_dir(dir)
             .unwrap()
             .with_local_file_name_validation(validate_file_name)
