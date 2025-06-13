@@ -1,8 +1,8 @@
 use axum::http::{HeaderMap, HeaderValue};
 use chrono::prelude::*;
 use chrono::Days;
-use farmap::fetch::github_importer::new_github_importer;
 use farmap::fetch::pinata_parser::cast_meta_from_pinata_response;
+use farmap::fetch::GithubFetcher;
 use farmap::fetch::ImporterError;
 use farmap::fetch::PinataFetcher;
 use farmap::user::UnprocessedUserLine;
@@ -128,14 +128,14 @@ pub async fn import_github_data(
     users: &mut UserCollection,
 ) -> Result<(), ImporterError> {
     let importer = if readwrite_to_filesystem.get() {
-        new_github_importer()
+        GithubFetcher::default()
             .with_local_data_dir(local_data_dir.to_path_buf())
             .unwrap_or_else(|_| {
                 handle_rw_error(readwrite_to_filesystem);
-                new_github_importer()
+                GithubFetcher::default()
             })
     } else {
-        new_github_importer()
+        GithubFetcher::default()
     };
 
     let importer = if let Ok(gh_auth_token) = std::env::var("GH_AUTH_TOKEN") {

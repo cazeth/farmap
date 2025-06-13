@@ -1,4 +1,4 @@
-use farmap::fetch::github_importer;
+use farmap::fetch::GithubFetcher;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use url::Url;
@@ -17,16 +17,17 @@ async fn test_commit_call_against_mock_github_data() {
         .create_async()
         .await;
 
-    let status_url = format!("{url}/repos/warpcast/labels/commits");
+    let status_url = Url::parse(&format!("{url}/repos/warpcast/labels/commits")).unwrap();
+    let base_url = Url::parse(&url).unwrap();
+
     println!("status url is {status_url}");
     let data_dir_path = PathBuf::from("./data/mock-tests-github/");
+    let importer = GithubFetcher::default()
+        .with_base_url(base_url)
+        .with_status_url(status_url)
+        .with_local_data_dir(data_dir_path)
+        .unwrap();
 
-    let importer = github_importer::new_github_importer_with_specific_status_url_and_base_url(
-        Url::parse(&url).unwrap(),
-        Url::parse(&status_url).unwrap(),
-    )
-    .with_local_data_dir(data_dir_path)
-    .unwrap();
     let status = importer.name_strings_from_api().await.unwrap();
     println!("here are the statuses!");
     for stat in &status {

@@ -1,6 +1,7 @@
 use log::{error, info, trace};
 use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
+use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -23,6 +24,16 @@ pub struct GithubFetcher {
     header_map: Option<HeaderMap>,
 }
 
+impl Default for GithubFetcher {
+    fn default() -> Self {
+        let base_url = Url::parse("https://raw.githubusercontent.com/warpcast/labels/").unwrap();
+        let status_check_url =
+            Url::parse("https://api.github.com/repos/warpcast/labels/commits").unwrap();
+
+        new_github_importer_with_specific_status_url_and_base_url(base_url, status_check_url)
+    }
+}
+
 impl GithubFetcher {
     pub fn new(
         base_url: Url,
@@ -40,6 +51,16 @@ impl GithubFetcher {
             extension: None,
             header_map: None,
         }
+    }
+
+    pub fn with_base_url(mut self, base_url: Url) -> Self {
+        self.base_url = base_url;
+        self
+    }
+
+    pub fn with_status_url(mut self, status_url: Url) -> Self {
+        self.status_url = status_url;
+        self
     }
 
     pub fn with_local_data_dir(self, directory: PathBuf) -> Result<Self, ImporterError> {
@@ -238,6 +259,41 @@ impl GithubFetcher {
 
         Ok(())
     }
+}
+
+pub fn new_github_importer_with_specific_status_url_and_base_url(
+    base_url: Url,
+    status_check_url: Url,
+) -> GithubFetcher {
+    fn parse_status(input: &str) -> Result<Vec<String>, ImporterError> {
+        let json_value: Value = serde_json::from_str(input)
+            .map_err(|_| ImporterError::BadApiResponse(input.to_string()))?;
+
+        let array = json_value
+            .as_array()
+            .ok_or(ImporterError::BadApiResponse(input.to_string()))?;
+
+        array
+            .iter()
+            .map(|x| {
+                x.as_object()
+                    .ok_or(ImporterError::BadApiResponse(input.to_string()))
+                    .and_then(|x| {
+                        x.get("sha")
+                            .ok_or(ImporterError::BadApiResponse(input.to_string()))
+                    })
+                    .map(|x| x.to_string().replace("\"", ""))
+            })
+            .collect::<Result<Vec<String>, ImporterError>>()
+    }
+
+    fn build_path(base_url: &Url, status: &str) -> Result<Url, ConversionError> {
+        let url_string = format!("{}{}/spam.jsonl", base_url, status);
+        let url = Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)?;
+        Ok(url)
+    }
+
+    GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
 }
 
 #[derive(Error, Debug)]
