@@ -1,10 +1,12 @@
 use axum::http::{HeaderMap, HeaderValue};
 use chrono::prelude::*;
 use chrono::Days;
-use farmap::import::ImporterError;
-use farmap::pinata_parser::cast_meta_from_pinata_response;
-use farmap::{new_github_importer, user::UnprocessedUserLine};
-use farmap::{pinata_importer::PinataFetcher, SpamScore};
+use farmap::fetch::github_importer::new_github_importer;
+use farmap::fetch::pinata_parser::cast_meta_from_pinata_response;
+use farmap::fetch::ImporterError;
+use farmap::fetch::PinataFetcher;
+use farmap::user::UnprocessedUserLine;
+use farmap::SpamScore;
 use farmap::{UserCollection, UsersSubset};
 use futures::stream::{self, StreamExt};
 use futures::TryStreamExt;

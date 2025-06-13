@@ -1,6 +1,6 @@
-use crate::import::ConversionError;
-use crate::import::Importer;
-use crate::import::ImporterError;
+use super::ConversionError;
+use super::Importer;
+use super::ImporterError;
 use serde_json::Value;
 use url::Url;
 

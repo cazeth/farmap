@@ -1,6 +1,6 @@
-use farmap::import::ConversionError;
-use farmap::import::Importer;
-use farmap::import::ImporterError;
+use farmap::fetch::ConversionError;
+use farmap::fetch::Importer;
+use farmap::fetch::ImporterError;
 use mockito::Server;
 use std::path::Path;
 use std::path::PathBuf;

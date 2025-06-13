@@ -1,6 +1,6 @@
-use crate::import::ImporterError;
-use crate::pinata_parser::followers_from_pinata_response;
-use crate::pinata_parser::reaction_times_from_response;
+use super::pinata_parser::followers_from_pinata_response;
+use super::pinata_parser::reaction_times_from_response;
+use super::ImporterError;
 use crate::User;
 use chrono::NaiveDateTime;
 use log::trace;

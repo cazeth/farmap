@@ -1,5 +1,5 @@
-use crate::import::ImporterError;
-use crate::wield_parser;
+use super::wield_parser;
+use super::ImporterError;
 use log::{trace, warn};
 use reqwest::Response;
 use std::str::FromStr;

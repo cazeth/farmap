@@ -272,8 +272,7 @@ pub enum ConversionError {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::import::Importer;
-    use crate::import::{ConversionError, ImporterError};
+    use super::*;
 
     use std::collections::HashSet;
     use std::path::PathBuf;

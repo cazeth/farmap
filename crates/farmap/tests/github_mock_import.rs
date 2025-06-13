@@ -1,4 +1,4 @@
-use farmap::github_importer;
+use farmap::fetch::github_importer;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use url::Url;

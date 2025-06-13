@@ -1,5 +1,5 @@
-use crate::import::ImporterError;
-use crate::importer_utils::parse_json_from_response;
+use super::importer_utils::parse_json_from_response;
+use super::ImporterError;
 use log::trace;
 use reqwest::Response;
 use serde_json::Value;

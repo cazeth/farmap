@@ -1,10 +1,10 @@
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
-use farmap::pinata_importer::PinataFetcher;
-use farmap::pinata_parser::{
+use farmap::fetch::pinata_parser::{
     followers_from_pinata_response, number_of_casts_from_response, reaction_times_from_response,
 };
+use farmap::fetch::PinataFetcher;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use url::Url;

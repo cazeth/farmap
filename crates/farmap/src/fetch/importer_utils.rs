@@ -1,4 +1,4 @@
-use crate::import::ImporterError;
+use super::ImporterError;
 use log::trace;
 use reqwest::Response;
 use serde_json::Value;
