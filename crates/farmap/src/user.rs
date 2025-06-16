@@ -364,14 +364,6 @@ impl UnprocessedUserLine {
         self.timestamp
     }
 
-    #[deprecated(note = "use import_data_from_file_with_res")]
-    pub fn import_data_from_file(path: &str) -> Vec<UnprocessedUserLine> {
-        json_lines(path)
-            .unwrap()
-            .collect::<Result<Vec<UnprocessedUserLine>, _>>()
-            .unwrap()
-    }
-
     pub fn import_data_from_file_with_res(
         path: &str,
     ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
