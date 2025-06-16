@@ -1,6 +1,7 @@
 use crate::{user::InvalidInputError, utils::distribution_from_counts};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SpamScore {
@@ -10,6 +11,31 @@ pub enum SpamScore {
 }
 
 pub type SpamRecord = (SpamScore, NaiveDate);
+
+pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
+
+#[derive(Debug, Copy, Clone)]
+#[allow(dead_code)]
+pub struct CommitHash(u32);
+
+impl TryFrom<String> for CommitHash {
+    type Error = InvalidHashError;
+
+    fn try_from(full_commit_value: String) -> Result<Self, Self::Error> {
+        if full_commit_value.len() != 40 {
+            return Err(InvalidHashError(full_commit_value));
+        };
+
+        let shortened_commit = full_commit_value.chars().take(4).collect::<String>();
+        let result = u32::from_str_radix(&shortened_commit, 16)
+            .map_err(|_| InvalidHashError(full_commit_value))?;
+        Ok(CommitHash(result))
+    }
+}
+
+#[derive(Error, Debug)]
+#[error("invalid hash: {0}")]
+pub struct InvalidHashError(String);
 
 impl TryFrom<usize> for SpamScore {
     type Error = InvalidInputError;
