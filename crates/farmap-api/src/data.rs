@@ -57,13 +57,7 @@ pub async fn get_data() -> UserCollection {
 
     info!("starting to fetch github data");
 
-    let _ = import_github_data(
-        &local_data_dir,
-        &names_data_path,
-        &readwrite_to_filesystem,
-        &mut users,
-    )
-    .await;
+    let _ = import_github_data(&names_data_path, &readwrite_to_filesystem, &mut users).await;
 
     info!("finished with github data");
     info!("number of users are {:?}", users.user_count());
@@ -122,21 +116,11 @@ pub async fn import_pinata_data(users: &mut UserCollection) {
 }
 
 pub async fn import_github_data(
-    local_data_dir: &Path,
     names_data_path: &Path,
     readwrite_to_filesystem: &Cell<bool>,
     users: &mut UserCollection,
 ) -> Result<(), ImporterError> {
-    let importer = if readwrite_to_filesystem.get() {
-        GithubFetcher::default()
-            .with_local_data_dir(local_data_dir.to_path_buf())
-            .unwrap_or_else(|_| {
-                handle_rw_error(readwrite_to_filesystem);
-                GithubFetcher::default()
-            })
-    } else {
-        GithubFetcher::default()
-    };
+    let importer = GithubFetcher::default();
 
     let importer = if let Ok(gh_auth_token) = std::env::var("GH_AUTH_TOKEN") {
         let header_name = "authorization";

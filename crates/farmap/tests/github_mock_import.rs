@@ -1,6 +1,5 @@
 use farmap::fetch::GithubFetcher;
 use std::fs::read_to_string;
-use std::path::PathBuf;
 use url::Url;
 
 #[tokio::test]
@@ -21,12 +20,9 @@ async fn test_commit_call_against_mock_github_data() {
     let base_url = Url::parse(&url).unwrap();
 
     println!("status url is {status_url}");
-    let data_dir_path = PathBuf::from("./data/mock-tests-github/");
     let importer = GithubFetcher::default()
         .with_base_url(base_url)
-        .with_status_url(status_url)
-        .with_local_data_dir(data_dir_path)
-        .unwrap();
+        .with_status_url(status_url);
 
     let status = importer.name_strings_from_api().await.unwrap();
     println!("here are the statuses!");

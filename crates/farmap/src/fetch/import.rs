@@ -1,7 +1,7 @@
+use super::github_parser;
 use log::{error, info, trace};
 use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
-use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -18,8 +18,6 @@ pub struct GithubFetcher {
     local_data_dir: Option<PathBuf>,
     base_url: Url,
     status_url: Url,
-    build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
-    strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
     extension: Option<String>,
     header_map: Option<HeaderMap>,
 }
@@ -27,18 +25,25 @@ pub struct GithubFetcher {
 impl Default for GithubFetcher {
     fn default() -> Self {
         let base_url = Url::parse("https://raw.githubusercontent.com/warpcast/labels/").unwrap();
-        let status_check_url =
+        let status_url =
             Url::parse("https://api.github.com/repos/warpcast/labels/commits").unwrap();
-
-        new_github_importer_with_specific_status_url_and_base_url(base_url, status_check_url)
+        Self {
+            local_data_files: None,
+            local_data_dir: None,
+            extension: None,
+            header_map: None,
+            base_url,
+            status_url,
+        }
     }
 }
 
 impl GithubFetcher {
+    #[deprecated(note = "use default combinend with with_base_url and with_status_url.")]
     pub fn new(
         base_url: Url,
-        build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
-        strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
+        _build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
+        _strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
         status_url: Url,
     ) -> Self {
         Self {
@@ -46,8 +51,6 @@ impl GithubFetcher {
             local_data_dir: None,
             base_url,
             status_url,
-            build_path,
-            strings_from_api_data,
             extension: None,
             header_map: None,
         }
@@ -63,6 +66,7 @@ impl GithubFetcher {
         self
     }
 
+    #[deprecated(note = "local data dir will be removed from this struct in the future")]
     pub fn with_local_data_dir(self, directory: PathBuf) -> Result<Self, ImporterError> {
         trace!("checking local data against online data");
         trace!("local directory : {directory:?}");
@@ -101,6 +105,7 @@ impl GithubFetcher {
 
     /// pass a validation criteria to use to check if file names are valid. You can, for instance,
     /// check that all of them are 40 characters or long or check that they all are digits only.
+    #[deprecated(note = "local file support will be removed in the future")]
     pub fn with_local_file_name_validation(
         self,
         validator: fn(&str) -> bool,
@@ -168,7 +173,8 @@ impl GithubFetcher {
     /// this method is used to show what the url would be for a particual call. Its primary use
     /// case is for testing.
     pub fn api_call_from_endpoint(&self, endpoint: &str) -> Result<Url, ImporterError> {
-        (self.build_path)(&self.base_url, endpoint).map_err(|_| ImporterError::InvalidEndpoint)
+        self.build_path(endpoint)
+            .map_err(|_| ImporterError::InvalidEndpoint)
     }
 
     /// method used internally to make all api calls.
@@ -199,7 +205,7 @@ impl GithubFetcher {
             .api_call(self.status_url.clone())
             .await
             .map_err(|_| ImporterError::FailedApiRequest)?;
-        (self.strings_from_api_data)(&api_response)
+        github_parser::parse_status(&api_response)
     }
 
     pub fn name_strings_hash_set_from_local_data(&self) -> Result<HashSet<&str>, ImporterError> {
@@ -219,6 +225,12 @@ impl GithubFetcher {
         self.api_call(call).await
     }
 
+    fn build_path(&self, status: &str) -> Result<Url, ConversionError> {
+        let url_string = format!("{}{}/spam.jsonl", self.base_url, status);
+        let url = Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)?;
+        Ok(url)
+    }
+
     /// this file should take mutable self since it should also update the state of the struct to
     /// keep track of the local filesystem.
     /// but let's keep that as a TODO
@@ -234,12 +246,13 @@ impl GithubFetcher {
         let local_status = self
             .name_strings_hash_set_from_local_data()
             .expect("a local valid directory should exist at this point");
-        let api_status = (self.strings_from_api_data)(&status_call_response).unwrap();
+        println!("status call response: {:?}", &status_call_response);
+        let api_status = github_parser::parse_status(&status_call_response).unwrap();
         let api_status_set = HashSet::from_iter(api_status.iter().map(|x| x.as_str()));
         let missing_names = api_status_set.difference(&local_status);
 
         for name in missing_names {
-            let call_path = (self.build_path)(&self.base_url, name).unwrap();
+            let call_path = self.build_path(name).unwrap();
             info!("donwloading file at {call_path:?}...");
             let body = self.api_call(call_path).await?;
 
@@ -265,35 +278,9 @@ pub fn new_github_importer_with_specific_status_url_and_base_url(
     base_url: Url,
     status_check_url: Url,
 ) -> GithubFetcher {
-    fn parse_status(input: &str) -> Result<Vec<String>, ImporterError> {
-        let json_value: Value = serde_json::from_str(input)
-            .map_err(|_| ImporterError::BadApiResponse(input.to_string()))?;
-
-        let array = json_value
-            .as_array()
-            .ok_or(ImporterError::BadApiResponse(input.to_string()))?;
-
-        array
-            .iter()
-            .map(|x| {
-                x.as_object()
-                    .ok_or(ImporterError::BadApiResponse(input.to_string()))
-                    .and_then(|x| {
-                        x.get("sha")
-                            .ok_or(ImporterError::BadApiResponse(input.to_string()))
-                    })
-                    .map(|x| x.to_string().replace("\"", ""))
-            })
-            .collect::<Result<Vec<String>, ImporterError>>()
-    }
-
-    fn build_path(base_url: &Url, status: &str) -> Result<Url, ConversionError> {
-        let url_string = format!("{}{}/spam.jsonl", base_url, status);
-        let url = Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)?;
-        Ok(url)
-    }
-
-    GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
+    GithubFetcher::default()
+        .with_base_url(base_url)
+        .with_status_url(status_check_url)
 }
 
 #[derive(Error, Debug)]
@@ -339,6 +326,7 @@ pub mod tests {
         base_url: Url,
         status_check_url: Url,
     ) -> Result<GithubFetcher, ImporterError> {
+        #[allow(deprecated)]
         Ok(
             GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
                 .with_local_data_dir(base_dir)?
@@ -366,6 +354,7 @@ pub mod tests {
         res
     }
 
+    #[allow(deprecated)]
     fn check_names_from_local_data(dir: PathBuf, expected_result: Vec<&str>) {
         let base_url = Url::parse("https://caz.pub").unwrap();
         let status_url = Url::parse("https://caz.pub").unwrap();
