@@ -11,38 +11,21 @@ pub async fn parse_follow_response(response: Response) -> Result<Vec<u64>, Impor
 }
 
 fn parse_raw_json(json: Value) -> Result<Vec<u64>, ImporterError> {
-    json.as_object()
-        .ok_or(ImporterError::BadApiResponse(json.to_string()))?
-        .get("result")
-        .ok_or(ImporterError::BadApiResponse(json.to_string()))?
-        .as_object()
-        .ok_or(ImporterError::BadApiResponse(json.to_string()))?
-        .get("users")
-        .ok_or(ImporterError::BadApiResponse(json.to_string()))?
-        .as_array()
-        .ok_or(ImporterError::BadApiResponse(json.to_string()))?
+    parse_raw_json_with_opt(&json).ok_or(ImporterError::BadApiResponse(json.to_string()))
+}
+
+fn parse_raw_json_with_opt(json: &Value) -> Option<Vec<u64>> {
+    let array = json.pointer("/result/users")?.as_array()?;
+    array
         .iter()
         .map(|object| {
             object
                 .as_object()
-                .ok_or(ImporterError::BadApiResponse(json.to_string()))
-                .and_then(|object| {
-                    object
-                        .get("fid")
-                        .ok_or(ImporterError::BadApiResponse(json.to_string()))
-                })
-                .and_then(|fid_str| {
-                    fid_str
-                        .as_str()
-                        .ok_or(ImporterError::BadApiResponse(json.to_string()))
-                })
-                .and_then(|fid_str| {
-                    fid_str
-                        .parse::<u64>()
-                        .map_err(|_| ImporterError::BadApiResponse(json.to_string()))
-                })
+                .and_then(|object| object.get("fid"))
+                .and_then(|fid_str| fid_str.as_str())
+                .and_then(|fid| fid.parse::<u64>().ok())
         })
-        .collect::<Result<_, _>>()
+        .collect::<Option<Vec<u64>>>()
 }
 
 #[cfg(test)]
