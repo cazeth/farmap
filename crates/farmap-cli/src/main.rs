@@ -262,6 +262,7 @@ fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
     }
 }
 
+#[allow(deprecated)]
 fn import_data_from_dir(data_dir: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
 
@@ -274,6 +275,7 @@ fn import_data_from_dir(data_dir: &str) -> UserCollection {
     users
 }
 
+#[allow(deprecated)]
 fn import_data_from_file(data_path: &str) -> UserCollection {
     // for now just panic if the path doesn't exist or is not jsonl.
 

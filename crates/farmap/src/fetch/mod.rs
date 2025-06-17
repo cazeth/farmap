@@ -6,6 +6,7 @@ pub mod github_importer;
 mod github_parser;
 mod import;
 mod importer_utils;
+pub mod local_spam_label_importer;
 mod pinata_importer;
 /// pinata parser will eventually deprecated as a public interface. The user should only need to
 /// use PinataFetcher.

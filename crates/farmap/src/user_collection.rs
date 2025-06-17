@@ -21,7 +21,7 @@ pub struct UserCollection {
     map: HashMap<usize, User>,
 }
 
-type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
+pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
 
 impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
@@ -63,6 +63,8 @@ impl UserCollection {
             .count()
     }
 
+    #[deprecated(note = "use local_spam_label_importer instead")]
+    #[allow(deprecated)]
     pub fn create_from_dir_with_res(dir: &str) -> Result<Self, DataCreationError> {
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
         let mut users = UserCollection::default();
@@ -75,6 +77,8 @@ impl UserCollection {
     /// A data importer that keeps running in case of nonfatal errors.
     /// Nonfatal errors are spam collision errors or invalid parameter data. In case of such error
     /// the import continues to run and returns the errors in a vec alongside the return data.
+    #[deprecated(note = "use local_spam_label_importer instead")]
+    #[allow(deprecated)]
     pub fn create_from_dir_and_collect_non_fatal_errors(dir: &str) -> CreateResult {
         // these errors are considered fatal for now.
         let lines = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
@@ -83,6 +87,8 @@ impl UserCollection {
     }
 
     /// Like create_from_dir ... but for a single file.
+    #[deprecated(note = "use local_spam_label_importer instead")]
+    #[allow(deprecated)]
     pub fn create_from_file_and_collect_non_fatal_errors(file: &str) -> CreateResult {
         let lines = UnprocessedUserLine::import_data_from_file_with_res(file)?;
 
@@ -117,7 +123,7 @@ impl UserCollection {
         Ok(())
     }
 
-    fn create_from_unprocessed_user_lines_and_collect_non_fatal_errors(
+    pub fn create_from_unprocessed_user_lines_and_collect_non_fatal_errors(
         lines: Vec<UnprocessedUserLine>,
     ) -> (UserCollection, Vec<DataCreationError>) {
         let mut users = UserCollection::default();
@@ -141,6 +147,8 @@ impl UserCollection {
         (users, non_fatal_errors)
     }
 
+    #[allow(deprecated)]
+    #[deprecated(note = "use local_spam_label_importer")]
     pub fn create_from_file_with_res(path: &str) -> Result<Self, DataCreationError> {
         let mut users = UserCollection::default();
         let unprocessed_user_line = UnprocessedUserLine::import_data_from_file_with_res(path)?;
@@ -257,125 +265,20 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-
-    #[test]
-    pub fn test_user_count_on_file_with_res() {
-        let users =
-            UserCollection::create_from_file_with_res("data/dummy-data/spam.jsonl").unwrap();
-        assert_eq!(users.user_count(), 2);
-    }
-
-    #[test]
-    pub fn test_error_on_nonexisting_file() {
-        assert_eq!(
-            UserCollection::create_from_file_with_res("no-data-here"),
-            Err(DataCreationError::DataReadError(
-                DataReadError::InvalidDataPathError {
-                    path: "no-data-here".to_string()
-                }
-            ))
-        )
-    }
-
-    #[test]
-    pub fn test_error_on_nonexisting_dir() {
-        assert_eq!(
-            UserCollection::create_from_dir_with_res("no-data-here"),
-            Err(DataCreationError::DataReadError(
-                DataReadError::InvalidDataPathError {
-                    path: "no-data-here".to_string()
-                }
-            ))
-        )
-    }
-
-    #[test]
-    pub fn test_error_on_invalid_json_with_error_collect() {
-        let users = UserCollection::create_from_file_and_collect_non_fatal_errors(
-            "data/invalid-data/data.jsonl",
-        );
-        match users {
-            Err(DataCreationError::DataReadError(DataReadError::InvalidJsonlError(..))) => (),
-            Err(_) => panic!(),
-            Ok(_) => panic!(),
-        }
-    }
-
-    #[test]
-    pub fn test_spam_score_collision_with_error_collect() {
-        let users = UserCollection::create_from_file_and_collect_non_fatal_errors(
-            "data/invalid-data/collision_data.jsonl",
-        );
-
-        assert!(users.is_ok());
-
-        // assert that errors is of length one and contains a SpamCollisionError.
-        let (data, errors) = users.unwrap();
-        assert_eq!(errors.len(), 1);
-        match errors[0] {
-            DataCreationError::UserError(UserError::SpamScoreCollision { .. }) => (),
-            _ => panic!(),
-        }
-
-        // check that the data contains one user.
-        assert_eq!(data.user_count(), 1);
-    }
-
-    #[test]
-    pub fn test_error_on_nonexisting_dir_with_error_collect() {
-        assert_eq!(
-            UserCollection::create_from_dir_and_collect_non_fatal_errors("no-data-here"),
-            Err(DataCreationError::DataReadError(
-                DataReadError::InvalidDataPathError {
-                    path: "no-data-here".to_string()
-                }
-            ))
-        )
-    }
-
-    #[test]
-    pub fn test_error_on_invalid_jsonl_data_on_file() {
-        let users = UserCollection::create_from_file_with_res("data/invalid-data/data.jsonl");
-        match users {
-            Err(DataCreationError::DataReadError(DataReadError::InvalidJsonlError(..))) => (),
-            Err(_) => panic!(),
-            Ok(_) => panic!(),
-        }
-    }
-
-    #[test]
-    pub fn test_error_on_spam_score_collision() {
-        let users =
-            UserCollection::create_from_file_with_res("data/invalid-data/collision_data.jsonl");
-        match users {
-            Err(DataCreationError::UserError(UserError::SpamScoreCollision { .. })) => (),
-            Err(_) => panic!(),
-            Ok(_) => panic!(),
-        }
-    }
-
-    #[test]
-    pub fn test_error_on_invalid_fid() {
-        let users =
-            UserCollection::create_from_file_with_res("data/invalid-data/invalid_spamscore.jsonl");
-        match users {
-            Err(DataCreationError::InvalidInputError(InvalidInputError::SpamScoreError {
-                ..
-            })) => (),
-            Err(_) => panic!(),
-            Ok(_) => panic!(),
-        }
-    }
+    use std::path::PathBuf;
 
     #[test]
     pub fn test_user_count_on_dir_with_new() {
-        let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
+
         assert_eq!(users.user_count(), 2);
     }
 
     #[test]
     pub fn test_user_count_at_date_with_new() {
-        let users = UserCollection::create_from_dir_with_res("data/dummy-data/").unwrap();
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
         assert_eq!(
             users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
             0
@@ -402,7 +305,8 @@ pub mod tests {
 
     #[test]
     fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
-        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
         let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
         let closure = |user: &User| user.created_at_or_after_date_with_opt(date).unwrap();
 
@@ -414,7 +318,8 @@ pub mod tests {
 
     #[test]
     fn test_apply_filter_for_one_fid_with_new() {
-        let mut users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let mut users = UserCollection::create_from_db(&db_path).unwrap();
         let closure = |user: &User| user.fid() == 2;
         users.apply_filter(closure);
         assert_eq!(
@@ -425,7 +330,9 @@ pub mod tests {
 
     #[test]
     fn test_none_for_filtered_spam_distribution_with_new() {
-        let users = UserCollection::create_from_dir_with_res("data/dummy-data").unwrap();
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
+
         let closure = |user: &User| user.fid() == 3;
 
         assert_eq!(users.spam_score_distribution_for_subset(closure), None);
