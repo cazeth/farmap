@@ -39,7 +39,7 @@ impl Default for GithubFetcher {
 }
 
 impl GithubFetcher {
-    #[deprecated(note = "use default combinend with with_base_url and with_status_url.")]
+    #[deprecated(note = "use default combined with with_base_url and with_status_url.")]
     pub fn new(
         base_url: Url,
         _build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
@@ -246,7 +246,7 @@ impl GithubFetcher {
         let local_status = self
             .name_strings_hash_set_from_local_data()
             .expect("a local valid directory should exist at this point");
-        println!("status call response: {:?}", &status_call_response);
+        trace!("status call response: {:?}", &status_call_response);
         let api_status = github_parser::parse_status(&status_call_response).unwrap();
         let api_status_set = HashSet::from_iter(api_status.iter().map(|x| x.as_str()));
         let missing_names = api_status_set.difference(&local_status);
