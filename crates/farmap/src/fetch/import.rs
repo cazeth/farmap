@@ -208,6 +208,7 @@ impl GithubFetcher {
         github_parser::parse_status(&api_response)
     }
 
+    #[deprecated(note = "local file support will be removed from this struct in the future")]
     pub fn name_strings_hash_set_from_local_data(&self) -> Result<HashSet<&str>, ImporterError> {
         let local_data_files = self
             .local_data_files
@@ -234,6 +235,8 @@ impl GithubFetcher {
     /// this file should take mutable self since it should also update the state of the struct to
     /// keep track of the local filesystem.
     /// but let's keep that as a TODO
+    #[deprecated(note = "local file support will be remove from this struct in the future")]
+    #[allow(deprecated)]
     pub async fn update_local_data_files(&self) -> Result<(), ImporterError> {
         info!("checking status against api to get missing files...");
         let local_data_dir = self
@@ -317,7 +320,6 @@ pub enum ConversionError {
 pub mod tests {
     use super::*;
 
-    use std::collections::HashSet;
     use std::path::PathBuf;
     use url::Url;
 
@@ -395,18 +397,6 @@ pub mod tests {
         assert!(importer.is_err());
     }
 
-    fn check_names_with_jsonl_extension(dir: PathBuf, expected: &[&str]) {
-        let base_url = Url::parse("https://caz.pub").unwrap();
-        let status_url = Url::parse("https://caz.pub").unwrap();
-        let expected_files: HashSet<&str> = HashSet::from_iter(expected.iter().copied());
-        let importer = create_test_importer(dir, base_url, status_url)
-            .unwrap()
-            .with_file_extension("jsonl")
-            .unwrap();
-        let filenames = importer.name_strings_hash_set_from_local_data().unwrap();
-        assert_eq!(filenames, expected_files);
-    }
-
     #[test]
     fn valid_files_without_jsonl_should_error_with_jsonl_extension() {
         check_dummy_new_err_with_jsonl_file_as_valid(PathBuf::from(
@@ -419,14 +409,6 @@ pub mod tests {
         check_dummy_new_ok_with_jsonl_file_as_valid(PathBuf::from(
             "data/unit-tests-importer/existing-dir-with-jsonl/",
         ));
-    }
-
-    #[test]
-    fn jsonl_files_names() {
-        check_names_with_jsonl_extension(
-            PathBuf::from("data/unit-tests-importer/existing-dir-with-jsonl/"),
-            &["valid"],
-        );
     }
 
     #[test]
