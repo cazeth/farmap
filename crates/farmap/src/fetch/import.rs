@@ -221,7 +221,7 @@ impl GithubFetcher {
             .collect::<HashSet<&str>>())
     }
 
-    pub async fn body_from_name(&self, name: &str) -> Result<String, ImporterError> {
+    pub async fn fetch_commit_hash_body(&self, name: &str) -> Result<String, ImporterError> {
         let call = self.api_call_from_endpoint(name)?;
         self.api_call(call).await
     }

@@ -171,7 +171,7 @@ pub async fn import_github_data(
     trace!("There are {} missing names", missing_names_count);
 
     let new_bodies = stream::iter(missing_names)
-        .then(|name| importer.body_from_name(name))
+        .then(|name| importer.fetch_commit_hash_body(name))
         .try_collect::<Vec<_>>()
         .await?;
 
