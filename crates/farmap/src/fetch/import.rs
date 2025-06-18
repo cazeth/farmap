@@ -1,4 +1,5 @@
 use super::github_parser;
+use crate::user::UnprocessedUserLine;
 use log::{error, info, trace};
 use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
@@ -224,6 +225,17 @@ impl GithubFetcher {
     pub async fn fetch_commit_hash_body(&self, name: &str) -> Result<String, ImporterError> {
         let call = self.api_call_from_endpoint(name)?;
         self.api_call(call).await
+    }
+
+    /// Returns an error when the api call could not be made with a good result. If particular line
+    /// in the response cannot be parsed the method returns those error in the inner
+    /// Vec<ImporterError>. The method partitions the lines into valid and invalid lines.
+    pub async fn fetch(
+        &self,
+        commit_hash: &str,
+    ) -> Result<(Vec<UnprocessedUserLine>, Vec<ImporterError>), ImporterError> {
+        let body = self.fetch_commit_hash_body(commit_hash).await?;
+        Ok(github_parser::parse_commit_hash_body(&body))
     }
 
     fn build_path(&self, status: &str) -> Result<Url, ConversionError> {
