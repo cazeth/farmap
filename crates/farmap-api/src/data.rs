@@ -157,10 +157,13 @@ pub async fn import_github_data(
 
     trace!("tried reading local names: local_names is {local_names:#?}");
 
-    let api_names = importer.name_strings_from_api().await.inspect_err(|err| {
-        error!("could not fetch api statuses. Aborting github data fetch");
-        error!("full error message : {err}");
-    })?;
+    let api_names = importer
+        .fetch_all_commit_hashes()
+        .await
+        .inspect_err(|err| {
+            error!("could not fetch api statuses. Aborting github data fetch");
+            error!("full error message : {err}");
+        })?;
 
     let api_names_set = HashSet::from_iter(api_names.iter().map(|x| x.to_string()));
     let missing_names = api_names_set.difference(&local_names);

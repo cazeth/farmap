@@ -200,7 +200,7 @@ impl GithubFetcher {
         res.text().await.map_err(ImporterError::NetworkError)
     }
 
-    pub async fn name_strings_from_api(&self) -> Result<Vec<String>, ImporterError> {
+    pub async fn fetch_all_commit_hashes(&self) -> Result<Vec<String>, ImporterError> {
         let api_response = self
             .api_call(self.status_url.clone())
             .await

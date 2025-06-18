@@ -24,7 +24,7 @@ async fn test_commit_call_against_mock_github_data() {
         .with_base_url(base_url)
         .with_status_url(status_url);
 
-    let status = importer.name_strings_from_api().await.unwrap();
+    let status = importer.fetch_all_commit_hashes().await.unwrap();
     println!("here are the statuses!");
     for stat in &status {
         println!("{}", stat);
