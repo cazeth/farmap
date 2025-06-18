@@ -692,4 +692,32 @@ mod tests {
         let sum: usize = result.values().sum();
         assert_eq!(sum, 3);
     }
+
+    #[test]
+    fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let mut set = UsersSubset::from(&users);
+        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
+        set.filter(|user: &User| user.created_at_or_after_date_with_opt(date).unwrap());
+        assert_eq!(set.current_spam_score_distribution(), Some([0.0, 0.0, 1.0]));
+    }
+
+    #[test]
+    fn test_filter_for_one_fid_with_new() {
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let mut set = UsersSubset::from(&users);
+        set.filter(|user: &User| user.fid() == 2);
+        assert_eq!(set.current_spam_score_distribution(), Some([0.0, 0.0, 1.0]))
+    }
+
+    #[test]
+    fn test_none_for_filtered_spam_distribution_with_new() {
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let mut set = UsersSubset::from(&users);
+        set.filter(|user: &User| user.fid() == 3);
+        assert_eq!(set.current_spam_score_distribution(), None);
+    }
 }

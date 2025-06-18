@@ -200,6 +200,7 @@ impl UserCollection {
     /// the subset is empty.
     // TODO: This function will be deprecated in the future, as it seems better to just create a
     // subset and calculate from it.
+    #[deprecated(note = "use subset with current_spam_score_distribution instead")]
     #[allow(deprecated)]
     pub fn spam_score_distribution_for_subset<F>(&self, filter: F) -> Option<[f32; 3]>
     where
@@ -301,40 +302,5 @@ pub mod tests {
             users.user_count_at_date(NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()),
             2
         );
-    }
-
-    #[test]
-    fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        let closure = |user: &User| user.created_at_or_after_date_with_opt(date).unwrap();
-
-        assert_eq!(
-            users.spam_score_distribution_for_subset(closure),
-            Some([0.0, 0.0, 1.0])
-        );
-    }
-
-    #[test]
-    fn test_apply_filter_for_one_fid_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let mut users = UserCollection::create_from_db(&db_path).unwrap();
-        let closure = |user: &User| user.fid() == 2;
-        users.apply_filter(closure);
-        assert_eq!(
-            users.current_spam_score_distribution(),
-            Some([0.0, 0.0, 1.0])
-        )
-    }
-
-    #[test]
-    fn test_none_for_filtered_spam_distribution_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-
-        let closure = |user: &User| user.fid() == 3;
-
-        assert_eq!(users.spam_score_distribution_for_subset(closure), None);
     }
 }
