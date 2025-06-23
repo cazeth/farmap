@@ -289,15 +289,6 @@ impl GithubFetcher {
     }
 }
 
-pub fn new_github_importer_with_specific_status_url_and_base_url(
-    base_url: Url,
-    status_check_url: Url,
-) -> GithubFetcher {
-    GithubFetcher::default()
-        .with_base_url(base_url)
-        .with_status_url(status_check_url)
-}
-
 #[derive(Error, Debug)]
 pub enum ImporterError {
     #[error("I/O error: {0}")]
