@@ -196,29 +196,6 @@ impl UserCollection {
         distribution_from_counts(&counts)
     }
 
-    /// Returns the spam_score_distribution after applying a filter. The function returns None if
-    /// the subset is empty.
-    // TODO: This function will be deprecated in the future, as it seems better to just create a
-    // subset and calculate from it.
-    #[deprecated(note = "use subset with current_spam_score_distribution instead")]
-    #[allow(deprecated)]
-    pub fn spam_score_distribution_for_subset<F>(&self, filter: F) -> Option<[f32; 3]>
-    where
-        F: Fn(&User) -> bool,
-    {
-        let mut counts = [0; 3];
-
-        for user in self.map.values().filter(|user| filter(user)) {
-            match user.latest_spam_record().0 {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 2,
-            }
-        }
-
-        distribution_from_counts(&counts)
-    }
-
     #[allow(deprecated)]
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
