@@ -3,7 +3,6 @@
 //! All the functionality to fetch data from external sources should go in this module. Each source
 //! can be used by the corresponding <SOURCE_NAME>Fetcher struct.
 mod errors;
-pub mod github_importer;
 mod github_parser;
 mod import;
 mod importer_utils;
