@@ -1,5 +1,5 @@
 use super::github_parser;
-use crate::user::UnprocessedUserLine;
+use crate::UnprocessedUserLine;
 use log::{error, info, trace};
 use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;

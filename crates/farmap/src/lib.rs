@@ -13,6 +13,7 @@ pub mod fetch;
 pub mod fid_score_shift;
 pub mod spam_score;
 pub mod subset;
+mod unprocessed_user_line;
 pub mod user;
 pub mod user_collection;
 mod utils;
@@ -24,6 +25,7 @@ pub use spam_score::SpamScoreCount;
 pub use spam_score::SpamScoreDistribution;
 #[doc(inline)]
 pub use subset::UsersSubset;
+pub use unprocessed_user_line::UnprocessedUserLine;
 pub use user::InvalidInputError;
 pub use user::User;
 pub use user::UserError;

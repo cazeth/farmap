@@ -1,4 +1,4 @@
-use crate::user::UnprocessedUserLine;
+use crate::UnprocessedUserLine;
 
 use super::ImporterError;
 use itertools::Itertools;

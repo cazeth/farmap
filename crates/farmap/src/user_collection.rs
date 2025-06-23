@@ -1,10 +1,10 @@
+use crate::fetch::DataReadError;
 use crate::spam_score::SpamScore;
-use crate::user::DataReadError;
 use crate::user::InvalidInputError;
-use crate::user::UnprocessedUserLine;
 use crate::user::User;
 use crate::user::UserError;
 use crate::utils::distribution_from_counts;
+use crate::UnprocessedUserLine;
 use chrono::NaiveDate;
 use serde::Deserialize;
 use serde::Serialize;

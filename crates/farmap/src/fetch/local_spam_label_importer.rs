@@ -1,9 +1,9 @@
 //! Import data from local files with spam label data.
 //!
 //! The data can be added to a [UserCollection](crate::UserCollection).
-use crate::user::DataReadError;
-use crate::user::InvalidJsonlError;
-use crate::user::UnprocessedUserLine;
+use super::DataReadError;
+use crate::fetch::InvalidJsonlError;
+use crate::UnprocessedUserLine;
 use itertools::Itertools;
 use serde_jsonlines::json_lines;
 use std::fs::read_dir;
