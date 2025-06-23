@@ -74,22 +74,12 @@ impl User {
         self.fid
     }
 
-    #[deprecated(since = "0.4.1", note = "use latest_spam_record_with_opt instead")]
-    pub fn latest_spam_record(&self) -> &SpamRecord {
-        self.labels.last().unwrap()
-    }
-
     pub fn latest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
         self.labels.last()
     }
 
     pub fn earliest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
         self.labels.first()
-    }
-
-    #[deprecated(since = "0.4.1", note = "use earliest_spam_record_with_opt instead")]
-    pub fn earliest_spam_record(&self) -> &SpamRecord {
-        self.labels.first().unwrap()
     }
 
     pub fn all_spam_records(&self) -> &Vec<SpamRecord> {

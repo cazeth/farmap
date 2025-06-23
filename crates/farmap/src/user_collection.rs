@@ -197,11 +197,10 @@ impl UserCollection {
     }
 
     #[deprecated(note = "prefer using the equivalent functionality in subset instead")]
-    #[allow(deprecated)]
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
-            match user.latest_spam_record().0 {
+            match user.latest_spam_record_with_opt()?.0 {
                 SpamScore::Zero => counts[0] += 1,
                 SpamScore::One => counts[1] += 1,
                 SpamScore::Two => counts[2] += 1,
