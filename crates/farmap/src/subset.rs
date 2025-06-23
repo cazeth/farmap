@@ -629,28 +629,6 @@ mod tests {
     }
 
     #[test]
-    fn test_spam_change_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let set = UsersSubset::from(&users);
-        let shifts = set.spam_changes_with_fid_score_shift(
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-            Days::new(700),
-        );
-        let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::Zero, 1);
-        let expected_new = FidScoreShift::new(ShiftSource::New, ShiftTarget::Two, 1);
-        assert!(shifts.contains(&expected_shift));
-        assert!(shifts.contains(&expected_new));
-        assert_eq!(shifts.len(), 2);
-        let change_matrix = set.spam_changes_with_fid_score_shift(
-            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
-            Days::new(700),
-        );
-        let expected_shift = FidScoreShift::new(ShiftSource::Zero, ShiftTarget::Zero, 1);
-        assert_eq!(change_matrix[0], expected_shift);
-    }
-
-    #[test]
     fn test_get_user_with_new() {
         let db_path = PathBuf::from("data/dummy-data_db.json");
         let users = UserCollection::create_from_db(&db_path).unwrap();
@@ -719,5 +697,42 @@ mod tests {
         let mut set = UsersSubset::from(&users);
         set.filter(|user: &User| user.fid() == 3);
         assert_eq!(set.current_spam_score_distribution(), None);
+    }
+
+    mod fid_score_shifts {
+        use super::*;
+
+        #[test]
+        fn test_spam_change_with_new() {
+            let db_path = PathBuf::from("data/dummy-data_db.json");
+            let users = UserCollection::create_from_db(&db_path).unwrap();
+            let set = UsersSubset::from(&users);
+            let shifts = set.spam_changes_with_fid_score_shift(
+                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                Days::new(700),
+            );
+            let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::Zero, 1);
+            let expected_new = FidScoreShift::new(ShiftSource::New, ShiftTarget::Two, 1);
+            assert!(shifts.contains(&expected_shift));
+            assert!(shifts.contains(&expected_new));
+            assert_eq!(shifts.len(), 2);
+            let change_matrix = set.spam_changes_with_fid_score_shift(
+                NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
+                Days::new(700),
+            );
+            let expected_shift = FidScoreShift::new(ShiftSource::Zero, ShiftTarget::Zero, 1);
+            assert_eq!(change_matrix[0], expected_shift);
+        }
+
+        #[test]
+        fn test_empty_set() {
+            let users = UserCollection::default();
+            let set = UsersSubset::from(&users);
+            let shift = set.spam_changes_with_fid_score_shift(
+                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                Days::new(100),
+            );
+            assert!(shift.is_empty());
+        }
     }
 }
