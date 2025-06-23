@@ -101,26 +101,8 @@ impl User {
         Some(self.earliest_spam_record_with_opt()?.1 >= date)
     }
 
-    #[deprecated(
-        since = "0.4.1",
-        note = "use created_at_or_after_date_with_opt instead"
-    )]
-    #[allow(deprecated)]
-    pub fn created_at_or_after_date(&self, date: NaiveDate) -> bool {
-        self.earliest_spam_record().1 >= date
-    }
-
     pub fn created_at_or_before_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
         Some(self.earliest_spam_record_with_opt()?.1 <= date)
-    }
-
-    #[deprecated(
-        since = "0.4.1",
-        note = "use created_at_or_before_date_with_opt instead"
-    )]
-    #[allow(deprecated)]
-    pub fn created_at_or_before_date(&self, date: NaiveDate) -> bool {
-        self.earliest_spam_record().1 <= date
     }
 
     pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
@@ -225,24 +207,8 @@ impl User {
         self.latest_cast_record_check_date
     }
 
-    #[deprecated(
-        since = "0.4.1",
-        note = "latest_spam_score_update_date_with_opt instead"
-    )]
-    pub fn last_spam_score_update_date(&self) -> NaiveDate {
-        self.labels.last().unwrap().1
-    }
-
     pub fn latest_spam_score_update_date_with_opt(&self) -> Option<NaiveDate> {
         Some(self.labels.last()?.1)
-    }
-
-    #[deprecated(
-        since = "0.4.1",
-        note = "earliest_spam_score_update_date_with_opt instead"
-    )]
-    pub fn earliest_spam_score_date(&self) -> NaiveDate {
-        *self.labels.iter().map(|(_, date)| date).min().unwrap()
     }
 
     pub fn earliest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
