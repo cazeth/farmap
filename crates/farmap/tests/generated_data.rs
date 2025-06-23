@@ -1,3 +1,4 @@
+use chrono::Datelike;
 use chrono::{Days, Duration, NaiveDate};
 use farmap::fid_score_shift::ShiftSource;
 use farmap::fid_score_shift::ShiftTarget;
@@ -44,8 +45,12 @@ fn every_other_user_has_spam_label_one_and_two(n: usize) -> Result<UserCollectio
 
 /// Create n users by increminting fid and incrementing one day from 20200101, all with spam label
 /// one.
-fn create_users_with_spam_label_one_then_two(n: usize) -> Result<UserCollection, UserError> {
-    let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+fn create_users_with_spam_label_one_then_two(
+    n: usize,
+    start_date: NaiveDate,
+) -> Result<UserCollection, UserError> {
+    let start_date =
+        NaiveDate::from_ymd_opt(start_date.year(), start_date.month(), start_date.day()).unwrap();
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
@@ -113,8 +118,9 @@ fn distribution_should_be_ones_and_twos_with_n_5() {
 #[test]
 fn distribution_should_be_twos() {
     let n: u64 = 10;
+    let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-    let users = create_users_with_spam_label_one_then_two(n as usize).unwrap();
+    let users = create_users_with_spam_label_one_then_two(n as usize, start_date).unwrap();
     let subset = UsersSubset::from(&users);
 
     assert_eq!(subset.user_count(), n as usize);
@@ -127,7 +133,6 @@ fn distribution_should_be_twos() {
     // check that spam record for each fid is stored correctly
     for i in 0..10 {
         let spam_record = subset.user(i).unwrap().all_spam_records();
-        println!("{:?}", spam_record);
         assert_eq!(
             spam_record[0].1,
             NaiveDate::from_ymd_opt(2020, 1, 1)
@@ -153,11 +158,12 @@ fn distribution_should_be_twos() {
 #[test]
 fn fid_shift_test_for_one_then_two_data() {
     let n: u64 = 10;
+    let start_date = NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
 
-    let users = create_users_with_spam_label_one_then_two(n as usize).unwrap();
+    let users = create_users_with_spam_label_one_then_two(n as usize, start_date).unwrap();
     let subset = UsersSubset::from(&users);
     let shifts = subset.spam_changes_with_fid_score_shift(
-        NaiveDate::from_ymd_opt(2020, 1, 1)
+        NaiveDate::from_ymd_opt(2021, 1, 1)
             .unwrap()
             .checked_add_days(Days::new(n - 1))
             .unwrap(),
@@ -169,7 +175,7 @@ fn fid_shift_test_for_one_then_two_data() {
     assert_eq!(shifts.len(), 1);
 
     let shifts = subset.spam_changes_with_fid_score_shift(
-        NaiveDate::from_ymd_opt(2020, 1, 1)
+        NaiveDate::from_ymd_opt(2021, 1, 1)
             .unwrap()
             .checked_add_days(Days::new(n - 1))
             .unwrap(),
