@@ -268,3 +268,18 @@ pub fn update_count_should_be_one_per_day() {
     assert_eq!(sum, n);
     assert!(set.count_updates().values().all(|n| *n == 1));
 }
+
+#[test]
+pub fn fid_score_shift_on() {
+    let n = 365;
+    let start_date = NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
+    let users = create_users_with_spam_label_one_then_two(n, start_date).unwrap();
+    let set = UsersSubset::from(&users);
+    let result = set.spam_changes_with_fid_score_shift(
+        NaiveDate::from_ymd_opt(2021, 12, 31).unwrap(),
+        Days::new(366),
+    );
+    assert_eq!(result[0].source(), ShiftSource::One);
+    assert_eq!(result[0].target(), ShiftTarget::Two);
+    assert_eq!(result[0].count(), 365);
+}
