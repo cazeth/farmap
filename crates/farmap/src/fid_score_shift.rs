@@ -32,4 +32,14 @@ impl FidScoreShift {
             count,
         }
     }
+
+    pub fn source(&self) -> ShiftSource {
+        self.source
+    }
+    pub fn target(&self) -> ShiftTarget {
+        self.target
+    }
+    pub fn count(&self) -> usize {
+        self.count
+    }
 }
