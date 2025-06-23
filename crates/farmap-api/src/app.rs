@@ -59,7 +59,9 @@ async fn root() -> &'static str {
 }
 
 async fn current_spam_score_distribution(State(users): State<Arc<UserCollection>>) -> Json<Value> {
-    let spam_score_distribution = users.current_spam_score_distribution().unwrap();
+    let users_ref: &UserCollection = &users;
+    let set = UsersSubset::from(users_ref);
+    let spam_score_distribution = set.current_spam_score_distribution().unwrap();
     Json(json!(spam_score_distribution))
 }
 

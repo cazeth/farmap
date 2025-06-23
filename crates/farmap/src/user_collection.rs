@@ -196,6 +196,7 @@ impl UserCollection {
         distribution_from_counts(&counts)
     }
 
+    #[deprecated(note = "prefer using the equivalent functionality in subset instead")]
     #[allow(deprecated)]
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
