@@ -2,12 +2,11 @@
 //! A library to parse and analyze [farcaster](https://www.farcaster.xyz/) data. The ambition is to
 //! be the simplest gateway to farcaster data for your rust application. For now, the
 //! library is focused on [Warpcast Spam Labels](https://github.com/warpcast/labels) and farcaster
-//! protocol data via Pinata, but may other types of data may be added in the future.
+//! protocol data via Pinata, but other types of data may be added in the future.
 //! # Quickstart
-//! In order to get started, you likely want to store Warpcast Spam Labels data locally. Then you
-//! want to use one of the available create methods in UserCollections to import this data. Then
-//! you likely want to create a subset of this data with various filters applied and do analysis on
-//! it and use it in other applications.
+//! In order to get started, you likely want to fetch data using the fetch module. Choose one or
+//! several Fetchers to get the data you want. You can use and analyze the data in various ways
+//! using the User, UserCollection and Subset struct.
 pub mod cast_meta;
 pub mod fetch;
 pub mod fid_score_shift;
