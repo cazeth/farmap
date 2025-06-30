@@ -226,6 +226,7 @@ impl User {
     }
 
     /// If the user didn't exist at the date, the function returns none.
+    #[deprecated(note = "use spam_score_at_date_with_owned instead")]
     pub fn spam_score_at_date(&self, date: &NaiveDate) -> Option<&SpamScore> {
         if date < &self.earliest_spam_record()?.1 {
             return None;
@@ -233,6 +234,20 @@ impl User {
 
         self.labels
             .iter()
+            .rev()
+            .find(|(_, d)| d <= date)
+            .map(|(score, _)| score)
+    }
+
+    /// If the user didn't exist at the date, the function returns none.
+    pub fn spam_score_at_date_with_owned(&self, date: &NaiveDate) -> Option<SpamScore> {
+        if date < &self.earliest_spam_record()?.1 {
+            return None;
+        };
+
+        self.labels
+            .iter()
+            .copied()
             .rev()
             .find(|(_, d)| d <= date)
             .map(|(score, _)| score)
@@ -319,8 +334,10 @@ pub mod tests {
         spam_score: Option<SpamScore>,
     ) {
         assert_eq!(
-            user.spam_score_at_date(&NaiveDate::from_ymd_opt(year as i32, month, date).unwrap()),
-            spam_score.as_ref()
+            user.spam_score_at_date_with_owned(
+                &NaiveDate::from_ymd_opt(year as i32, month, date).unwrap()
+            ),
+            spam_score
         )
     }
 

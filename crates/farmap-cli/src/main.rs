@@ -169,7 +169,9 @@ fn main() {
         assert_eq!(dates.len(), scores.len());
 
         for records in zip(dates, scores) {
-            set.filter(|user: &User| user.spam_score_at_date(&records.0) == Some(&records.1))
+            set.filter(|user: &User| {
+                user.spam_score_at_date_with_owned(&records.0) == Some(records.1)
+            })
         }
     }
 

@@ -61,7 +61,7 @@ impl UserCollection {
     pub fn user_count_at_date(&self, date: NaiveDate) -> usize {
         self.map
             .iter()
-            .filter(|(_, user)| user.spam_score_at_date(&date).is_some())
+            .filter(|(_, user)| user.spam_score_at_date_with_owned(&date).is_some())
             .count()
     }
 
@@ -186,7 +186,7 @@ impl UserCollection {
         for spam_score in self
             .map
             .iter()
-            .filter_map(|(_, user)| user.spam_score_at_date(&date))
+            .filter_map(|(_, user)| user.spam_score_at_date_with_owned(&date))
         {
             match spam_score {
                 SpamScore::Zero => counts[0] += 1,

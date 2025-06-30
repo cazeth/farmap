@@ -125,9 +125,9 @@ impl<'a> UsersSubset<'a> {
         Some(
             self.map
                 .iter()
-                .filter_map(|(_, user)| user.spam_score_at_date(&date))
+                .filter_map(|(_, user)| user.spam_score_at_date_with_owned(&date))
                 .fold(SpamScoreCount::new(date, 0, 0, 0), |mut acc, user| {
-                    acc.add(user);
+                    acc.add(&user);
                     acc
                 }),
         )
@@ -155,12 +155,12 @@ impl<'a> UsersSubset<'a> {
         let mut result: [[usize; 3]; 3] = [[0; 3]; 3];
 
         for user in self.map.values() {
-            if let Some(from_spam_score) = user.spam_score_at_date(&initial_date) {
-                let from_index = *from_spam_score as usize;
-                let to_spam_score = user.spam_score_at_date(&end_date).unwrap(); // must be Some if
-                                                                                 // intial_date
-                                                                                 // is Some.
-                let to_index = *to_spam_score as usize;
+            if let Some(from_spam_score) = user.spam_score_at_date_with_owned(&initial_date) {
+                let from_index = from_spam_score as usize;
+                let to_spam_score = user.spam_score_at_date_with_owned(&end_date).unwrap(); // must be Some if
+                                                                                            // intial_date
+                                                                                            // is Some.
+                let to_index = to_spam_score as usize;
                 result[from_index][to_index] += 1;
             }
         }

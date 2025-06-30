@@ -232,13 +232,13 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
         .map(|(from, to)| {
             let mut subset = UsersSubset::from(users);
             subset.filter(|user| {
-                user.spam_score_at_date(&previous_date)
-                    .map(|x| *x == from)
+                user.spam_score_at_date_with_owned(&previous_date)
+                    .map(|x| x == from)
                     .unwrap_or(false)
             });
             subset.filter(|user| {
-                user.spam_score_at_date(&previous_date)
-                    .map(|x| *x == to)
+                user.spam_score_at_date_with_owned(&previous_date)
+                    .map(|x| x == to)
                     .unwrap_or(false)
             });
             (subset.casts_data_fill_rate(), from, to)
@@ -259,13 +259,13 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
         |result_fids: &mut HashSet<u64>, from: SpamScore, to: SpamScore| {
             let mut subset = UsersSubset::from(users);
             subset.filter(|user| {
-                user.spam_score_at_date(&previous_date)
-                    .map(|x| *x == from)
+                user.spam_score_at_date_with_owned(&previous_date)
+                    .map(|x| x == from)
                     .unwrap_or(false)
             });
             subset.filter(|user| {
-                user.spam_score_at_date(&previous_date)
-                    .map(|x| *x == to)
+                user.spam_score_at_date_with_owned(&previous_date)
+                    .map(|x| x == to)
                     .unwrap_or(false)
             });
 

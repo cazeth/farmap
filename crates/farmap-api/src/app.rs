@@ -208,8 +208,8 @@ async fn casts_for_moved(
     info!("checking with current time {}", current_time);
 
     set.filter(|user: &User| {
-        user.spam_score_at_date(&begin_date)
-            .is_some_and(|u| Ok(*u) == (from as usize).try_into())
+        user.spam_score_at_date_with_owned(&begin_date)
+            .is_some_and(|u| Ok(u) == (from as usize).try_into())
     });
 
     let set_size = set.user_count();
