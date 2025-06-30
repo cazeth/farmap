@@ -17,7 +17,13 @@ fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserErro
     let mut date = start_date;
     for i in 0..n {
         let user = User::new(i, (SpamScore::One, date));
-        users.push_with_res(user)?;
+        let cloned_user = user.clone();
+        users
+            .add_user(user)
+            .map_err(|_| UserError::DifferentFidMerge {
+                fid_1: cloned_user.fid(),
+                fid_2: cloned_user.fid(),
+            })?;
         date = date.checked_add_signed(Duration::days(1)).unwrap();
     }
 

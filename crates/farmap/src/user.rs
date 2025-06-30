@@ -1,4 +1,6 @@
 use crate::cast_meta::CastMeta;
+use crate::spam_score::SpamEntries;
+use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamScore;
 use crate::UnprocessedUserLine;
 use chrono::DateTime;
@@ -10,10 +12,11 @@ use itertools::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct User {
     fid: usize,
-    labels: Vec<SpamRecord>,
+    #[serde(rename = "entries")]
+    labels: Option<SpamEntries>,
 
     /// Some(Empty vec): has been checked and there were no cast records.
     /// None: Has not been checked.
@@ -29,9 +32,11 @@ impl User {
     /// This method only takes a single SpamRecord as input. Therefore it cannot fail. Add more
     /// SpamRecords with add_spam_record. This function is mostly used for testing.
     pub fn new(fid: usize, labels: SpamRecord) -> Self {
+        let entry = SpamEntry::WithoutSourceCommit(labels);
+        let entries = SpamEntries::new(entry);
         Self {
             fid,
-            labels: vec![labels],
+            labels: Some(entries),
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
@@ -75,30 +80,23 @@ impl User {
     }
 
     pub fn latest_spam_record(&self) -> Option<SpamRecord> {
-        Some(*self.labels.last()?)
+        Some(self.labels.as_ref()?.last_spam_entry().record())
     }
 
     pub fn earliest_spam_record(&self) -> Option<SpamRecord> {
-        Some(*self.labels.first()?)
-    }
-
-    #[deprecated(note = "use latest_spam_record instead")]
-    pub fn latest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
-        self.labels.last()
-    }
-
-    #[deprecated(note = "use earliest_spam_record instead")]
-    pub fn earliest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
-        self.labels.first()
+        Some(self.labels.as_ref()?.earliest_spam_entry().record())
     }
 
     pub fn all_spam_records_with_opt(&self) -> Option<Vec<SpamRecord>> {
-        Some(self.labels.clone())
-    }
-
-    #[deprecated(note = "use all_spam_records_with_opt instead")]
-    pub fn all_spam_records(&self) -> &Vec<SpamRecord> {
-        &self.labels
+        let records = self
+            .labels
+            .as_ref()?
+            .all_spam_entries()
+            .iter()
+            .cloned()
+            .map(|x| x.record())
+            .collect_vec();
+        Some(records)
     }
 
     /// None: there is no spam_score data in the dataset.
@@ -125,28 +123,21 @@ impl User {
     /// There is no collision and the list is updated while remaining sorted.
     ///
     pub fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
-        let position_closest_and_smaller: Option<usize> =
-            self.labels.iter().position(|(_, d)| *d >= new_record.1);
-
-        let record_closest_and_smaller = position_closest_and_smaller.map(|p| self.labels[p]);
-
-        match record_closest_and_smaller {
-            Some((value, date)) if date == new_record.1 && value == new_record.0 => Ok(()),
-            None => {
-                self.labels.push(new_record);
-                Ok(())
-            }
-            Some((_, date)) if date != new_record.1 => {
-                self.labels
-                    .insert(position_closest_and_smaller.unwrap(), new_record);
-                Ok(())
-            }
-            Some(_) => Err(UserError::SpamScoreCollision {
-                fid: self.fid,
-                date: new_record.1,
-                old_spam_score: record_closest_and_smaller.unwrap().0,
-                new_spam_score: new_record.0,
-            }),
+        let new_entry = SpamEntry::WithoutSourceCommit(new_record);
+        if let Some(labels) = &mut self.labels {
+            labels
+                .add_spam_entry(new_entry)
+                .map_err(|_| UserError::SpamScoreCollision {
+                    fid: self.fid(),
+                    date: new_entry.date(),
+                    old_spam_score: self
+                        .spam_score_at_date_with_owned(&new_entry.date())
+                        .unwrap(),
+                    new_spam_score: new_entry.score(),
+                })
+        } else {
+            self.labels = Some(SpamEntries::new(new_entry));
+            Ok(())
         }
     }
 
@@ -214,15 +205,15 @@ impl User {
     }
 
     pub fn latest_spam_score_update_date_with_opt(&self) -> Option<NaiveDate> {
-        Some(self.labels.last()?.1)
+        Some(self.labels.as_ref()?.last_spam_entry().date())
     }
 
     pub fn earliest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
-        self.labels.iter().map(|(_, date)| date).min().copied()
+        Some(self.labels.as_ref()?.earliest_spam_entry().date())
     }
 
     pub fn latest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
-        self.labels.iter().map(|(_, date)| date).max().copied()
+        Some(self.labels.as_ref()?.last_spam_entry().date())
     }
 
     /// If the user didn't exist at the date, the function returns none.
@@ -230,13 +221,7 @@ impl User {
         if date < &self.earliest_spam_record()?.1 {
             return None;
         };
-
-        self.labels
-            .iter()
-            .copied()
-            .rev()
-            .find(|(_, d)| d <= date)
-            .map(|(score, _)| score)
+        Some(self.labels.as_ref()?.spam_score_at_date(*date)?)
     }
 }
 
@@ -268,12 +253,12 @@ impl TryFrom<UnprocessedUserLine> for User {
                 timestamp: value.timestamp(),
             });
         };
-
-        let labels: Vec<(SpamScore, NaiveDate)> = vec![(label_value, date)];
+        let record: SpamRecord = (label_value, date);
+        let entries = SpamEntries::new(SpamEntry::WithoutSourceCommit(record));
 
         Ok(Self {
             fid,
-            labels,
+            labels: Some(entries),
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
@@ -340,9 +325,10 @@ pub mod tests {
         let check_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
         let check_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
         let check_datetime = NaiveDateTime::new(check_date, check_time);
+        let labels = SpamEntries::new(SpamEntry::WithoutSourceCommit((SpamScore::Zero, label)));
         let user = User {
             fid: 1,
-            labels: vec![(SpamScore::Zero, label)],
+            labels: Some(labels),
             reaction_times: Some(vec![reaction_datetime]),
             latest_reaction_time_update_date: Some(check_datetime),
             cast_records: None,
@@ -360,9 +346,11 @@ pub mod tests {
         let check_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
         let check_time = NaiveTime::from_hms_opt(10, 1, 10).unwrap();
         let check_datetime = NaiveDateTime::new(check_date, check_time);
+        let labels = SpamEntries::new(SpamEntry::WithoutSourceCommit((SpamScore::Zero, label)));
+
         let user = User {
             fid: 2,
-            labels: vec![(SpamScore::Zero, label)],
+            labels: Some(labels),
             reaction_times: Some(vec![first_reaction_datetime, second_reaction_datetime]),
             latest_reaction_time_update_date: Some(check_datetime),
             cast_records: None,
@@ -379,9 +367,10 @@ pub mod tests {
         let earlier_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
         let spam_record = (SpamScore::One, date);
+        let entries = SpamEntries::new(SpamEntry::WithoutSourceCommit(spam_record));
         let mut user = User {
             fid: 1,
-            labels: vec![spam_record],
+            labels: Some(entries),
             cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
