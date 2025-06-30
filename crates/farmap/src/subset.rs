@@ -414,8 +414,7 @@ mod tests {
         let db_path = PathBuf::from("data/dummy-data_db.json");
         let users = UserCollection::create_from_db(&db_path).unwrap();
         let filter = |user: &User| {
-            user.earliest_spam_record_with_opt().unwrap().1
-                > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
+            user.earliest_spam_record().unwrap().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
         };
 
         let subset = UsersSubset::from_filter(&users, filter);
@@ -438,8 +437,7 @@ mod tests {
         let db_path = PathBuf::from("data/dummy-data_db.json");
         let users = UserCollection::create_from_db(&db_path).unwrap();
         let filter = |user: &User| {
-            user.earliest_spam_record_with_opt().unwrap().1
-                > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
+            user.earliest_spam_record().unwrap().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
         };
 
         let mut full_set = UsersSubset::from(&users);
@@ -635,20 +633,12 @@ mod tests {
         let set = UsersSubset::from(&users);
         assert!(set.user(3).is_none());
         assert_eq!(
-            set.user(1)
-                .unwrap()
-                .earliest_spam_record_with_opt()
-                .unwrap()
-                .1,
+            set.user(1).unwrap().earliest_spam_record().unwrap().1,
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
         );
 
         assert_eq!(
-            set.user(2)
-                .unwrap()
-                .earliest_spam_record_with_opt()
-                .unwrap()
-                .1,
+            set.user(2).unwrap().earliest_spam_record().unwrap().1,
             NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
         );
     }

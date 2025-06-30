@@ -175,7 +175,7 @@ fn main() {
 
     if let Some(score) = args.current_spam_score {
         set.filter(|user: &User| {
-            if let Some(latest_spam_record) = user.latest_spam_record_with_opt() {
+            if let Some(latest_spam_record) = user.latest_spam_record() {
                 latest_spam_record.0
                     == SpamScore::try_from(score).expect("spam score must be 0,1 or 2")
             } else {

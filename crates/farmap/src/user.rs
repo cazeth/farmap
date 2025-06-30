@@ -74,10 +74,20 @@ impl User {
         self.fid
     }
 
+    pub fn latest_spam_record(&self) -> Option<SpamRecord> {
+        Some(*self.labels.last()?)
+    }
+
+    pub fn earliest_spam_record(&self) -> Option<SpamRecord> {
+        Some(*self.labels.first()?)
+    }
+
+    #[deprecated(note = "use latest_spam_record instead")]
     pub fn latest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
         self.labels.last()
     }
 
+    #[deprecated(note = "use earliest_spam_record instead")]
     pub fn earliest_spam_record_with_opt(&self) -> Option<&SpamRecord> {
         self.labels.first()
     }
@@ -88,11 +98,11 @@ impl User {
 
     /// None: there is no spam_score data in the dataset.
     pub fn created_at_or_after_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
-        Some(self.earliest_spam_record_with_opt()?.1 >= date)
+        Some(self.earliest_spam_record()?.1 >= date)
     }
 
     pub fn created_at_or_before_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
-        Some(self.earliest_spam_record_with_opt()?.1 <= date)
+        Some(self.earliest_spam_record()?.1 <= date)
     }
 
     pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
@@ -211,7 +221,7 @@ impl User {
 
     /// If the user didn't exist at the date, the function returns none.
     pub fn spam_score_at_date(&self, date: &NaiveDate) -> Option<&SpamScore> {
-        if date < &self.earliest_spam_record_with_opt()?.1 {
+        if date < &self.earliest_spam_record()?.1 {
             return None;
         };
 

@@ -41,7 +41,7 @@ impl UserCollection {
     /// Return None if the user if exists but has no spam record.
     pub fn spam_score_by_fid(&self, fid: usize) -> Option<SpamScore> {
         let user = self.map.get(&fid)?;
-        Some(user.latest_spam_record_with_opt()?.0)
+        Some(user.latest_spam_record()?.0)
     }
 
     pub fn user_mut(&mut self, fid: usize) -> Option<&mut User> {
@@ -200,7 +200,7 @@ impl UserCollection {
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
         let mut counts = [0; 3];
         for (_, user) in self.map.iter() {
-            match user.latest_spam_record_with_opt()?.0 {
+            match user.latest_spam_record()?.0 {
                 SpamScore::Zero => counts[0] += 1,
                 SpamScore::One => counts[1] += 1,
                 SpamScore::Two => counts[2] += 1,

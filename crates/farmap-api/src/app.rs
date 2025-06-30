@@ -216,7 +216,7 @@ async fn casts_for_moved(
     info!("set size after begin_date filtering is {set_size}");
 
     set.filter(|user: &User| {
-        if let Some(latest_spam_record) = user.latest_spam_record_with_opt() {
+        if let Some(latest_spam_record) = user.latest_spam_record() {
             Ok(latest_spam_record.0) == (to as usize).try_into()
         } else {
             false
