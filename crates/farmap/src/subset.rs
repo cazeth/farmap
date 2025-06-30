@@ -283,13 +283,14 @@ impl<'a> UsersSubset<'a> {
         let mut result: HashMap<NaiveDate, usize> = HashMap::new();
         for date in self
             .iter()
-            .flat_map(|user| user.all_spam_records())
+            .flat_map(|user| user.all_spam_records_with_opt())
+            .flatten()
             .map(|(_, date)| date)
         {
-            if let Some(current_count) = result.get_mut(date) {
+            if let Some(current_count) = result.get_mut(&date) {
                 *current_count += 1;
             } else {
-                result.insert(*date, 1);
+                result.insert(date, 1);
             }
         }
         result

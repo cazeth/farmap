@@ -27,6 +27,8 @@ impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
     /// This method may fail if the user is considered invalid in UserCollection because of
     /// SpamScoreCollision.
+    #[deprecated(since = "TBD")]
+    #[allow(deprecated)]
     pub fn push_with_res(&mut self, user: User) -> Result<bool, UserError> {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
             existing_user.merge_user(user)?;

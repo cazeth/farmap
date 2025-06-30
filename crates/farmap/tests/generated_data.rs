@@ -132,7 +132,7 @@ fn distribution_should_be_twos() {
 
     // check that spam record for each fid is stored correctly
     for i in 0..10 {
-        let spam_record = subset.user(i).unwrap().all_spam_records();
+        let spam_record = subset.user(i).unwrap().all_spam_records_with_opt().unwrap();
         assert_eq!(
             spam_record[0].1,
             NaiveDate::from_ymd_opt(2020, 1, 1)

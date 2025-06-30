@@ -234,7 +234,7 @@ fn print_all(set: &UsersSubset) {
 fn print_fid_history(set: &UsersSubset, fid: &usize) {
     println!("Spam record history for {}", fid);
     println!("------");
-    for record in set.user(*fid).unwrap().all_spam_records() {
+    for record in set.user(*fid).unwrap().all_spam_records_with_opt().unwrap() {
         println!("{:?}: {:?}", record.1, record.0 as usize);
     }
 }

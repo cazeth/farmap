@@ -92,6 +92,11 @@ impl User {
         self.labels.first()
     }
 
+    pub fn all_spam_records_with_opt(&self) -> Option<Vec<SpamRecord>> {
+        Some(self.labels.clone())
+    }
+
+    #[deprecated(note = "use all_spam_records_with_opt instead")]
     pub fn all_spam_records(&self) -> &Vec<SpamRecord> {
         &self.labels
     }
@@ -119,7 +124,7 @@ impl User {
     ///
     /// There is no collision and the list is updated while remaining sorted.
     ///
-    fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
+    pub fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
         let position_closest_and_smaller: Option<usize> =
             self.labels.iter().position(|(_, d)| *d >= new_record.1);
 
@@ -147,6 +152,7 @@ impl User {
 
     /// Merges two user objects into one. Both must have the same FID and no contradictory spam
     /// records (i.e same date but different scores)
+    #[deprecated(note = "use add spam record instead")]
     pub fn merge_user(&mut self, other: Self) -> Result<(), UserError> {
         if self.fid != other.fid() {
             return Err(UserError::DifferentFidMerge {
@@ -155,8 +161,8 @@ impl User {
             });
         };
 
-        for spam_record in other.all_spam_records() {
-            self.add_spam_record(*spam_record)?
+        for spam_record in other.all_spam_records_with_opt().unwrap() {
+            self.add_spam_record(spam_record)?
         }
 
         Ok(())
@@ -381,24 +387,33 @@ pub mod tests {
 
         assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
         assert!(user.add_spam_record((SpamScore::One, date)).is_ok());
-        assert_eq!(user.all_spam_records().len(), 1);
+        assert_eq!(user.all_spam_records_with_opt().unwrap().len(), 1);
         assert!(user.add_spam_record((SpamScore::Two, later_date)).is_ok());
-        assert_eq!(user.all_spam_records().len(), 2);
+        assert_eq!(user.all_spam_records_with_opt().unwrap().len(), 2);
 
         //make sure spam_records are sorted
-        assert_eq!(user.all_spam_records().first().unwrap().1, date);
-        assert_eq!(user.all_spam_records().last().unwrap().1, later_date);
+        assert_eq!(
+            user.all_spam_records_with_opt().unwrap().first().unwrap().1,
+            date
+        );
+        assert_eq!(
+            user.all_spam_records_with_opt().unwrap().last().unwrap().1,
+            later_date
+        );
 
         assert!(user
             .add_spam_record((SpamScore::Zero, earlier_date))
             .is_ok());
         assert_eq!(
-            user.all_spam_records().first().unwrap(),
+            user.all_spam_records_with_opt().unwrap().first().unwrap(),
             &(SpamScore::Zero, earlier_date)
         );
-        assert_eq!(user.all_spam_records()[1], (SpamScore::One, date));
         assert_eq!(
-            user.all_spam_records().last().unwrap(),
+            user.all_spam_records_with_opt().unwrap()[1],
+            (SpamScore::One, date)
+        );
+        assert_eq!(
+            user.all_spam_records_with_opt().unwrap().last().unwrap(),
             &(SpamScore::Two, later_date)
         );
     }
