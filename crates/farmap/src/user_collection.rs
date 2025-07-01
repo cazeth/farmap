@@ -8,6 +8,7 @@ use crate::UnprocessedUserLine;
 use chrono::NaiveDate;
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::hash_map::Entry::Vacant;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
@@ -219,6 +220,16 @@ impl UserCollection {
     pub fn data(&self) -> &HashMap<usize, User> {
         &self.map
     }
+
+    pub fn add_user(&mut self, user: User) -> Result<(), DuplicateUserError> {
+        let fid = user.fid();
+        if let Vacant(v) = self.map.entry(fid) {
+            v.insert(user);
+            Ok(())
+        } else {
+            Err(DuplicateUserError)
+        }
+    }
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -232,6 +243,10 @@ pub enum DataCreationError {
     #[error("Input is not readable or accessible")]
     DataReadError(#[from] DataReadError),
 }
+
+#[derive(Error, Debug, PartialEq)]
+#[error("user already exists in collection")]
+pub struct DuplicateUserError;
 
 #[derive(Error, Debug)]
 pub enum DbReadError {
