@@ -16,6 +16,7 @@ fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserErro
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
+        #[allow(deprecated)]
         let user = User::new(i, (SpamScore::One, date));
         let cloned_user = user.clone();
         users
@@ -38,9 +39,11 @@ fn every_other_user_has_spam_label_one_and_two(n: usize) -> Result<UserCollectio
     for i in 0..n {
         date = date.checked_add_signed(Duration::days(1)).unwrap();
         if i % 2 == 0 {
+            #[allow(deprecated)]
             let user = User::new(i, (SpamScore::One, date));
             users.push_with_res(user)?;
         } else {
+            #[allow(deprecated)]
             let user = User::new(i, (SpamScore::Two, date));
             users.push_with_res(user)?;
         }
@@ -60,6 +63,7 @@ fn create_users_with_spam_label_one_then_two(
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
+        #[allow(deprecated)]
         let user = User::new(i, (SpamScore::One, date));
         users.push_with_res(user)?;
         date = date.checked_add_signed(Duration::days(1)).unwrap();
@@ -67,6 +71,7 @@ fn create_users_with_spam_label_one_then_two(
 
     // create a spam record with score 2 for incrementing dates.
     for i in 0..n {
+        #[allow(deprecated)]
         users.push_with_res(User::new(i, (SpamScore::Two, date)))?;
         date = date.checked_add_signed(Duration::days(1)).unwrap();
     }
