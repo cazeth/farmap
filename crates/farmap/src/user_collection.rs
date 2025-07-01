@@ -260,6 +260,8 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use chrono::NaiveDate;
+    use serde_json::json;
     use std::path::PathBuf;
 
     #[test]
@@ -296,5 +298,22 @@ pub mod tests {
             users.user_count_at_date(NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()),
             2
         );
+    }
+
+    #[test]
+    fn serialize() {
+        let mut collection = UserCollection::default();
+        let record = (
+            SpamScore::Zero,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+        );
+        let mut user = User::new(1, record);
+        user.add_spam_record(record).unwrap();
+        let record = (SpamScore::Two, NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
+        user.add_spam_record(record).unwrap();
+        collection.add_user(user).unwrap();
+        let json = json!(collection);
+        let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null}}}"#;
+        assert_eq!(json.to_string(), expected_json);
     }
 }
