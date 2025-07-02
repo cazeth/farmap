@@ -1,4 +1,5 @@
-use crate::{user::InvalidInputError, utils::distribution_from_counts};
+use crate::{user::InvalidInputError, utils::distribution_from_counts, UnprocessedUserLine};
+use chrono::DateTime;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -248,6 +249,27 @@ impl From<SpamEntries> for SerdeSpamEntries {
             entries: value.entries,
             version: 1,
         }
+    }
+}
+
+impl TryFrom<UnprocessedUserLine> for SpamEntry {
+    type Error = InvalidInputError;
+
+    fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
+        let label_value = SpamScore::try_from(value.label_value())?;
+        let date = if let Some(date) =
+            DateTime::from_timestamp(value.timestamp().try_into().unwrap(), 0)
+        {
+            date.date_naive()
+        } else {
+            return Err(InvalidInputError::DateError {
+                timestamp: value.timestamp(),
+            });
+        };
+
+        let record: SpamRecord = (label_value, date);
+
+        Ok(SpamEntry::WithoutSourceCommit(record))
     }
 }
 
