@@ -346,6 +346,7 @@ pub mod tests {
             cast_records: None,
             latest_cast_record_check_date: None,
         };
+        #[allow(deprecated)]
         users.push_with_res(user).unwrap();
         let label = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
         let first_reaction_date = NaiveDate::from_ymd_opt(2025, 4, 1).unwrap();
@@ -368,6 +369,7 @@ pub mod tests {
             cast_records: None,
             latest_cast_record_check_date: None,
         };
+        #[allow(deprecated)]
         users.push_with_res(user).unwrap();
         users
     }

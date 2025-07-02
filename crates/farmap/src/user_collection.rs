@@ -29,7 +29,7 @@ impl UserCollection {
     /// add a user to the collection. If the fid already exists, the label is updated.
     /// This method may fail if the user is considered invalid in UserCollection because of
     /// SpamScoreCollision.
-    #[deprecated(since = "TBD")]
+    #[deprecated(since = "0.9.1", note = "use add_user_instead")]
     #[allow(deprecated)]
     pub fn push_with_res(&mut self, user: User) -> Result<bool, UserError> {
         if let Some(existing_user) = self.map.get_mut(&user.fid()) {
@@ -118,12 +118,16 @@ impl UserCollection {
         Ok(())
     }
 
+    #[deprecated(
+        since = "TBD",
+        note = "create a User and add the user to the collection instead"
+    )]
     pub fn push_unprocessed_user_line(
         &mut self,
         line: UnprocessedUserLine,
     ) -> Result<(), Box<dyn Error>> {
         let new_user = User::try_from(line)?;
-        self.push_with_res(new_user)?;
+        self.add_user(new_user)?;
         Ok(())
     }
 

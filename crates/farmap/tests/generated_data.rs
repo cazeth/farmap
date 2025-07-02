@@ -31,6 +31,7 @@ fn create_users_with_spam_label_one(n: usize) -> Result<UserCollection, UserErro
     Ok(users)
 }
 
+#[allow(deprecated)]
 fn every_other_user_has_spam_label_one_and_two(n: usize) -> Result<UserCollection, UserError> {
     let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
     let mut users = UserCollection::default();
@@ -63,16 +64,14 @@ fn create_users_with_spam_label_one_then_two(
     let mut users = UserCollection::default();
     let mut date = start_date;
     for i in 0..n {
-        #[allow(deprecated)]
-        let user = User::new(i, (SpamScore::One, date));
-        users.push_with_res(user)?;
-        date = date.checked_add_signed(Duration::days(1)).unwrap();
-    }
-
-    // create a spam record with score 2 for incrementing dates.
-    for i in 0..n {
-        #[allow(deprecated)]
-        users.push_with_res(User::new(i, (SpamScore::Two, date)))?;
+        let mut user = User::new_without_labels(i);
+        user.add_spam_record((SpamScore::One, date)).unwrap();
+        user.add_spam_record((
+            SpamScore::Two,
+            date.checked_add_signed(Duration::days(n as i64)).unwrap(),
+        ))
+        .unwrap();
+        users.add_user(user).unwrap();
         date = date.checked_add_signed(Duration::days(1)).unwrap();
     }
 
