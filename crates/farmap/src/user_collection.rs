@@ -307,8 +307,7 @@ pub mod tests {
             SpamScore::Zero,
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
         );
-        #[allow(deprecated)]
-        let mut user = User::new(1, record);
+        let mut user = User::new_without_labels(1);
         user.add_spam_record(record).unwrap();
         let record = (SpamScore::Two, NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
         user.add_spam_record(record).unwrap();
