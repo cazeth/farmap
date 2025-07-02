@@ -74,25 +74,12 @@ pub fn import_data_from_dir_with_res(
 pub fn import_data_from_file_with_res(
     path: &str,
 ) -> Result<Vec<UnprocessedUserLine>, DataReadError> {
-    let mut result: Vec<UnprocessedUserLine> = Vec::new();
-    let lines_iter = json_lines::<UnprocessedUserLine, _>(path).map_err(|_| {
-        DataReadError::InvalidDataPathError {
-            path: path.to_string(),
-        }
-    })?;
-
-    for line in lines_iter {
-        let line = if let Ok(line) = line {
-            line
-        } else {
-            return Err(DataReadError::InvalidJsonlError(InvalidJsonlError {
-                path: path.to_string(),
-            }));
-        };
-
-        result.push(line);
-    }
-    Ok(result)
+    let import_results = import_data_from_file_with_collected_res(path)?;
+    let result: Result<_, DataReadError> = import_results
+        .into_iter()
+        .try_collect()
+        .map_err(DataReadError::InvalidJsonlError);
+    result
 }
 
 #[cfg(test)]
