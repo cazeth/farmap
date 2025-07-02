@@ -1,4 +1,5 @@
 use crate::fetch::DataReadError;
+use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamScore;
 use crate::user::InvalidInputError;
 use crate::user::User;
@@ -130,20 +131,39 @@ impl UserCollection {
         lines: Vec<UnprocessedUserLine>,
     ) -> (UserCollection, Vec<DataCreationError>) {
         let mut users = UserCollection::default();
-
         let mut non_fatal_errors: Vec<DataCreationError> = Vec::new();
 
         for line in lines {
-            let user = match User::try_from(line) {
-                Ok(user) => user,
+            let fid = line.fid();
+            let spam_entry: SpamEntry = match SpamEntry::try_from(line) {
+                Ok(spam_entry) => spam_entry,
                 Err(err) => {
                     non_fatal_errors.push(DataCreationError::InvalidInputError(err));
                     continue;
                 }
             };
 
-            if let Err(err) = users.push_with_res(user) {
-                non_fatal_errors.push(DataCreationError::UserError(err))
+            if let Some(user) = users.user_mut(fid) {
+                if user.add_spam_record(spam_entry.record()).is_err() {
+                    non_fatal_errors.push(DataCreationError::UserError(
+                        UserError::SpamScoreCollision {
+                            fid,
+                            date: spam_entry.date(),
+                            old_spam_score: user
+                                .spam_score_at_date_with_owned(&spam_entry.date())
+                                .unwrap(),
+                            new_spam_score: spam_entry.score(),
+                        },
+                    ))
+                };
+            } else {
+                let mut new_user = User::new_without_labels(fid);
+                new_user
+                    .add_spam_record(spam_entry.record())
+                    .expect("adding spam entry should not fail for new user");
+                users
+                    .add_user(new_user)
+                    .expect("adding user should not fail for if user doesn't exist in collection");
             }
         }
 
