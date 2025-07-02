@@ -242,6 +242,9 @@ pub enum DataCreationError {
 
     #[error("Input is not readable or accessible")]
     DataReadError(#[from] DataReadError),
+
+    #[error("DuplicateUserError")]
+    DuplicateUserError(#[from] DuplicateUserError),
 }
 
 #[derive(Error, Debug, PartialEq)]
