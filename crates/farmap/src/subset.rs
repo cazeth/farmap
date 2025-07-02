@@ -12,7 +12,7 @@ use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UsersSubset<'a> {
     map: HashMap<usize, &'a User>,
     earliest_spam_score_date: Option<NaiveDate>,
