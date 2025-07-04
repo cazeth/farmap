@@ -8,6 +8,7 @@
 //! several Fetchers to get the data you want. You can use and analyze the data in various ways
 //! using the User, UserCollection and Subset struct.
 pub mod cast_meta;
+mod dated;
 pub mod fetch;
 pub mod fid_score_shift;
 pub mod spam_score;
@@ -18,9 +19,9 @@ pub mod user_collection;
 mod utils;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
+pub use spam_score::DatedSpamScoreCount;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
-pub use spam_score::SpamScoreCount;
 pub use spam_score::SpamScoreDistribution;
 #[doc(inline)]
 pub use subset::UsersSubset;

@@ -7,6 +7,7 @@ use axum::{
 use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
 use farmap::{User, UserCollection, UsersSubset};
+use itertools::Itertools;
 use log::info;
 use log::trace;
 use serde::Deserialize;
@@ -169,6 +170,7 @@ async fn weekly_spam_score_distributions(
         set.filter(|user: &User| user.fid() as u64 >= from_fid);
     };
     let result = set.weekly_spam_score_distributions_with_dedicated_type();
+    let result = result.iter().map(|(_, obj)| obj).collect_vec();
     Json(json!(result))
 }
 

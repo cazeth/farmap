@@ -1,6 +1,6 @@
 use crate::fid_score_shift::ShiftSource;
 use crate::fid_score_shift::ShiftTarget;
-use crate::spam_score::{SpamScoreCount, SpamScoreDistribution};
+use crate::spam_score::{DatedSpamScoreCount, DatedSpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
 use crate::FidScoreShift;
@@ -85,20 +85,23 @@ impl<'a> UsersSubset<'a> {
 
     /// Returns none if the subset is empty
     pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
-        self.current_spam_score_count_with_opt()?.distributions()
+        let spam_score_counts = self.current_spam_score_count_with_opt()?;
+        let distributions: DatedSpamScoreDistribution = spam_score_counts.try_map_into().ok()?;
+        let result: [f32; 3] = distributions.into_inner().into();
+        Some(result)
     }
 
     /// Returns the spam score count for a set at a weekly cadence. The first value is at the
     /// earliest spam score date in the set and the last value is always the current date even if
     /// it is the fewer than seven days between it and the next-to-last value.
-    pub fn weekly_spam_score_counts(&self) -> Vec<SpamScoreCount> {
+    pub fn weekly_spam_score_counts(&self) -> Vec<DatedSpamScoreCount> {
         if self.map.is_empty() {
             return Vec::new();
         }
         // since the struct is not empty the unwrap should never trigger.
         let mut date = self.earliest_spam_score_date.unwrap();
         let end_date = self.latest_spam_score_date.unwrap();
-        let mut result: Vec<SpamScoreCount> = Vec::new();
+        let mut result: Vec<DatedSpamScoreCount> = Vec::new();
         while date <= end_date {
             result.push(self.spam_score_count_at_date(date).unwrap());
             date += Duration::days(7);
@@ -113,7 +116,7 @@ impl<'a> UsersSubset<'a> {
         result
     }
 
-    pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<SpamScoreCount> {
+    pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<DatedSpamScoreCount> {
         if date < self.earliest_spam_score_date? {
             return None;
         };
@@ -126,19 +129,22 @@ impl<'a> UsersSubset<'a> {
             self.map
                 .iter()
                 .filter_map(|(_, user)| user.spam_score_at_date_with_owned(&date))
-                .fold(SpamScoreCount::new(date, 0, 0, 0), |mut acc, user| {
-                    acc.add(&user);
-                    acc
-                }),
+                .fold(
+                    DatedSpamScoreCount::default_with_date(date),
+                    |mut acc, user| {
+                        acc.add(user);
+                        acc
+                    },
+                ),
         )
     }
 
     /// Returns none when the set is empty
-    pub fn current_spam_score_count_with_opt(&self) -> Option<SpamScoreCount> {
+    pub fn current_spam_score_count_with_opt(&self) -> Option<DatedSpamScoreCount> {
         self.spam_score_count_at_date(self.latest_spam_score_date?)
     }
 
-    pub fn current_spam_score_count(&self) -> SpamScoreCount {
+    pub fn current_spam_score_count(&self) -> DatedSpamScoreCount {
         let date = self.latest_spam_score_date.unwrap();
         self.spam_score_count_at_date(date).unwrap()
     }
@@ -235,11 +241,24 @@ impl<'a> UsersSubset<'a> {
         shifts
     }
 
+    pub fn spam_score_distribution_at_date_with_dedicated_type(
+        &self,
+        date: NaiveDate,
+    ) -> Option<DatedSpamScoreDistribution> {
+        self.spam_score_count_at_date(date)?.try_map_into().ok()
+    }
+
     /// Returns the distribution of spam scores at a certain date. Excludes users that did not
     /// exist at the given date.
     /// Returns none if the struct contains no users or if no users existed at the provided date.
+    #[deprecated(
+        since = "TBD",
+        note = "use spam_score_distribution_at_date_with_dedicated_type instead"
+    )]
     pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
-        self.spam_score_count_at_date(date)?.distributions()
+        let distributions: DatedSpamScoreDistribution =
+            self.spam_score_count_at_date(date)?.try_map_into().ok()?;
+        Some(distributions.into_inner().into())
     }
 
     /// Returns the average total casts of the users in the group along with the fraction of users
@@ -323,14 +342,30 @@ impl<'a> UsersSubset<'a> {
     #[allow(deprecated)]
     pub fn weekly_spam_score_distributions_with_dedicated_type(
         &self,
-    ) -> Vec<SpamScoreDistribution> {
-        self.weekly_spam_score_distributions()
-            .into_iter()
-            .map(|(x, y)| {
-                SpamScoreDistribution::new(x, y[0] as f64, y[1] as f64, y[2] as f64)
-                    .expect("Internal error - distributions do not sum to 1")
-            })
-            .collect::<Vec<_>>()
+    ) -> Vec<(NaiveDate, DatedSpamScoreDistribution)> {
+        // return an empty vec if the set is empty.
+        if self.map.is_empty() {
+            return Vec::new();
+        }
+
+        let mut result: Vec<(NaiveDate, DatedSpamScoreDistribution)> = Vec::new();
+        let mut date = self.earliest_spam_score_date.unwrap();
+        let end_date = self.latest_spam_score_date.unwrap();
+        while date <= end_date {
+            result.push((
+                date,
+                self.spam_score_distribution_at_date_with_dedicated_type(date)
+                    .unwrap(),
+            ));
+            date += Duration::days(7);
+        }
+        result.push((
+            date,
+            self.spam_score_distribution_at_date_with_dedicated_type(date)
+                .unwrap(),
+        ));
+
+        result
     }
 
     /// Checks the distribution, starting at the date of the earliest spam score date an
@@ -553,18 +588,16 @@ mod tests {
         let set = UsersSubset::from(&users);
         let weekly_distributions = set.weekly_spam_score_distributions_with_dedicated_type();
         assert_eq!(
-            weekly_distributions.first().unwrap().date(),
+            weekly_distributions.first().unwrap().0,
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
         );
 
         assert!(
-            weekly_distributions.last().unwrap().date()
-                >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+            weekly_distributions.last().unwrap().0 >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
         );
 
         assert!(
-            weekly_distributions.last().unwrap().date()
-                <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
+            weekly_distributions.last().unwrap().0 <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
         );
     }
 

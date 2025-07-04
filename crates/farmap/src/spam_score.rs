@@ -1,3 +1,4 @@
+use crate::dated::Dated;
 use crate::{user::InvalidInputError, utils::distribution_from_counts, UnprocessedUserLine};
 use chrono::DateTime;
 use chrono::NaiveDate;
@@ -12,8 +13,73 @@ pub enum SpamScore {
 }
 
 pub type SpamRecord = (SpamScore, NaiveDate);
-
 pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
+pub type DatedSpamScoreCount = Dated<SpamScoreCount>;
+pub type DatedSpamScoreDistribution = Dated<SpamScoreDistribution>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SpamScoreCount {
+    nonspam: u64,
+    maybe: u64,
+    spam: u64,
+}
+
+impl SpamScoreCount {
+    pub fn new(spam_count: u64, maybe_count: u64, nonspam_count: u64) -> Self {
+        Self {
+            spam: spam_count,
+            maybe: maybe_count,
+            nonspam: nonspam_count,
+        }
+    }
+
+    pub fn add(&mut self, score: SpamScore) {
+        match score {
+            SpamScore::Zero => self.spam += 1,
+            SpamScore::One => self.maybe += 1,
+            SpamScore::Two => self.nonspam += 1,
+        }
+    }
+
+    pub fn total(&self) -> u64 {
+        self.spam + self.maybe + self.nonspam
+    }
+
+    pub fn spam(&self) -> u64 {
+        self.spam
+    }
+
+    pub fn maybe_spam(&self) -> u64 {
+        self.maybe
+    }
+
+    pub fn non_spam(&self) -> u64 {
+        self.nonspam
+    }
+}
+
+impl From<[u64; 3]> for SpamScoreCount {
+    fn from(value: [u64; 3]) -> Self {
+        Self {
+            spam: value[0],
+            maybe: value[1],
+            nonspam: value[2],
+        }
+    }
+}
+
+impl From<SpamScoreCount> for [u64; 3] {
+    fn from(value: SpamScoreCount) -> Self {
+        [value.spam, value.maybe, value.nonspam]
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct SpamScoreDistribution {
+    nonspam: f32,
+    maybe: f32,
+    spam: f32,
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CommitHash(u32);
@@ -50,64 +116,28 @@ impl TryFrom<usize> for SpamScore {
     }
 }
 
-#[derive(Serialize, Debug)]
-pub struct SpamScoreCount {
-    date: NaiveDate,
-    nonspam: u64,
-    maybe: u64,
-    spam: u64,
-}
-
-impl SpamScoreCount {
-    pub fn new(date: NaiveDate, spam_count: u64, maybe_count: u64, nonspam_count: u64) -> Self {
-        Self {
-            date,
-            nonspam: nonspam_count,
-            maybe: maybe_count,
-            spam: spam_count,
-        }
-    }
-
-    pub fn date(&self) -> NaiveDate {
-        self.date
-    }
-
-    pub fn spam(&self) -> u64 {
-        self.spam
-    }
-
-    pub fn maybe_spam(&self) -> u64 {
-        self.maybe
-    }
-
-    pub fn non_spam(&self) -> u64 {
-        self.nonspam
-    }
-
-    pub fn add(&mut self, score: &SpamScore) {
-        match score {
-            SpamScore::Zero => self.spam += 1,
-            SpamScore::One => self.maybe += 1,
-            SpamScore::Two => self.nonspam += 1,
-        }
-    }
-
-    pub fn total(&self) -> u64 {
-        self.spam + self.maybe + self.nonspam
-    }
-
-    pub fn distributions(&self) -> Option<[f32; 3]> {
-        distribution_from_counts(&[self.spam, self.maybe, self.nonspam])
+impl From<SpamScoreDistribution> for [f32; 3] {
+    fn from(value: SpamScoreDistribution) -> Self {
+        [value.spam, value.maybe, value.nonspam]
     }
 }
 
-#[derive(Serialize, Debug)]
-pub struct SpamScoreDistribution {
-    date: NaiveDate,
-    nonspam: f64,
-    maybe: f64,
-    spam: f64,
+impl TryFrom<SpamScoreCount> for SpamScoreDistribution {
+    type Error = EmptyScoreCountError;
+    fn try_from(value: SpamScoreCount) -> Result<Self, Self::Error> {
+        let distribution =
+            distribution_from_counts::<3>(&value.into()).ok_or(EmptyScoreCountError)?;
+        Ok(SpamScoreDistribution {
+            nonspam: distribution[2],
+            maybe: distribution[1],
+            spam: distribution[0],
+        })
+    }
 }
+
+#[derive(Debug, Error)]
+#[error("trying to create a spam score distribution from an empty SpamScoreCount")]
+pub struct EmptyScoreCountError;
 
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum SpamEntry {
@@ -301,38 +331,6 @@ impl SpamEntry {
     }
 }
 
-impl SpamScoreDistribution {
-    pub fn new(date: NaiveDate, spam: f64, maybe: f64, nonspam: f64) -> Result<Self, String> {
-        let sum = spam + maybe + nonspam;
-        if !(0.99..=1.01).contains(&sum) {
-            Err("provided values are not a distribution".to_string())
-        } else {
-            Ok(Self {
-                date,
-                nonspam,
-                maybe,
-                spam,
-            })
-        }
-    }
-
-    pub fn date(&self) -> NaiveDate {
-        self.date
-    }
-
-    pub fn spam(&self) -> f64 {
-        self.spam
-    }
-
-    pub fn maybe_spam(&self) -> f64 {
-        self.maybe
-    }
-
-    pub fn non_spam(&self) -> f64 {
-        self.nonspam
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -368,9 +366,9 @@ pub mod tests {
         assert_eq!(entries.spam_score_at_date(date), typed_score);
     }
 
-    pub fn basic_spam_score_count() -> SpamScoreCount {
+    pub fn basic_spam_score_count() -> DatedSpamScoreCount {
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
-        SpamScoreCount::new(date, 100, 150, 200)
+        DatedSpamScoreCount::from(date, [100, 150, 200])
     }
 
     #[test]

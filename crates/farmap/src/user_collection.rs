@@ -67,17 +67,6 @@ impl UserCollection {
             .count()
     }
 
-    #[deprecated(note = "use local_spam_label_importer instead")]
-    #[allow(deprecated)]
-    pub fn create_from_dir_with_res(dir: &str) -> Result<Self, DataCreationError> {
-        let unprocessed_user_line = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
-        let mut users = UserCollection::default();
-        for line in unprocessed_user_line {
-            users.push_with_res(User::try_from(line)?)?;
-        }
-        Ok(users)
-    }
-
     /// A data importer that keeps running in case of nonfatal errors.
     /// Nonfatal errors are spam collision errors or invalid parameter data. In case of such error
     /// the import continues to run and returns the errors in a vec alongside the return data.
@@ -172,19 +161,6 @@ impl UserCollection {
         }
 
         (users, non_fatal_errors)
-    }
-
-    #[allow(deprecated)]
-    #[deprecated(note = "use local_spam_label_importer")]
-    pub fn create_from_file_with_res(path: &str) -> Result<Self, DataCreationError> {
-        let mut users = UserCollection::default();
-        let unprocessed_user_line = UnprocessedUserLine::import_data_from_file_with_res(path)?;
-
-        for line in unprocessed_user_line {
-            users.push_with_res(User::try_from(line)?)?;
-        }
-
-        Ok(users)
     }
 
     /// Applies a filter to the user data. Use with caution since the data is removed from the
