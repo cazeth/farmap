@@ -5,8 +5,6 @@ use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
 use std::collections::HashSet;
 use std::fs;
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
 use thiserror::Error;
 use url::Url;
@@ -16,7 +14,6 @@ use url::Url;
 /// the github api.
 pub struct GithubFetcher {
     local_data_files: Option<Vec<PathBuf>>,
-    local_data_dir: Option<PathBuf>,
     base_url: Url,
     status_url: Url,
     extension: Option<String>,
@@ -30,7 +27,6 @@ impl Default for GithubFetcher {
             Url::parse("https://api.github.com/repos/warpcast/labels/commits").unwrap();
         Self {
             local_data_files: None,
-            local_data_dir: None,
             extension: None,
             header_map: None,
             base_url,
@@ -49,7 +45,6 @@ impl GithubFetcher {
     ) -> Self {
         Self {
             local_data_files: None,
-            local_data_dir: None,
             base_url,
             status_url,
             extension: None,
@@ -98,7 +93,6 @@ impl GithubFetcher {
         };
 
         Ok(Self {
-            local_data_dir: Some(directory),
             local_data_files: Some(local_data_files),
             ..self
         })
@@ -242,50 +236,6 @@ impl GithubFetcher {
         let url_string = format!("{}{}/spam.jsonl", self.base_url, status);
         let url = Url::parse(&url_string).map_err(|_| ConversionError::ConversionError)?;
         Ok(url)
-    }
-
-    /// this file should take mutable self since it should also update the state of the struct to
-    /// keep track of the local filesystem.
-    /// but let's keep that as a TODO
-    #[deprecated(note = "local file support will be remove from this struct in the future")]
-    #[allow(deprecated)]
-    pub async fn update_local_data_files(&self) -> Result<(), ImporterError> {
-        info!("checking status against api to get missing files...");
-        let local_data_dir = self
-            .local_data_dir
-            .as_ref()
-            .ok_or(ImporterError::InvalidDirectory)?;
-
-        let status_api_path = self.status_url.clone();
-        let status_call_response = self.api_call(status_api_path).await?;
-        let local_status = self
-            .name_strings_hash_set_from_local_data()
-            .expect("a local valid directory should exist at this point");
-        trace!("status call response: {:?}", &status_call_response);
-        let api_status = github_parser::parse_status(&status_call_response).unwrap();
-        let api_status_set = HashSet::from_iter(api_status.iter().map(|x| x.as_str()));
-        let missing_names = api_status_set.difference(&local_status);
-
-        for name in missing_names {
-            let call_path = self.build_path(name).unwrap();
-            info!("donwloading file at {call_path:?}...");
-            let body = self.api_call(call_path).await?;
-
-            let mut new_file_path = format!("{}/{}", local_data_dir.to_str().unwrap(), name);
-
-            new_file_path = if let Some(file_extension) = &self.extension {
-                format!("{}.{}", new_file_path, file_extension)
-            } else {
-                new_file_path
-            };
-
-            info!("new file created: {new_file_path}");
-            let mut new_file = File::create(new_file_path).expect("should be able to create file");
-            new_file.write_all(body.as_bytes())?;
-            info!("download completed");
-        }
-
-        Ok(())
     }
 }
 
