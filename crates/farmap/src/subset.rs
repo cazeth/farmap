@@ -116,6 +116,10 @@ impl<'a> UsersSubset<'a> {
         result
     }
 
+    pub fn into_map(self) -> HashMap<usize, &'a User> {
+        self.map
+    }
+
     pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<DatedSpamScoreCount> {
         if date < self.earliest_spam_score_date? {
             return None;
