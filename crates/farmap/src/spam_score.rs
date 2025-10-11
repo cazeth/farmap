@@ -12,10 +12,13 @@ pub enum SpamScore {
     Two,
 }
 
+pub type SpamScoreWithSourceCommit = (SpamScore, CommitHash);
 pub type SpamRecord = (SpamScore, NaiveDate);
 pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
 pub type DatedSpamScoreCount = Dated<SpamScoreCount>;
 pub type DatedSpamScoreDistribution = Dated<SpamScoreDistribution>;
+pub type DatedSpamEntry = Dated<SpamEntry>;
+pub type DatedSpamUpdate = Dated<SpamUpdate>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SpamScoreCount {
@@ -143,6 +146,27 @@ pub struct EmptyScoreCountError;
 pub enum SpamEntry {
     WithSourceCommit(SpamRecordWithSourceCommit),
     WithoutSourceCommit(SpamRecord),
+}
+
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy)]
+pub enum SpamUpdate {
+    WithSourceCommit(SpamScoreWithSourceCommit),
+    WithoutSourceCommit(SpamScore),
+}
+
+impl SpamUpdate {
+    pub fn score(&self) -> SpamScore {
+        match self {
+            Self::WithSourceCommit(x) => x.0,
+            Self::WithoutSourceCommit(x) => *x,
+        }
+    }
+}
+
+impl From<SpamScore> for SpamUpdate {
+    fn from(value: SpamScore) -> Self {
+        Self::WithoutSourceCommit(value)
+    }
 }
 
 impl SpamEntry {
