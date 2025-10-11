@@ -238,6 +238,14 @@ impl User {
 }
 
 #[derive(Error, Debug, PartialEq)]
+pub enum UserValueError {
+    #[error(
+        "User Value collides with existing user value. A User cannot contain colliding user values"
+    )]
+    CollisionError,
+}
+
+#[derive(Error, Debug, PartialEq)]
 pub enum UserError {
     #[error("User {0} already has a spam record for date {1}. The existing spam score at the date is {} but a spamscore of {} is now trying to be set.", .fid, . date) ]
     SpamScoreCollision {
