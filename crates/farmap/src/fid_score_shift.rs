@@ -7,7 +7,7 @@ pub struct FidScoreShift {
     count: usize,
 }
 
-#[derive(Serialize, Clone, Copy, PartialEq, Debug)]
+#[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum ShiftSource {
     Zero,
     One,
@@ -15,7 +15,7 @@ pub enum ShiftSource {
     New,
 }
 
-#[derive(Serialize, Clone, Copy, PartialEq, Debug)]
+#[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum ShiftTarget {
     Zero,
     One,
