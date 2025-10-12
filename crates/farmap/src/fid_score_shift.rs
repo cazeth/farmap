@@ -1,3 +1,4 @@
+use crate::SpamScore;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -90,6 +91,26 @@ impl TryFrom<u8> for ShiftTarget {
             2 => Ok(Self::Two),
             3 => Ok(Self::Removed),
             _ => Err(InvalidNumberError),
+        }
+    }
+}
+
+impl From<SpamScore> for ShiftSource {
+    fn from(value: SpamScore) -> Self {
+        match value {
+            SpamScore::Zero => ShiftSource::Zero,
+            SpamScore::One => ShiftSource::One,
+            SpamScore::Two => ShiftSource::Two,
+        }
+    }
+}
+
+impl From<SpamScore> for ShiftTarget {
+    fn from(value: SpamScore) -> Self {
+        match value {
+            SpamScore::Zero => ShiftTarget::Zero,
+            SpamScore::One => ShiftTarget::One,
+            SpamScore::Two => ShiftTarget::Two,
         }
     }
 }
