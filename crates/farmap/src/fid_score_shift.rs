@@ -68,6 +68,18 @@ impl TryFrom<FidScoreShift> for usize {
     }
 }
 
+impl TryFrom<u8> for ShiftSource {
+    type Error = InvalidNumberError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Zero),
+            1 => Ok(Self::One),
+            2 => Ok(Self::Two),
+            3 => Ok(Self::New),
+            _ => Err(InvalidNumberError),
+        }
+    }
+}
 #[derive(Error, Debug)]
 #[error("number out of bounds, must be between 0 and 16")]
 pub struct InvalidNumberError;
