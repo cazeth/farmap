@@ -2,10 +2,12 @@ use chrono::Days;
 use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
+use farmap::fetch::local_spam_label_importer;
 use farmap::SpamScore;
 use farmap::User;
 use farmap::UserCollection;
 use farmap::UsersSubset;
+use itertools::Itertools;
 use simple_log::log::info;
 use simple_log::log::warn;
 use simple_log::LogConfigBuilder;
@@ -277,17 +279,14 @@ fn import_data_from_dir(data_dir: &str) -> UserCollection {
     users
 }
 
-#[allow(deprecated)]
 fn import_data_from_file(data_path: &str) -> UserCollection {
-    // for now just panic if the path doesn't exist or is not jsonl.
-
-    let (users, non_fatal_errors) =
-        UserCollection::create_from_file_and_collect_non_fatal_errors(data_path).unwrap();
-    for error in non_fatal_errors {
+    let results =
+        local_spam_label_importer::import_data_from_file_with_collected_res(data_path).unwrap();
+    let (oks, errors): (Vec<_>, Vec<_>) = results.into_iter().partition_result();
+    for error in errors {
         warn!("non-fatal error on import: {:?}", error)
     }
-
-    users
+    UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(oks).0
 }
 
 #[cfg(test)]
