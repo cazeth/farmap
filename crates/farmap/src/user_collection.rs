@@ -79,15 +79,6 @@ impl UserCollection {
         Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
-    /// Like create_from_dir ... but for a single file.
-    #[deprecated(note = "use local_spam_label_importer instead")]
-    #[allow(deprecated)]
-    pub fn create_from_file_and_collect_non_fatal_errors(file: &str) -> CreateResult {
-        let lines = UnprocessedUserLine::import_data_from_file_with_res(file)?;
-
-        Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
-    }
-
     // the problem with this is that when the file does not exist the program will fail because
     // there isn't really a way for the caller to anticipate this...
     pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
