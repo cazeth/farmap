@@ -22,6 +22,13 @@ impl<T> Dated<T> {
     pub fn into_inner(self) -> T {
         self.inner
     }
+    pub fn from<S>(date: NaiveDate, arg: S) -> Self
+    where
+        T: From<S>,
+    {
+        let inner = T::from(arg);
+        Self { inner, date }
+    }
 }
 
 impl<T> From<(T, NaiveDate)> for Dated<T> {
@@ -87,13 +94,6 @@ impl<T: Default> Dated<T> {
             date: new_date,
             inner: new_inner,
         })
-    }
-    pub fn from<S>(date: NaiveDate, arg: S) -> Self
-    where
-        T: From<S>,
-    {
-        let inner = T::from(arg);
-        Self { inner, date }
     }
 }
 
