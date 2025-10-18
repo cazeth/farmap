@@ -1,5 +1,8 @@
 use crate::fetch::DataReadError;
 use crate::fetch::InvalidJsonlError;
+use crate::InvalidInputError;
+use chrono::DateTime;
+use chrono::NaiveDate;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_jsonlines::json_lines;
@@ -29,6 +32,16 @@ impl UnprocessedUserLine {
 
     pub fn timestamp(&self) -> usize {
         self.timestamp
+    }
+
+    pub fn date(&self) -> Result<NaiveDate, InvalidInputError> {
+        if let Some(date) = DateTime::from_timestamp(self.timestamp().try_into().unwrap(), 0) {
+            Ok(date.date_naive())
+        } else {
+            Err(InvalidInputError::DateError {
+                timestamp: self.timestamp(),
+            })
+        }
     }
 
     #[deprecated(note = "use local_spam_label_importer instead")]
