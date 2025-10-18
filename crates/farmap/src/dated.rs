@@ -34,6 +34,15 @@ impl<T> Dated<T> {
         let inner = T::from(arg);
         Self { inner, date }
     }
+
+    pub fn map_into<S>(self) -> Dated<S>
+    where
+        S: From<T>,
+    {
+        let date = self.date();
+        let inner = S::from(self.inner);
+        Dated::<S> { inner, date }
+    }
 }
 
 impl<T> From<(T, NaiveDate)> for Dated<T> {
@@ -76,16 +85,6 @@ impl<T: Default> Dated<T> {
         Self {
             inner: T::default(),
             date,
-        }
-    }
-
-    pub fn map_into<S>(self) -> Dated<S>
-    where
-        S: From<T>,
-    {
-        Dated::<S> {
-            date: self.date(),
-            inner: self.inner.into(),
         }
     }
 
