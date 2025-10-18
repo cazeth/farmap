@@ -8,6 +8,7 @@
 //! several Fetchers to get the data you want. You can use and analyze the data in various ways
 //! using the User, UserCollection and Subset struct.
 pub mod cast_meta;
+mod collidable;
 mod dated;
 pub mod fetch;
 pub mod fid_score_shift;

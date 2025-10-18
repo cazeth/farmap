@@ -1,3 +1,4 @@
+use crate::collidable::Collidable;
 use crate::dated::Dated;
 use crate::user_value::AnyUserValue;
 use crate::user_value::UserValue;
@@ -224,6 +225,11 @@ impl UserValue for DatedSpamUpdate {
 
 impl UserValueSeal for DatedSpamUpdate {}
 
+impl Collidable for DatedSpamUpdate {
+    fn is_collision(&self, other: &Self) -> bool {
+        self.date() == other.date() && self.score() != other.score()
+    }
+}
 impl SpamEntry {
     pub fn date(&self) -> NaiveDate {
         match self {
