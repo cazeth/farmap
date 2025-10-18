@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_jsonlines::json_lines;
 use std::fs::read_dir;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct UnprocessedUserLine {
     provider: usize,
     r#type: Type,
@@ -97,7 +97,7 @@ impl UnprocessedUserLine {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 struct Type {
     fid: u64,
     target: String,
