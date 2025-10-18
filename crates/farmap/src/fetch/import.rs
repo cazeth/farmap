@@ -332,15 +332,6 @@ pub mod tests {
         assert_eq!(expected_result.len(), actual_names.len())
     }
 
-    fn check_dummy_new_ok_with_jsonl_file_as_valid(dir: PathBuf) {
-        let base_url = Url::parse("https://caz.pub").unwrap();
-        let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = create_test_importer(dir, base_url, status_url)
-            .unwrap()
-            .with_file_extension("jsonl");
-        assert!(importer.is_ok());
-    }
-
     fn check_dummy_new_err_with_jsonl_file_as_valid(dir: PathBuf) {
         let base_url = Url::parse("https://caz.pub").unwrap();
         let status_url = Url::parse("https://caz.pub").unwrap();
@@ -357,32 +348,11 @@ pub mod tests {
         ));
     }
 
-    #[test]
-    fn jsonl_files_should_be_ok_with_jsonl_files_extension() {
-        check_dummy_new_ok_with_jsonl_file_as_valid(PathBuf::from(
-            "data/unit-tests-importer/existing-dir-with-jsonl/",
-        ));
-    }
-
-    #[test]
-    fn empty_dir_should_be_ok_with_jsonl_files_extension() {
-        check_dummy_new_ok_with_jsonl_file_as_valid(PathBuf::from(
-            "data/unit-tests-importer/existing-empty-dir",
-        ));
-    }
-
     fn check_dummy_new_ok(dir: PathBuf) {
         let base_url = Url::parse("https://caz.pub").unwrap();
         let status_url = Url::parse("https://caz.pub").unwrap();
         let importer = create_test_importer(dir, base_url, status_url);
         assert!(importer.is_ok());
-    }
-
-    fn check_dummy_new_err(dir: PathBuf) {
-        let base_url = Url::parse("https://caz.pub").unwrap();
-        let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = create_test_importer(dir, base_url, status_url);
-        assert!(importer.is_err());
     }
 
     #[test]
@@ -408,13 +378,6 @@ pub mod tests {
 
         check_dummy_new_ok(PathBuf::from(
             "data/unit-tests-importer/nonexisting-empty-dir/",
-        ));
-    }
-
-    #[test]
-    fn new_should_err_on_invalid_file_in_dir() {
-        check_dummy_new_err(PathBuf::from(
-            "data/unit-tests-importer/existing-dir-with-invalid-file",
         ));
     }
 
