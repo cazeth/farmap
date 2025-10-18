@@ -1,4 +1,7 @@
 use crate::dated::Dated;
+use crate::user_value::AnyUserValue;
+use crate::user_value::UserValue;
+use crate::user_value::UserValueSeal;
 use crate::{user::InvalidInputError, utils::distribution_from_counts, UnprocessedUserLine};
 use chrono::DateTime;
 use chrono::NaiveDate;
@@ -168,6 +171,58 @@ impl From<SpamScore> for SpamUpdate {
         Self::WithoutSourceCommit(value)
     }
 }
+
+impl UserValue for SpamUpdate {
+    fn as_any_user_value(&self) -> AnyUserValue {
+        AnyUserValue::SpamScore(self.score())
+    }
+
+    fn into_any_user_value(self) -> AnyUserValue {
+        AnyUserValue::SpamScore(self.score())
+    }
+
+    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self> {
+        match any_user_value {
+            AnyUserValue::SpamUpdate(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self> {
+        match any_user_value {
+            AnyUserValue::SpamUpdate(x) => Some(x),
+            _ => None,
+        }
+    }
+}
+
+impl UserValueSeal for SpamUpdate {}
+
+impl UserValue for DatedSpamUpdate {
+    fn as_any_user_value(&self) -> AnyUserValue {
+        AnyUserValue::DatedSpamUpdate(*self)
+    }
+
+    fn into_any_user_value(self) -> AnyUserValue {
+        AnyUserValue::DatedSpamUpdate(self)
+    }
+
+    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self> {
+        match any_user_value {
+            AnyUserValue::DatedSpamUpdate(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self> {
+        match any_user_value {
+            AnyUserValue::DatedSpamUpdate(x) => Some(x),
+            _ => None,
+        }
+    }
+}
+
+impl UserValueSeal for DatedSpamUpdate {}
 
 impl SpamEntry {
     pub fn date(&self) -> NaiveDate {
