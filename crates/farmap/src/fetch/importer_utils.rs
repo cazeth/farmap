@@ -13,7 +13,7 @@ pub async fn parse_json_from_response(response: Response) -> Result<Value, Impor
         .await
         .map_err(|_| ImporterError::FailedApiRequest)?;
 
-    trace!("response text: {:?}", response_text);
+    trace!("response text: {response_text:?}");
     serde_json::from_str(&response_text)
         .map_err(|_| ImporterError::BadApiResponse(response_text.to_string()))
 }

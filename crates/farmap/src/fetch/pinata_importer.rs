@@ -76,7 +76,7 @@ impl PinataFetcher {
         let extension = "linksByTargetFid";
         let mut url = self.base_url.clone().join(extension).unwrap();
         url.set_query(Some(&format!("link_type=follow&target_fid={fid}")));
-        trace!("url: {}", url);
+        trace!("url: {url}");
         self.client
             .get(url)
             .send()

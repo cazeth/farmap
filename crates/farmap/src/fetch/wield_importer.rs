@@ -67,7 +67,7 @@ impl WieldFetcher {
             .fetch_follower_response_for_fid(fid)
             .await
             .inspect_err(|e| trace!("fetch failed with error {e:?}"))?;
-        trace!("fetching followers, response is {:?}", response);
+        trace!("fetching followers, response is {response:?}");
         let followers = wield_parser::parse_follow_response(response).await?;
         Ok(followers)
     }
