@@ -11,6 +11,7 @@ pub mod cast_meta;
 mod dated;
 pub mod fetch;
 pub mod fid_score_shift;
+mod has_tag;
 pub mod spam_score;
 pub mod subset;
 mod unprocessed_user_line;
@@ -18,6 +19,7 @@ pub mod user;
 pub mod user_collection;
 mod user_value;
 mod utils;
+pub use crate::has_tag::HasTag;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
 pub use spam_score::DatedSpamScoreCount;
