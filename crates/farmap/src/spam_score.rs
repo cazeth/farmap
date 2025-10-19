@@ -1,5 +1,7 @@
+#![allow(refining_impl_trait)]
 use crate::collidable::Collidable;
 use crate::dated::Dated;
+use crate::has_tag::HasTag;
 use crate::user_value::AnyUserValue;
 use crate::user_value::UserValue;
 use crate::user_value::UserValueSeal;
@@ -22,6 +24,34 @@ pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
 pub type DatedSpamScoreCount = Dated<SpamScoreCount>;
 pub type DatedSpamScoreDistribution = Dated<SpamScoreDistribution>;
 pub type DatedSpamUpdate = Dated<SpamUpdate>;
+pub type DatedSpamUpdateWithFid = Dated<SpamUpdateWithFid>;
+pub type SpamUpdateWithFid = (SpamUpdate, u64);
+
+impl HasTag<u64> for SpamUpdateWithFid {
+    fn tag(&self) -> u64 {
+        self.1
+    }
+
+    fn untag(self) -> (SpamUpdate, u64) {
+        (self.0, self.1)
+    }
+}
+
+impl HasTag<(NaiveDate, u64)> for DatedSpamUpdateWithFid {
+    fn tag(&self) -> (NaiveDate, u64) {
+        (self.date(), self.as_inner().1)
+    }
+
+    fn untag(self) -> (SpamUpdate, (NaiveDate, u64)) {
+        (self.into_inner().into(), (self.date(), self.as_inner().1))
+    }
+}
+
+impl From<SpamUpdateWithFid> for SpamUpdate {
+    fn from(value: SpamUpdateWithFid) -> SpamUpdate {
+        value.0
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SpamScoreCount {
@@ -229,6 +259,33 @@ impl Collidable for DatedSpamUpdate {
         self.date() == other.date() && self.score() != other.score()
     }
 }
+
+impl HasTag<u64> for DatedSpamUpdateWithFid {
+    fn untag(self) -> (DatedSpamUpdate, u64) {
+        let date = self.date();
+        let spam_update = self.into_inner();
+        let fid = spam_update.1;
+        let res = DatedSpamUpdate::from(date, spam_update);
+        (res, fid)
+    }
+
+    fn tag(&self) -> u64 {
+        self.1
+    }
+}
+
+impl TryFrom<UnprocessedUserLine> for DatedSpamUpdateWithFid {
+    type Error = InvalidInputError;
+
+    fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
+        let spam_score = SpamScore::try_from(value.label_value())?;
+        let spam_update = SpamUpdate::from(spam_score);
+        let spam_update_with_fid = (spam_update, value.fid() as u64);
+        let date = value.date()?;
+        Ok(DatedSpamUpdateWithFid::from(date, spam_update_with_fid))
+    }
+}
+
 impl SpamEntry {
     pub fn date(&self) -> NaiveDate {
         match self {
