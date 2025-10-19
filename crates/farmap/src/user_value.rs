@@ -1,4 +1,4 @@
-use crate::spam_score::{DatedSpamEntry, DatedSpamUpdate, SpamScore, SpamUpdate};
+use crate::spam_score::{DatedSpamUpdate, SpamScore, SpamUpdate};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -18,7 +18,6 @@ pub trait UserValueSeal {}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AnyUserValue {
-    DatedSpamEntry(DatedSpamEntry),
     DatedSpamUpdate(DatedSpamUpdate),
     SpamUpdate(SpamUpdate),
     SpamScore(SpamScore),

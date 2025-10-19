@@ -21,7 +21,6 @@ pub type SpamRecord = (SpamScore, NaiveDate);
 pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
 pub type DatedSpamScoreCount = Dated<SpamScoreCount>;
 pub type DatedSpamScoreDistribution = Dated<SpamScoreDistribution>;
-pub type DatedSpamEntry = Dated<SpamEntry>;
 pub type DatedSpamUpdate = Dated<SpamUpdate>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
