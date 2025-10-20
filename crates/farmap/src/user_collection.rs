@@ -307,7 +307,7 @@ pub mod tests {
         user.add_spam_record(record).unwrap();
         collection.add_user(user).unwrap();
         let json = json!(collection);
-        let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null}}}"#;
+        let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null,"user_values":null}}}"#;
         assert_eq!(json.to_string(), expected_json);
     }
 }

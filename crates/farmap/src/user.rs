@@ -2,6 +2,7 @@ use crate::cast_meta::CastMeta;
 use crate::spam_score::SpamEntries;
 use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamScore;
+use crate::user_value::AnyUserValue;
 use crate::UnprocessedUserLine;
 use chrono::DateTime;
 use chrono::Datelike;
@@ -24,6 +25,7 @@ pub struct User {
     reaction_times: Option<Vec<NaiveDateTime>>,
     latest_reaction_time_update_date: Option<NaiveDateTime>,
     latest_cast_record_check_date: Option<NaiveDate>,
+    user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
 }
 
 type SpamRecord = (SpamScore, NaiveDate);
@@ -42,6 +44,7 @@ impl User {
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
+            user_values: None,
         }
     }
 
@@ -53,6 +56,7 @@ impl User {
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
+            user_values: None,
         }
     }
 
@@ -283,6 +287,7 @@ impl TryFrom<UnprocessedUserLine> for User {
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
+            user_values: None,
         })
     }
 }
@@ -353,6 +358,7 @@ pub mod tests {
             latest_reaction_time_update_date: Some(check_datetime),
             cast_records: None,
             latest_cast_record_check_date: None,
+            user_values: None,
         };
         #[allow(deprecated)]
         users.push_with_res(user).unwrap();
@@ -376,6 +382,7 @@ pub mod tests {
             latest_reaction_time_update_date: Some(check_datetime),
             cast_records: None,
             latest_cast_record_check_date: None,
+            user_values: None,
         };
         #[allow(deprecated)]
         users.push_with_res(user).unwrap();
@@ -397,6 +404,7 @@ pub mod tests {
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
+            user_values: None,
         };
 
         assert!(user.add_spam_record((SpamScore::Zero, date)).is_err());
