@@ -48,6 +48,9 @@ impl User {
         }
     }
 
+    pub fn all_user_values(&self) -> &Option<Vec<(AnyUserValue, NaiveDateTime)>> {
+        &self.user_values
+    }
     pub fn new_without_labels(fid: usize) -> Self {
         Self {
             fid,
