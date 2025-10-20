@@ -19,6 +19,7 @@ mod unprocessed_user_line;
 pub mod user;
 pub mod user_collection;
 mod user_value;
+mod user_with_spam_data;
 mod utils;
 pub use crate::has_tag::HasTag;
 #[doc(inline)]
@@ -36,3 +37,4 @@ pub use user::UserError;
 #[doc(inline)]
 pub use user_collection::UserCollection;
 pub use user_value::UserValue;
+pub use user_with_spam_data::UserWithSpamData;
