@@ -11,6 +11,7 @@ mod pinata_importer;
 /// pinata parser will eventually deprecated as a public interface. The user should only need to
 /// use PinataFetcher.
 pub mod pinata_parser;
+mod retrieve_error;
 mod wield_importer;
 mod wield_parser;
 pub use errors::DataReadError;
@@ -19,4 +20,5 @@ pub use import::ConversionError;
 pub use import::GithubFetcher;
 pub use import::ImporterError;
 pub use pinata_importer::PinataFetcher;
+pub use retrieve_error::RetrieveError;
 pub use wield_importer::WieldFetcher;

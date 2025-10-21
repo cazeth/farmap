@@ -1,13 +1,28 @@
 //! Import data from local files with spam label data.
 //!
 //! The data can be added to a [UserCollection](crate::UserCollection).
-use super::DataReadError;
+use super::{DataReadError, RetrieveError};
 use crate::fetch::InvalidJsonlError;
+use crate::spam_score::DatedSpamUpdateWithFid;
 use crate::UnprocessedUserLine;
 use itertools::Itertools;
 use serde_jsonlines::json_lines;
 use std::fs::read_dir;
 use std::path::Path;
+
+pub fn import_data_from_file(
+    path: impl AsRef<Path>,
+) -> Result<Vec<DatedSpamUpdateWithFid>, RetrieveError> {
+    let import_result = import_data_from_file_with_collected_res(path)
+        .map_err(|_| RetrieveError::CouldNotFetchData)?;
+
+    import_result
+        .into_iter()
+        .flatten()
+        .map(TryInto::<DatedSpamUpdateWithFid>::try_into)
+        .try_collect()
+        .map_err(|_| RetrieveError::InvalidFetchedData)
+}
 
 pub fn import_data_from_file_with_collected_res(
     path: impl AsRef<Path>,
