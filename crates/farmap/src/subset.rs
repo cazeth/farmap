@@ -120,6 +120,9 @@ impl<'a> UsersSubset<'a> {
         self.map
     }
 
+    pub fn drop_fid(&mut self, fid: usize) -> Option<&User> {
+        self.map.get(&fid).map(|v| &**v)
+    }
     pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<DatedSpamScoreCount> {
         if date < self.earliest_spam_score_date? {
             return None;
