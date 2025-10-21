@@ -4,7 +4,6 @@ use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
 use crate::UnprocessedUserLine;
-use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Local;
 use chrono::NaiveDate;
@@ -271,15 +270,7 @@ impl TryFrom<UnprocessedUserLine> for User {
     fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
         let label_value = SpamScore::try_from(value.label_value())?;
         let fid = value.fid();
-        let date = if let Some(date) =
-            DateTime::from_timestamp(value.timestamp().try_into().unwrap(), 0)
-        {
-            date.date_naive()
-        } else {
-            return Err(InvalidInputError::DateError {
-                timestamp: value.timestamp(),
-            });
-        };
+        let date = value.date()?;
         let record: SpamRecord = (label_value, date);
         let entries = SpamEntries::new(SpamEntry::WithoutSourceCommit(record));
 
