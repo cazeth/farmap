@@ -420,6 +420,15 @@ impl<'a> IntoIterator for UsersSubset<'a> {
     }
 }
 
+impl<'a> From<HashMap<usize, &'a User>> for UsersSubset<'a> {
+    fn from(value: HashMap<usize, &'a User>) -> Self {
+        Self {
+            map: value,
+            ..Default::default()
+        }
+    }
+}
+
 impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
     fn from(users: &'a UserCollection) -> Self {
         let map: HashMap<usize, &User> = users
