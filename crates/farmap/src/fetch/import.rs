@@ -27,11 +27,13 @@ impl Default for GithubFetcher {
 }
 
 impl GithubFetcher {
+    /// set the base url of the fetches made to Github.
     pub fn with_base_url(mut self, base_url: Url) -> Self {
         self.base_url = base_url;
         self
     }
 
+    // set the url that returns a summary of all the commits.
     pub fn with_status_url(mut self, status_url: Url) -> Self {
         self.status_url = status_url;
         self
