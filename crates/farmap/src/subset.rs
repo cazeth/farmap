@@ -411,6 +411,15 @@ impl<'a> UsersSubset<'a> {
     }
 }
 
+impl<'a> IntoIterator for UsersSubset<'a> {
+    type Item = &'a User;
+    type IntoIter = std::collections::hash_map::IntoValues<usize, &'a User>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.map.into_values()
+    }
+}
+
 impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
     fn from(users: &'a UserCollection) -> Self {
         let map: HashMap<usize, &User> = users
