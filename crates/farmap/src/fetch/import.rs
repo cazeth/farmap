@@ -273,128 +273,22 @@ pub enum ConversionError {
 pub mod tests {
     use super::*;
 
-    use std::path::PathBuf;
     use url::Url;
 
     fn create_test_importer(
-        base_dir: PathBuf,
         base_url: Url,
         status_check_url: Url,
     ) -> Result<GithubFetcher, ImporterError> {
-        #[allow(deprecated)]
-        Ok(
-            GithubFetcher::new(base_url, build_path, parse_status, status_check_url)
-                .with_local_data_dir(base_dir)?
-                .with_local_file_name_validation(validate_file_name)?,
-        )
-    }
-
-    // these function are not used in the tests since they only test the functionality against the
-    // local data without making any api calls.
-    fn parse_status(_: &str) -> Result<Vec<String>, ImporterError> {
-        panic!();
-    }
-
-    // this function is not used in the tests since it only tests the functionality against the
-    // local data without making any api calls.
-    fn build_path(_: &Url, _: &str) -> Result<Url, ConversionError> {
-        panic!();
-    }
-
-    // this function is not used in the tests since it only tests the functionality against the
-    // local data without making any api calls.
-    fn validate_file_name(name: &str) -> bool {
-        let res = !matches!(name, "invalid-file");
-        dbg!(res);
-        res
-    }
-
-    #[allow(deprecated)]
-    fn check_names_from_local_data(dir: PathBuf, expected_result: Vec<&str>) {
-        let base_url = Url::parse("https://caz.pub").unwrap();
-        let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = GithubFetcher::new(base_url, build_path, parse_status, status_url)
-            .with_local_data_dir(dir)
-            .unwrap()
-            .with_local_file_name_validation(validate_file_name)
-            .unwrap();
-
-        let actual_names: Vec<String> = importer
-            .name_strings_hash_set_from_local_data()
-            .unwrap()
-            .iter()
-            .map(|x| x.to_string())
-            .collect();
-
-        for expected in &expected_result {
-            assert!(actual_names.contains(&expected.to_string()));
-        }
-        assert_eq!(expected_result.len(), actual_names.len())
-    }
-
-    fn check_dummy_new_err_with_jsonl_file_as_valid(dir: PathBuf) {
-        let base_url = Url::parse("https://caz.pub").unwrap();
-        let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = create_test_importer(dir, base_url, status_url)
-            .unwrap()
-            .with_file_extension("jsonl");
-        assert!(importer.is_err());
+        Ok(GithubFetcher::default()
+            .with_base_url(base_url)
+            .with_status_url(status_check_url))
     }
 
     #[test]
-    fn valid_files_without_jsonl_should_error_with_jsonl_extension() {
-        check_dummy_new_err_with_jsonl_file_as_valid(PathBuf::from(
-            "data/unit-tests-importer/existing-dir-with-valid-files",
-        ));
-    }
-
-    fn check_dummy_new_ok(dir: PathBuf) {
+    fn check_dummy_new_ok() {
         let base_url = Url::parse("https://caz.pub").unwrap();
         let status_url = Url::parse("https://caz.pub").unwrap();
-        let importer = create_test_importer(dir, base_url, status_url);
+        let importer = create_test_importer(base_url, status_url);
         assert!(importer.is_ok());
-    }
-
-    #[test]
-    fn new_should_work_on_existing_empty_dir() {
-        check_dummy_new_ok(PathBuf::from(
-            "data/unit-tests-importer/existing-empty-dir/",
-        ));
-    }
-
-    #[test]
-    fn new_should_work_on_dir_with_valid_file() {
-        check_dummy_new_ok(PathBuf::from(
-            "data/unit-tests-importer/existing-dir-with-valid-files/",
-        ));
-    }
-
-    #[test]
-    fn new_should_work_on_nonexisting_dir() {
-        let path = PathBuf::from("data/unit-tests-importer/nonexisting-empty-dir/");
-        if path.exists() {
-            std::fs::remove_dir(path).unwrap();
-        }
-
-        check_dummy_new_ok(PathBuf::from(
-            "data/unit-tests-importer/nonexisting-empty-dir/",
-        ));
-    }
-
-    #[test]
-    fn valid_file_name() {
-        check_names_from_local_data(
-            PathBuf::from("data/unit-tests-importer/existing-dir-with-valid-files"),
-            vec!["valid-file"],
-        );
-    }
-
-    #[test]
-    fn should_be_no_local_names_from_empty_dir() {
-        let expected_result: Vec<&str> = Vec::new();
-        check_names_from_local_data(
-            PathBuf::from("data/unit-tests-importer/existing-empty-dir"),
-            expected_result,
-        );
     }
 }
