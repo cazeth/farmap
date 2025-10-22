@@ -3,20 +3,13 @@ use crate::UnprocessedUserLine;
 use log::{error, info, trace};
 use reqwest::header::HeaderMap;
 use reqwest::ClientBuilder;
-use std::collections::HashSet;
-use std::fs;
-use std::path::PathBuf;
 use thiserror::Error;
 use url::Url;
 
-/// This struct ensures that all necessary files are available to the program.
-/// It does so by checking the local file system or, if those files are unavailable or outdated,
-/// the github api.
+/// Fetch spam data from Farcaster Github repo.
 pub struct GithubFetcher {
-    local_data_files: Option<Vec<PathBuf>>,
     base_url: Url,
     status_url: Url,
-    extension: Option<String>,
     header_map: Option<HeaderMap>,
 }
 
@@ -26,8 +19,6 @@ impl Default for GithubFetcher {
         let status_url =
             Url::parse("https://api.github.com/repos/warpcast/labels/commits").unwrap();
         Self {
-            local_data_files: None,
-            extension: None,
             header_map: None,
             base_url,
             status_url,
@@ -36,22 +27,6 @@ impl Default for GithubFetcher {
 }
 
 impl GithubFetcher {
-    #[deprecated(note = "use default combined with with_base_url and with_status_url.")]
-    pub fn new(
-        base_url: Url,
-        _build_path: fn(&Url, &str) -> Result<Url, ConversionError>,
-        _strings_from_api_data: fn(&str) -> Result<Vec<String>, ImporterError>,
-        status_url: Url,
-    ) -> Self {
-        Self {
-            local_data_files: None,
-            base_url,
-            status_url,
-            extension: None,
-            header_map: None,
-        }
-    }
-
     pub fn with_base_url(mut self, base_url: Url) -> Self {
         self.base_url = base_url;
         self
@@ -60,102 +35,6 @@ impl GithubFetcher {
     pub fn with_status_url(mut self, status_url: Url) -> Self {
         self.status_url = status_url;
         self
-    }
-
-    #[deprecated(note = "local data dir will be removed from this struct in the future")]
-    pub fn with_local_data_dir(self, directory: PathBuf) -> Result<Self, ImporterError> {
-        trace!("checking local data against online data");
-        trace!("local directory : {directory:?}");
-        let local_data_files: Vec<PathBuf> = if !directory.exists() {
-            trace!("directory does not exist, creating...");
-            fs::create_dir_all(&directory).map_err(ImporterError::IoError)?;
-            trace!(
-                "created directory {:?}",
-                std::fs::canonicalize(&directory)
-                    .expect("should be able to get path to dir after it was created")
-            );
-            Vec::new()
-        } else {
-            trace!("directory already exists, checking contents...");
-            let result: std::result::Result<Vec<_>, ImporterError> = fs::read_dir(&directory)
-                .map_err(ImporterError::IoError)?
-                .map(|x| x.map_err(ImporterError::IoError))
-                .collect();
-            let readable_paths = result?;
-            let maybe_valid_paths: Vec<PathBuf> = readable_paths.iter().map(|x| x.path()).collect();
-            maybe_valid_paths
-                .iter()
-                .for_each(|x| trace!("local file exists : {x:?}"));
-            if maybe_valid_paths.is_empty() {
-                trace!("no local files in the dir");
-            }
-            maybe_valid_paths
-        };
-
-        Ok(Self {
-            local_data_files: Some(local_data_files),
-            ..self
-        })
-    }
-
-    /// pass a validation criteria to use to check if file names are valid. You can, for instance,
-    /// check that all of them are 40 characters or long or check that they all are digits only.
-    #[deprecated(note = "local file support will be removed in the future")]
-    pub fn with_local_file_name_validation(
-        self,
-        validator: fn(&str) -> bool,
-    ) -> Result<Self, ImporterError> {
-        let file_paths = self
-            .local_data_files
-            .as_ref()
-            .ok_or(ImporterError::InvalidDirectory)?;
-
-        let file_path_results = file_paths
-            .iter()
-            .inspect(|x| println!("file is {x:?}"))
-            .flat_map(|x| {
-                x.file_name()
-                    .ok_or(ImporterError::InvalidDirectory)
-                    .map(|x| x.to_str())
-                    .map(|x| x.ok_or(ImporterError::InvalidDirectory))
-            })
-            .collect::<Result<Vec<&str>, ImporterError>>();
-
-        let file_paths = file_path_results?;
-        if file_paths.iter().all(|x| validator(x)) {
-            Ok(self)
-        } else {
-            Err(ImporterError::InvalidDirectory)
-        }
-    }
-
-    pub fn with_file_extension(self, extension: &str) -> Result<Self, ImporterError> {
-        let local_data_files = self
-            .local_data_files
-            .as_ref()
-            .ok_or(ImporterError::InvalidDirectory)?;
-
-        trace!("checking extensions in local dir against extension {extension} ");
-        // check that all files have extensions that can be parsed to a str, otherwise return an error
-        let extensions = local_data_files
-            .iter()
-            .inspect(|x| println!("{x:?}"))
-            .map(|x| {
-                x.extension()
-                    .and_then(|x| x.to_str())
-                    .ok_or(ImporterError::InvalidDirectory)
-            })
-            .inspect(|x| println!("{x:?}"))
-            .collect::<Result<HashSet<&str>, ImporterError>>()?;
-
-        if extensions.iter().all(|x| *x == extension) {
-            let mut result = self;
-            result.extension = Some(extension.to_string());
-            trace!("all files in directory are considered to have valid extensions!");
-            Ok(result)
-        } else {
-            Err(ImporterError::InvalidDirectory)
-        }
     }
 
     pub fn with_api_header(self, map: HeaderMap) -> Self {
@@ -201,19 +80,6 @@ impl GithubFetcher {
             .await
             .map_err(|_| ImporterError::FailedApiRequest)?;
         github_parser::parse_status(&api_response)
-    }
-
-    #[deprecated(note = "local file support will be removed from this struct in the future")]
-    pub fn name_strings_hash_set_from_local_data(&self) -> Result<HashSet<&str>, ImporterError> {
-        let local_data_files = self
-            .local_data_files
-            .as_ref()
-            .ok_or(ImporterError::InvalidDirectory)?;
-        Ok(local_data_files
-            .iter()
-            .map(|x| x.file_name().unwrap().to_str().unwrap())
-            .map(|x| x.split(".").next().unwrap())
-            .collect::<HashSet<&str>>())
     }
 
     pub async fn fetch_commit_hash_body(&self, name: &str) -> Result<String, ImporterError> {
