@@ -7,6 +7,8 @@
 //! In order to get started, you likely want to fetch data using the fetch module. Choose one or
 //! several Fetchers to get the data you want. You can use and analyze the data in various ways
 //! using the User, UserCollection and Subset struct.
+mod analyze_spam_entry;
+pub use analyze_spam_entry::SetWithSpamEntries;
 pub mod cast_meta;
 mod collidable;
 mod dated;
