@@ -117,6 +117,20 @@ pub struct SpamScoreDistribution {
     spam: f32,
 }
 
+impl SpamScoreDistribution {
+    pub fn spam(&self) -> f32 {
+        self.spam
+    }
+
+    pub fn maybe_spam(&self) -> f32 {
+        self.maybe
+    }
+
+    pub fn non_spam(&self) -> f32 {
+        self.nonspam
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CommitHash(u32);
 
