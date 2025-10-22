@@ -252,6 +252,13 @@ impl UserValue for DatedSpamUpdate {
     }
 }
 
+impl From<(SpamScore, NaiveDate)> for DatedSpamUpdate {
+    fn from(value: (SpamScore, NaiveDate)) -> Self {
+        let spam_update: SpamUpdate = value.0.into();
+        Dated::from(value.1, spam_update)
+    }
+}
+
 impl UserValueSeal for DatedSpamUpdate {}
 
 impl Collidable for DatedSpamUpdate {
