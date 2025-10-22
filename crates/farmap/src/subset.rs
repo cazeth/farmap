@@ -297,8 +297,7 @@ impl<'a> UsersSubset<'a> {
 
         Some(
             self.iter()
-                .map(|x| x.reaction_times())
-                .flatten()
+                .flat_map(|x| x.reaction_times())
                 .flat_map(|x| x.iter())
                 .collect(),
         )
