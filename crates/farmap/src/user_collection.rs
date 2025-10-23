@@ -254,6 +254,7 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use chrono::NaiveDate;
     use serde_json::json;
     use std::path::PathBuf;
@@ -309,5 +310,20 @@ pub mod tests {
         let json = json!(collection);
         let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null,"user_values":null}}}"#;
         assert_eq!(json.to_string(), expected_json);
+    }
+
+    pub fn empty_collection() -> UserCollection {
+        UserCollection::default()
+    }
+
+    pub fn basic_single_user_test_collection_with_n_spam_updates(n: u64) -> UserCollection {
+        let date = NaiveDate::parse_from_str("2020-1-1", "%Y-%m-%d").unwrap();
+        let user = create_user_with_m_spam_scores(1, n, date);
+
+        let mut user_collection = UserCollection::default();
+        user_collection
+            .add_user(user)
+            .expect("only one user in collection - cannot collide");
+        user_collection
     }
 }

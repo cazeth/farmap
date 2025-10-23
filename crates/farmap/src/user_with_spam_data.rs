@@ -67,3 +67,30 @@ fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserW
         None
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use crate::spam_score::DatedSpamUpdate;
+    use crate::spam_score::SpamScore;
+    use crate::User;
+    use chrono::Days;
+    use chrono::NaiveDate;
+
+    pub fn create_user_with_m_spam_scores(
+        fid: u64,
+        m: u64,
+        first_spam_score_date: NaiveDate,
+    ) -> User {
+        let mut user = User::new_without_labels(fid as usize);
+        let mut date = first_spam_score_date;
+
+        for i in 0..m {
+            let spam_update =
+                DatedSpamUpdate::from(date, SpamScore::try_from((i % 3) as usize).unwrap());
+            user.add_user_value(spam_update)
+                .expect("should not cause collision");
+            date = date.checked_add_days(Days::new(1)).unwrap();
+        }
+        user
+    }
+}
