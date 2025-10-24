@@ -2,6 +2,7 @@ use crate::cast_meta::CastMeta;
 use crate::collidable::Collidable;
 use crate::spam_score::SpamEntries;
 use crate::spam_score::SpamEntry;
+use crate::spam_score::SpamRecord;
 use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
 use crate::UnprocessedUserLine;
@@ -28,8 +29,6 @@ pub struct User {
     latest_cast_record_check_date: Option<NaiveDate>,
     user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
 }
-
-type SpamRecord = (SpamScore, NaiveDate);
 
 impl User {
     /// This method only takes a single SpamRecord as input. Therefore it cannot fail. Add more
