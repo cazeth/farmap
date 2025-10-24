@@ -223,6 +223,16 @@ impl UserCollection {
     }
 }
 
+#[derive(Error, Debug, PartialEq, Clone, Hash)]
+#[non_exhaustive]
+pub enum CollectionError {
+    #[error("Tried to add colliding value")]
+    UserValueCollisionError,
+
+    #[error("user already exists in collection")]
+    DuplicateUserError,
+}
+
 #[derive(Error, Debug, PartialEq)]
 pub enum DataCreationError {
     #[error("Input data is invalid.")]
