@@ -1,4 +1,5 @@
 use crate::fetch::DataReadError;
+use crate::has_tag::HasTag;
 use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamScore;
 use crate::user::InvalidInputError;
@@ -39,6 +40,34 @@ impl UserCollection {
             self.map.insert(user.fid(), user);
             Ok(true)
         }
+    }
+
+    /// Returns a vec of all the collision errors, if there are any.
+    pub fn add_user_value_iter(
+        &mut self,
+        values: impl IntoIterator<Item = impl HasTag<u64>>,
+    ) -> Option<Vec<CollectionError>> {
+        let mut errors: Option<Vec<CollectionError>> = None;
+        for value in values {
+            if let Some(user) = self.user_mut(value.tag() as usize) {
+                let user_add_result = user
+                    .add_user_value(value.untag().0)
+                    .map_err(|_| CollectionError::UserValueCollisionError);
+                if let Err(add_result) = user_add_result {
+                    if let Some(errors) = &mut errors {
+                        errors.push(add_result);
+                    } else {
+                        errors = Some(vec![add_result])
+                    }
+                }
+            } else {
+                let mut user = User::new_without_labels(value.tag() as usize);
+                user.add_user_value(value.untag().0)
+                    .expect("new user cannot collide");
+                self.add_user(user).expect("new user cannot collide");
+            }
+        }
+        errors
     }
 
     /// Return `Some(SpamScore)` if the fid exists, otherwise returns none.
