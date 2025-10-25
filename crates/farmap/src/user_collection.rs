@@ -330,6 +330,7 @@ pub enum DbReadError {
 pub mod tests {
     use super::*;
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
+    use crate::UserValue;
     use chrono::NaiveDate;
     use serde_json::json;
     use std::path::PathBuf;
@@ -385,6 +386,42 @@ pub mod tests {
         let json = json!(collection);
         let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null,"user_values":null}}}"#;
         assert_eq!(json.to_string(), expected_json);
+    }
+
+    impl<T> HasTag<u64> for TestUserValue<T>
+    where
+        T: UserValue,
+    {
+        fn tag(&self) -> u64 {
+            self.fid
+        }
+
+        #[allow(refining_impl_trait)]
+        fn untag(self) -> (T, u64) {
+            (self.value, self.fid)
+        }
+    }
+
+    struct TestUserValue<T: UserValue> {
+        pub value: T,
+        pub fid: u64,
+    }
+
+    pub fn new_collection_from_user_value_iter<T>(
+        values: impl IntoIterator<Item = T>,
+    ) -> UserCollection
+    where
+        T: UserValue,
+    {
+        let mut collection = UserCollection::default();
+        let res = collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {
+            TestUserValue {
+                value: x,
+                fid: n as u64 + 1,
+            }
+        }));
+        assert!(res.is_none()); // There is one entry per fid so there should be no collisions
+        collection
     }
 
     pub fn empty_collection() -> UserCollection {
