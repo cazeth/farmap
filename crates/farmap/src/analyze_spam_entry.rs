@@ -384,6 +384,41 @@ mod tests {
         );
     }
 
+    // an iterator that returns DatedSpamUpdate with SpamScore One.
+    // It begins with a user-defined date an increments from there.
+    // It ends after user-define len.
+    struct SpamScoreOneIter {
+        pub current_date: NaiveDate,
+        pub len: u64,
+        pub count: u64,
+    }
+
+    impl Iterator for SpamScoreOneIter {
+        type Item = DatedSpamUpdate;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.count < self.len {
+                let value = Some(DatedSpamUpdate::from(self.current_date, SpamScore::One));
+                self.count += 1;
+                self.current_date.checked_add_days(Days::new(1)).unwrap();
+                value
+            } else {
+                None
+            }
+        }
+    }
+
+    fn create_users_with_spam_label_one(n: usize) -> UserCollection {
+        let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+        let new_iter = SpamScoreOneIter {
+            current_date: start_date,
+            len: n as u64,
+            count: 0,
+        };
+
+        crate::user_collection::tests::new_collection_from_user_value_iter(new_iter)
+    }
+
     mod test_new {
         use super::*;
         use crate::user_collection::tests::*;
@@ -393,6 +428,13 @@ mod tests {
             let user_collection = empty_collection();
             let set = create_set(&user_collection);
             assert!(set.is_none());
+        }
+
+        #[test]
+        fn ones() {
+            let collection = create_users_with_spam_label_one(10);
+            let set = create_set(&collection);
+            assert!(set.is_some());
         }
 
         #[test]
