@@ -129,7 +129,7 @@ impl UserCollection {
         {
             let mut set = UsersSubset::from(&collection);
             set.filter(|user| {
-                user.labels().is_some() && !user.user_values_of_kind::<DatedSpamUpdate>().is_empty()
+                user.labels().is_some() && user.user_values_of_kind::<DatedSpamUpdate>().is_empty()
             });
 
             fid_update_list = set.iter().map(|user| user.fid()).collect_vec();
