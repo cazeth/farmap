@@ -6,7 +6,10 @@ use axum::{
 };
 use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
-use farmap::{User, UserCollection, UsersSubset};
+use farmap::SetWithSpamEntries;
+use farmap::User;
+use farmap::UserCollection;
+use farmap::UsersSubset;
 use itertools::Itertools;
 use log::info;
 use log::trace;
@@ -61,8 +64,8 @@ async fn root() -> &'static str {
 
 async fn current_spam_score_distribution(State(users): State<Arc<UserCollection>>) -> Json<Value> {
     let users_ref: &UserCollection = &users;
-    let set = UsersSubset::from(users_ref);
-    let spam_score_distribution = set.current_spam_score_distribution().unwrap();
+    let set = SetWithSpamEntries::new(users_ref).unwrap();
+    let spam_score_distribution = set.current_spam_score_distribution();
     Json(json!(spam_score_distribution))
 }
 
