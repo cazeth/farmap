@@ -419,6 +419,47 @@ mod tests {
         crate::user_collection::tests::new_collection_from_user_value_iter(new_iter)
     }
 
+    // an iterator that returns DatedSpamUpdate cycling through them: 0,1,2,0,1,2,0...
+    // It begins with a user-defined date an increments from there.
+    // It ends after user-define len.
+    struct SpamScoreCyclingIter {
+        pub current_date: NaiveDate,
+        pub len: u64,
+        pub count: u64,
+        pub spam_score: u64,
+    }
+
+    impl Iterator for SpamScoreCyclingIter {
+        type Item = DatedSpamUpdate;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.count < self.len {
+                let value = Some(DatedSpamUpdate::from(
+                    self.current_date,
+                    SpamScore::try_from(self.spam_score as usize).unwrap(),
+                ));
+                self.count += 1;
+                self.current_date.checked_add_days(Days::new(1)).unwrap();
+                self.spam_score = (self.spam_score + 1) % 3;
+                value
+            } else {
+                None
+            }
+        }
+    }
+
+    fn create_users_with_cycling_spam_labels(n: usize) -> UserCollection {
+        let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+        let new_iter = SpamScoreCyclingIter {
+            current_date: start_date,
+            len: n as u64,
+            count: 0,
+            spam_score: 0,
+        };
+
+        crate::user_collection::tests::new_collection_from_user_value_iter(new_iter)
+    }
+
     mod test_new {
         use super::*;
         use crate::user_collection::tests::*;
@@ -487,6 +528,78 @@ mod tests {
             let collection = basic_single_user_test_collection_with_n_spam_updates(1);
             let set = create_set(&collection).unwrap();
             check_filtered(set, always_true, FilterValidity::NonEmpty);
+        }
+    }
+
+    mod current_spam_counts {
+        use super::*;
+
+        #[track_caller]
+        fn check_count(set: &SetWithSpamEntries, nonspam: u64, maybe: u64, spam: u64) {
+            let counts = set.current_spam_score_count();
+            assert_eq!(counts.non_spam(), nonspam);
+            assert_eq!(counts.maybe_spam(), maybe);
+            assert_eq!(counts.spam(), spam);
+        }
+
+        #[test]
+        fn one_user_per_count() {
+            let collection = create_users_with_cycling_spam_labels(3);
+            let set = create_set(&collection).unwrap();
+            check_count(&set, 1, 1, 1);
+        }
+    }
+
+    mod current_spam_distributions {
+        use super::*;
+
+        fn check_distribution(set: &SetWithSpamEntries, nonspam: f32, maybe: f32, spam: f32) {
+            let distribution = set.current_spam_score_distribution();
+            assert_eq!(distribution.non_spam(), nonspam);
+            assert_eq!(distribution.maybe_spam(), maybe);
+            assert_eq!(distribution.spam(), spam);
+        }
+
+        #[test]
+        fn test_ones() {
+            let collection = create_users_with_spam_label_one(10);
+            let set = create_set(&collection).unwrap();
+            check_distribution(&set, 0.0, 1.0, 0.0);
+        }
+    }
+
+    mod update_count {
+        use super::*;
+
+        fn check_update_count(set: &SetWithSpamEntries, expected: u64) {
+            assert_eq!(set.user_count(), expected as usize);
+        }
+
+        fn test_ones(n: u64) {
+            let collection = create_users_with_spam_label_one(n as usize);
+            let set = create_set(&collection).unwrap();
+            check_update_count(&set, n);
+        }
+
+        fn test_cycling(n: u64) {
+            let collection = create_users_with_cycling_spam_labels(n as usize);
+            let set = create_set(&collection).unwrap();
+            check_update_count(&set, n);
+        }
+
+        #[test]
+        fn test_ones_with_different_lens() {
+            test_ones(1);
+            test_ones(10);
+            test_ones(100);
+            test_ones(1000);
+        }
+
+        #[test]
+        fn test_cycling_with_different_lens() {
+            test_cycling(19);
+            test_cycling(57);
+            test_cycling(10000);
         }
     }
 
