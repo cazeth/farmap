@@ -168,7 +168,7 @@ pub async fn import_github_data(
     let api_names_set = HashSet::from_iter(api_names.iter().map(|x| x.to_string()));
     let missing_names = api_names_set.difference(&local_names);
     let missing_names_count = missing_names.clone().count();
-    trace!("There are {} missing names", missing_names_count);
+    trace!("There are {missing_names_count} missing names");
 
     let new_bodies = stream::iter(missing_names)
         .then(|name| importer.fetch_commit_hash_body(name))
@@ -185,7 +185,7 @@ pub async fn import_github_data(
 
     let updated_local_names = api_names;
 
-    trace!("updated local names: {:?}", updated_local_names);
+    trace!("updated local names: {updated_local_names:?}");
 
     let local_names_file: Option<File> = if readwrite_to_filesystem.get() {
         std::fs::File::create(names_data_path)

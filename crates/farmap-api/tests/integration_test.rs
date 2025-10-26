@@ -39,7 +39,7 @@ async fn test_root_endpoint() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/", addr))
+        .get(format!("http://{addr}/"))
         .send()
         .await
         .expect("Failed to send request");
@@ -55,7 +55,7 @@ async fn test_fid_endpoint() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/100", addr))
+        .get(format!("http://{addr}/100"))
         .send()
         .await
         .expect("Failed to send request");
@@ -66,7 +66,7 @@ async fn test_fid_endpoint() {
     assert_eq!(json.as_u64(), Some(2)); // "Two" maps to 2
 
     let response = client
-        .get(format!("http://{}/200", addr))
+        .get(format!("http://{addr}/200"))
         .send()
         .await
         .expect("Failed to send request");
@@ -76,7 +76,7 @@ async fn test_fid_endpoint() {
     assert_eq!(json.as_u64(), Some(0)); // "Zero" maps to 0
 
     let response = client
-        .get(format!("http://{}/999999", addr))
+        .get(format!("http://{addr}/999999"))
         .send()
         .await
         .expect("Failed to send request");
@@ -90,7 +90,7 @@ async fn test_current_spam_score_distribution() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/spam_score_distribution", addr))
+        .get(format!("http://{addr}/spam_score_distribution"))
         .send()
         .await
         .expect("Failed to send request");
@@ -108,7 +108,7 @@ async fn test_monthly_spam_scores() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/monthly_spam_scores", addr))
+        .get(format!("http://{addr}/monthly_spam_scores"))
         .send()
         .await
         .expect("Failed to send request");
@@ -141,7 +141,7 @@ async fn test_weekly_spam_scores() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/weekly_spam_scores", addr))
+        .get(format!("http://{addr}/weekly_spam_scores"))
         .send()
         .await
         .expect("Failed to send request");
@@ -177,8 +177,7 @@ async fn test_weekly_spam_scores_with_filters() {
     // Test with FID range filter
     let response = client
         .get(format!(
-            "http://{}/weekly_spam_scores?from_fid=100&to_fid=300",
-            addr
+            "http://{addr}/weekly_spam_scores?from_fid=100&to_fid=300"
         ))
         .send()
         .await
@@ -195,7 +194,7 @@ async fn test_weekly_spam_score_counts() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/weekly_spam_scores_counts", addr))
+        .get(format!("http://{addr}/weekly_spam_scores_counts"))
         .send()
         .await
         .expect("Failed to send request");
@@ -211,7 +210,7 @@ async fn test_latest_moves() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/latest_moves", addr))
+        .get(format!("http://{addr}/latest_moves"))
         .send()
         .await
         .expect("Failed to send request");
@@ -247,7 +246,7 @@ async fn test_latest_moves_with_days_filter() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/latest_moves?days=30", addr))
+        .get(format!("http://{addr}/latest_moves?days=30"))
         .send()
         .await
         .expect("Failed to send request");
@@ -263,7 +262,7 @@ async fn test_casts_for_moved() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("http://{}/casts_for_moved/0/1/30", addr))
+        .get(format!("http://{addr}/casts_for_moved/0/1/30"))
         .send()
         .await
         .expect("Failed to send request");
@@ -287,7 +286,7 @@ async fn test_casts_for_moved_invalid_params() {
 
     // Test with invalid from value (>2)
     let response = client
-        .get(format!("http://{}/casts_for_moved/3/0/30", addr))
+        .get(format!("http://{addr}/casts_for_moved/3/0/30"))
         .send()
         .await
         .expect("Failed to send request");
@@ -302,7 +301,7 @@ async fn test_spam_score_distributions_for_cohort() {
 
     // Test for January 2025 cohort
     let response = client
-        .get(format!("http://{}/spam_score_distributions/2025/1", addr))
+        .get(format!("http://{addr}/spam_score_distributions/2025/1"))
         .send()
         .await
         .expect("Failed to send request");
@@ -332,7 +331,7 @@ async fn test_spam_score_distributions_for_cohort_invalid_date() {
 
     // Test with invalid month (13)
     let response = client
-        .get(format!("http://{}/spam_score_distributions/2025/13", addr))
+        .get(format!("http://{addr}/spam_score_distributions/2025/13"))
         .send()
         .await
         .expect("Failed to send request");
@@ -341,7 +340,7 @@ async fn test_spam_score_distributions_for_cohort_invalid_date() {
 
     // Test with invalid month (0)
     let response = client
-        .get(format!("http://{}/spam_score_distributions/2025/0", addr))
+        .get(format!("http://{addr}/spam_score_distributions/2025/0"))
         .send()
         .await
         .expect("Failed to send request");
