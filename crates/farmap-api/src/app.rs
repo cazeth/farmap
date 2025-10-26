@@ -9,6 +9,7 @@ use chrono::{Days, Months, NaiveDate};
 use farmap::SetWithSpamEntries;
 use farmap::User;
 use farmap::UserCollection;
+use farmap::UserWithSpamData;
 use farmap::UsersSubset;
 use itertools::Itertools;
 use log::info;
@@ -83,17 +84,20 @@ async fn latest_moves(
     };
 
     let users_ref: &UserCollection = &users;
-    let mut set = UsersSubset::from(users_ref);
-    if let Some(to_fid) = filters.to_fid {
-        set.filter(|user: &User| user.fid() as u64 <= to_fid);
-    };
-    if let Some(from_fid) = filters.from_fid {
-        set.filter(|user: &User| user.fid() as u64 >= from_fid);
-    };
 
-    let result = set.spam_changes_with_fid_score_shift(comparison_time, Days::new(21));
+    if let Some(mut set) = SetWithSpamEntries::new(users_ref) {
+        if let Some(to_fid) = filters.to_fid {
+            set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
+        };
+        if let Some(from_fid) = filters.from_fid {
+            set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
+        };
 
-    Json(json!(result))
+        let result = set.spam_changes_with_fid_score_shift(comparison_time, Days::new(21));
+        Json(json!(result))
+    } else {
+        Json(serde_json::Value::Null)
+    }
 }
 
 async fn fid(
@@ -182,16 +186,19 @@ async fn weekly_spam_score_counts(
     State(users): State<Arc<UserCollection>>,
 ) -> Json<Value> {
     let users_ref: &UserCollection = &users;
-    let mut set = UsersSubset::from(users_ref);
-    if let Some(to_fid) = filters.to_fid {
-        set.filter(|user: &User| user.fid() as u64 <= to_fid);
-    };
-    if let Some(from_fid) = filters.from_fid {
-        set.filter(|user: &User| user.fid() as u64 >= from_fid);
-    };
+    if let Some(mut set) = SetWithSpamEntries::new(users_ref) {
+        if let Some(to_fid) = filters.to_fid {
+            set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
+        };
+        if let Some(from_fid) = filters.from_fid {
+            set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
+        };
 
-    let counts = set.weekly_spam_score_counts();
-    Json(json!(counts))
+        let counts = set.weekly_spam_score_counts();
+        Json(json!(counts))
+    } else {
+        Json(serde_json::Value::Null)
+    }
 }
 
 async fn casts_for_moved(
