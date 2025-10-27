@@ -126,8 +126,7 @@ async fn spam_score_distributions_for_cohort(
         };
 
     trace!(
-        "checking spam score distributions for cohort created at of before {:?}",
-        cohort_start_date
+        "checking spam score distributions for cohort created at of before {cohort_start_date:?}"
     );
 
     let cohort_end_date = cohort_start_date
@@ -216,8 +215,8 @@ async fn casts_for_moved(
     let users_ref: &UserCollection = &users;
     let mut set = UsersSubset::from(users_ref);
 
-    info!("checking with begin date {}", begin_date);
-    info!("checking with current time {}", current_time);
+    info!("checking with begin date {begin_date}");
+    info!("checking with current time {current_time}");
 
     set.filter(|user: &User| {
         user.spam_score_at_date_with_owned(&begin_date)
