@@ -1,19 +1,21 @@
 use axum::http::{HeaderMap, HeaderValue};
 use chrono::prelude::*;
 use chrono::Days;
+use farmap::fetch::github_parser::parse_commit_hash_body;
 use farmap::fetch::pinata_parser::cast_meta_from_pinata_response;
 use farmap::fetch::GithubFetcher;
 use farmap::fetch::ImporterError;
 use farmap::fetch::PinataFetcher;
+use farmap::spam_score::DatedSpamUpdateWithFid;
+use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
-use farmap::UnprocessedUserLine;
 use farmap::{UserCollection, UsersSubset};
 use futures::stream::{self, StreamExt};
 use futures::TryStreamExt;
 use itertools::iproduct;
+use itertools::Itertools;
 use log::trace;
 use log::{error, info};
-use serde_jsonlines::JsonLinesReader;
 use std::cell::Cell;
 use std::fs::File;
 use std::path::Path;
@@ -175,12 +177,14 @@ pub async fn import_github_data(
         .try_collect::<Vec<_>>()
         .await?;
 
-    for (i, body) in new_bodies.iter().enumerate() {
-        let lines = JsonLinesReader::new(body.as_bytes());
-        for line in lines.read_all::<UnprocessedUserLine>().flatten() {
-            users.push_unprocessed_user_line(line).unwrap_or(());
-        }
-        trace!("finished with {i}...");
+    for body in new_bodies {
+        let user_lines = parse_commit_hash_body(&body);
+        let dated_spam_updates = user_lines
+            .0
+            .into_iter()
+            .flat_map(DatedSpamUpdateWithFid::try_from)
+            .collect_vec();
+        users.add_user_value_iter(dated_spam_updates);
     }
 
     let updated_local_names = api_names;
@@ -230,18 +234,22 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
 
     let fill_rates = iproduct!(spam_scores, spam_scores)
         .map(|(from, to)| {
-            let mut subset = UsersSubset::from(users);
+            let mut subset = SetWithSpamEntries::new(users).expect("no users with spam data");
             subset.filter(|user| {
-                user.spam_score_at_date_with_owned(&previous_date)
+                user.spam_score_at_date(previous_date)
                     .map(|x| x == from)
                     .unwrap_or(false)
             });
             subset.filter(|user| {
-                user.spam_score_at_date_with_owned(&previous_date)
+                user.spam_score_at_date(previous_date)
                     .map(|x| x == to)
                     .unwrap_or(false)
             });
-            (subset.casts_data_fill_rate(), from, to)
+            (
+                subset.user_count() as f32 / users.user_count() as f32,
+                from,
+                to,
+            )
         })
         .collect::<Vec<_>>();
 
