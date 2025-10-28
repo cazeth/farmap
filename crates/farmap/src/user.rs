@@ -384,6 +384,7 @@ pub enum InvalidInputError {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::spam_score::DatedSpamUpdate;
     use chrono::NaiveTime;
     use std::path::PathBuf;
 
@@ -605,5 +606,11 @@ pub mod tests {
                 NaiveTime::from_hms_opt(10, 1, 10).unwrap(),
             ),
         );
+    }
+
+    #[test]
+    fn test_user_values_of_kind_is_none_on_none_user_values() {
+        let user = User::new_without_labels(1);
+        assert!(user.user_values_of_kind::<DatedSpamUpdate>().is_empty());
     }
 }
