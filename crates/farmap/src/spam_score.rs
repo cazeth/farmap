@@ -11,7 +11,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum SpamScore {
     Zero,
     One,
@@ -131,7 +131,7 @@ impl SpamScoreDistribution {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub struct CommitHash(u32);
 
 impl TryFrom<String> for CommitHash {
@@ -189,13 +189,13 @@ impl TryFrom<SpamScoreCount> for SpamScoreDistribution {
 #[error("trying to create a spam score distribution from an empty SpamScoreCount")]
 pub struct EmptyScoreCountError;
 
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub enum SpamEntry {
     WithSourceCommit(SpamRecordWithSourceCommit),
     WithoutSourceCommit(SpamRecord),
 }
 
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 pub enum SpamUpdate {
     WithSourceCommit(SpamScoreWithSourceCommit),
     WithoutSourceCommit(SpamScore),
@@ -329,7 +329,7 @@ impl From<SpamEntry> for SpamRecord {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Hash)]
 #[serde(try_from = "SerdeSpamEntries")]
 #[serde(into = "SerdeSpamEntries")]
 pub struct SpamEntries {
