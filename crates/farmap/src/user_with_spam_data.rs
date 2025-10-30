@@ -1,3 +1,4 @@
+use crate::is_user::IsUser;
 use crate::spam_score::DatedSpamUpdate;
 use crate::SpamScore;
 use crate::{fetch::ConversionError, User};
@@ -74,6 +75,16 @@ fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserW
         Some(UserWithSpamData { user: value })
     } else {
         None
+    }
+}
+
+impl<'a> IsUser<'a> for UserWithSpamData<'a> {
+    fn fid(&self) -> usize {
+        self.fid()
+    }
+
+    fn user(&self) -> &'a User {
+        self.user
     }
 }
 
