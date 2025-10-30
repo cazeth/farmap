@@ -52,6 +52,14 @@ impl<'a> UserWithSpamData<'a> {
             .min_by_key(|user| user.date())
             .expect("cannot be empty")
     }
+
+    pub fn latest_spam_update(&self) -> DatedSpamUpdate {
+        **self
+            .dated_spam_updates()
+            .iter()
+            .max_by_key(|user| user.date())
+            .expect("cannot be empty")
+    }
 }
 
 fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserWithSpamData> {
