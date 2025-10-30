@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Clone)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, Hash)]
 pub struct CastMeta {
     cast_fid: u64,
     cast_date: NaiveDate,
@@ -25,7 +25,7 @@ impl CastMeta {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Copy, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Copy, Clone, Hash)]
 pub enum CastType {
     CAST,
 }

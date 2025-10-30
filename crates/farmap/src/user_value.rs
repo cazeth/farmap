@@ -16,7 +16,7 @@ pub trait UserValue:
 
 pub trait UserValueSeal {}
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum AnyUserValue {
     DatedSpamUpdate(DatedSpamUpdate),
     SpamUpdate(SpamUpdate),

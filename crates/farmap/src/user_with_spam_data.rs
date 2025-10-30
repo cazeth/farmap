@@ -5,6 +5,7 @@ use chrono::NaiveDate;
 use itertools::Itertools;
 
 /// A User guaranteed to have at least one [SpamUpdate](crate::spam_score::SpamUpdate).
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserWithSpamData<'a> {
     user: &'a User,
 }

@@ -15,7 +15,7 @@ use itertools::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 pub struct User {
     fid: usize,
     #[serde(rename = "entries")]

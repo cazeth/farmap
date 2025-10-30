@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 
 use chrono::NaiveDate;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Hash, Eq)]
 #[serde(bound(
     serialize = "T: serde::Serialize",
     deserialize = "T: serde::de::DeserializeOwned"
@@ -71,12 +71,6 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Dated<T> {
             .field("inner", &self.inner)
             .field("date", &self.date)
             .finish()
-    }
-}
-
-impl<T: PartialEq> PartialEq for Dated<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner && self.date == other.date
     }
 }
 
