@@ -70,7 +70,6 @@ impl<'a> SetWithSpamEntries<'a> {
     where
         F: Fn(&UserWithSpamData) -> bool,
     {
-        dbg!(&self.filtered(&filter));
         if self.filtered(&filter).is_none() {
             None
         } else {
@@ -84,8 +83,6 @@ impl<'a> SetWithSpamEntries<'a> {
                 .collect();
 
             self.set = UsersSubset::from(new_set);
-
-            dbg!(&self.set);
             self.earliest_spam_score_date = earliest_spam_score_date(self.set.iter());
             self.latest_spam_score_date = latest_spam_score_date(self.set.iter());
             Some(())
