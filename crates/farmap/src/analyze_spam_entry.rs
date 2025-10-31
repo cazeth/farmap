@@ -6,13 +6,16 @@ use crate::SpamScore;
 use crate::SpamScoreDistribution;
 use crate::User;
 use crate::UserCollection;
+use crate::UserSet;
 use crate::UserWithSpamData;
 use crate::UsersSubset;
 use chrono::Days;
 use chrono::Duration;
 use chrono::NaiveDate;
 use itertools::Itertools;
+use std::collections::hash_set::IntoIter as HashSetIntoIter;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use thiserror::Error;
 
 /// A set of [UserWithSpamData]
@@ -275,6 +278,46 @@ impl<'a> TryFrom<UsersSubset<'a>> for SetWithSpamEntries<'a> {
         } else {
             Err(EmptySetError)
         }
+    }
+}
+
+pub struct SetWithSpamEntriesIter<'a> {
+    iter: HashSetIntoIter<UserWithSpamData<'a>>,
+}
+
+impl<'a> Iterator for SetWithSpamEntriesIter<'a> {
+    type Item = UserWithSpamData<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+impl<'a> IntoIterator for SetWithSpamEntries<'a> {
+    type Item = UserWithSpamData<'a>;
+    type IntoIter = SetWithSpamEntriesIter<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        let iter: HashSet<_> = self
+            .set
+            .into_iter()
+            .map(|x| {
+                x.try_into()
+                    .expect("SetWithSpamEntries should only contain users that have spam data")
+            })
+            .collect();
+        let iter = iter.into_iter();
+
+        SetWithSpamEntriesIter { iter }
+    }
+}
+
+#[allow(refining_impl_trait)]
+impl<'a> UserSet<'a> for SetWithSpamEntries<'a> {
+    fn user(&'a self, fid: usize) -> Option<UserWithSpamData<'a>> {
+        self.set.user(fid).and_then(|x| x.try_into().ok())
+    }
+    fn user_count(&self) -> usize {
+        self.set.user_count()
     }
 }
 
