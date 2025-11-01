@@ -92,9 +92,13 @@ impl<'a> IsUser<'a> for UserWithSpamData<'a> {
 pub mod tests {
     use crate::spam_score::DatedSpamUpdate;
     use crate::spam_score::SpamScore;
+    use crate::user::tests::create_user;
+    use crate::user::tests::valid_user_value_add;
     use crate::User;
     use chrono::Days;
     use chrono::NaiveDate;
+
+    use super::UserWithSpamData;
 
     pub fn create_user_with_m_spam_scores(
         fid: u64,
@@ -112,5 +116,42 @@ pub mod tests {
             date = date.checked_add_days(Days::new(1)).unwrap();
         }
         user
+    }
+
+    pub fn valid_spam_user(user: &User) -> UserWithSpamData {
+        UserWithSpamData::try_from(user).unwrap()
+    }
+
+    pub fn add_spam_score(user: &mut User, spam_score: u64, date: &str) {
+        let date = NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+        let spam_score = SpamScore::try_from(spam_score as usize).unwrap();
+        let dated_spam_update =
+            <DatedSpamUpdate as From<(SpamScore, NaiveDate)>>::from((spam_score, date));
+        valid_user_value_add(user, dated_spam_update);
+    }
+
+    mod test_spam_score_at_date {
+        use super::*;
+
+        fn check_spam_score_at_date(
+            user: &UserWithSpamData,
+            spam_score: Option<usize>,
+            date: &str,
+        ) {
+            let date = NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+            assert_eq!(
+                user.spam_score_at_date(date),
+                spam_score.map(|score| SpamScore::try_from(score).unwrap())
+            );
+        }
+
+        #[test]
+        fn test_user_with_single_spam_score() {
+            let mut user = create_user(1);
+            add_spam_score(&mut user, 1, "2024-03-05");
+            let spam_user = valid_spam_user(&user);
+            check_spam_score_at_date(&spam_user, None, "2024-03-04");
+            check_spam_score_at_date(&spam_user, Some(1), "2024-03-05");
+        }
     }
 }
