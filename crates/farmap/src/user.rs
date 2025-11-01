@@ -392,6 +392,14 @@ pub mod tests {
     use super::*;
     use crate::user_collection::UserCollection;
 
+    pub fn create_user(fid: usize) -> User {
+        User::new_without_labels(fid)
+    }
+
+    pub fn valid_user_value_add<T: UserValue>(user: &mut User, value: T) {
+        user.add_user_value::<T>(value).unwrap()
+    }
+
     fn check_created_at_or_before_date(user: &User, year: u32, month: u32, date: u32) -> bool {
         user.created_at_or_before_date_with_opt(
             NaiveDate::from_ymd_opt(year as i32, month, date).unwrap(),
