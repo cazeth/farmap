@@ -138,6 +138,7 @@ impl User {
             None
         }
     }
+
     pub fn new_without_labels(fid: usize) -> Self {
         Self {
             fid,

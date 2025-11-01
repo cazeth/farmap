@@ -139,6 +139,7 @@ impl FidScoreShift {
     pub fn target(&self) -> ShiftTarget {
         self.target
     }
+
     pub fn count(&self) -> usize {
         self.count
     }

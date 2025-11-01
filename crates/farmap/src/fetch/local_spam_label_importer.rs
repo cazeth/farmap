@@ -1,5 +1,4 @@
 //! Import data from local files with spam label data.
-//!
 //! The data can be added to a [UserCollection](crate::UserCollection).
 use super::{DataReadError, RetrieveError};
 use crate::fetch::InvalidJsonlError;
