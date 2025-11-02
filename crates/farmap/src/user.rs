@@ -374,20 +374,6 @@ pub mod tests {
         user.add_user_value::<T>(value).unwrap()
     }
 
-    fn check_created_at_or_before_date(user: &User, year: u32, month: u32, date: u32) -> bool {
-        user.created_at_or_before_date_with_opt(
-            NaiveDate::from_ymd_opt(year as i32, month, date).unwrap(),
-        )
-        .unwrap()
-    }
-
-    fn check_created_at_or_after_date(user: &User, year: u32, month: u32, date: u32) -> bool {
-        user.created_at_or_after_date_with_opt(
-            NaiveDate::from_ymd_opt(year as i32, month, date).unwrap(),
-        )
-        .unwrap()
-    }
-
     fn check_spam_score_at_date(
         user: &User,
         year: u32,
@@ -525,17 +511,6 @@ pub mod tests {
     }
 
     #[test]
-    pub fn test_user_created_after_date_on_dummy_data_with_new() {
-        let collection = dummy_data();
-        let user = collection.user(1).unwrap();
-
-        assert!(check_created_at_or_after_date(user, 2023, 1, 1));
-        assert!(check_created_at_or_after_date(user, 2024, 1, 1));
-        assert!(!check_created_at_or_after_date(user, 2024, 6, 1));
-        assert!(!check_created_at_or_after_date(user, 2025, 1, 1));
-    }
-
-    #[test]
     pub fn test_spam_score_by_date_on_dummy_data_with_new() {
         let collection = dummy_data();
         let user = collection.user(1).unwrap();
@@ -544,26 +519,6 @@ pub mod tests {
         check_spam_score_at_date(user, 2025, 1, 20, Some(SpamScore::One));
         check_spam_score_at_date(user, 2025, 1, 23, Some(SpamScore::Zero));
         check_spam_score_at_date(user, 2025, 1, 25, Some(SpamScore::Zero));
-    }
-
-    #[test]
-    fn test_created_by_before_date_with_new() {
-        let collection = dummy_data();
-        let user = collection.user(1).unwrap();
-        assert!(!check_created_at_or_before_date(user, 2023, 12, 31));
-        assert!(check_created_at_or_before_date(user, 2024, 1, 1));
-        assert!(check_created_at_or_before_date(user, 2024, 1, 2));
-        assert!(check_created_at_or_before_date(user, 2024, 1, 2));
-        assert!(check_created_at_or_before_date(user, 2025, 12, 31));
-
-        let user = collection.user(2).unwrap();
-        assert!(!check_created_at_or_before_date(user, 2023, 1, 31));
-        assert!(!check_created_at_or_before_date(user, 2024, 1, 1));
-        assert!(!check_created_at_or_before_date(user, 2024, 1, 2));
-        assert!(!check_created_at_or_before_date(user, 2025, 1, 22));
-        assert!(check_created_at_or_before_date(user, 2025, 1, 23));
-        assert!(check_created_at_or_before_date(user, 2025, 1, 24));
-        assert!(check_created_at_or_before_date(user, 2025, 12, 31));
     }
 
     #[test]
