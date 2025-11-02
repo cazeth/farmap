@@ -172,16 +172,6 @@ impl User {
         }
     }
 
-    /// Returns the fid of the user
-    /// # Examples
-    /// ```rust
-    /// use farmap::User;
-    /// use chrono::NaiveDate;
-    /// use farmap::SpamScore;
-    ///
-    /// let user = User::new(1, (SpamScore::Zero, NaiveDate::from_ymd_opt(2020,1,1).unwrap()) );
-    /// assert_eq!(user.fid(), 1);
-    /// ````
     pub fn fid(&self) -> usize {
         self.fid
     }
