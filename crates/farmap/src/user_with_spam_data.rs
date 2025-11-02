@@ -99,6 +99,7 @@ pub mod tests {
     use chrono::NaiveDate;
 
     use super::UserWithSpamData;
+    use crate::user_collection::tests::dummy_data;
 
     pub fn create_user_with_m_spam_scores(
         fid: u64,
@@ -152,6 +153,18 @@ pub mod tests {
             let spam_user = valid_spam_user(&user);
             check_spam_score_at_date(&spam_user, None, "2024-03-04");
             check_spam_score_at_date(&spam_user, Some(1), "2024-03-05");
+        }
+
+        #[test]
+        pub fn test_spam_scores_on_dummy_data() {
+            let collection = dummy_data();
+            let user = valid_spam_user(collection.user(1).unwrap());
+
+            check_spam_score_at_date(&user, None, "2023-01-25");
+            check_spam_score_at_date(&user, Some(1), "2024-01-25");
+            check_spam_score_at_date(&user, Some(1), "2025-01-20");
+            check_spam_score_at_date(&user, Some(0), "2025-01-23");
+            check_spam_score_at_date(&user, Some(0), "2025-01-25");
         }
     }
 }
