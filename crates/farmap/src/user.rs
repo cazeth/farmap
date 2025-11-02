@@ -31,23 +31,6 @@ pub struct User {
 }
 
 impl User {
-    /// This method only takes a single SpamRecord as input. Therefore it cannot fail. Add more
-    /// SpamRecords with add_spam_record. This function is mostly used for testing.
-    #[deprecated(since = "0.9.1", note = "use new_without_labels instead")]
-    pub fn new(fid: usize, labels: SpamRecord) -> Self {
-        let entry = SpamEntry::WithoutSourceCommit(labels);
-        let entries = SpamEntries::new(entry);
-        Self {
-            fid,
-            labels: Some(entries),
-            cast_records: None,
-            latest_cast_record_check_date: None,
-            reaction_times: None,
-            latest_reaction_time_update_date: None,
-            user_values: None,
-        }
-    }
-
     /// Check if a User has at least one value of type T.
     pub fn has<T: UserValue>(&self) -> bool {
         if let Some(user_values) = &self.user_values {
