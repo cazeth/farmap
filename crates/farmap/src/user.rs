@@ -363,6 +363,7 @@ pub mod tests {
     use std::path::PathBuf;
 
     use super::*;
+    use crate::user_collection::tests::dummy_data;
     use crate::user_collection::UserCollection;
 
     pub fn create_user(fid: usize) -> User {
@@ -525,9 +526,8 @@ pub mod tests {
 
     #[test]
     pub fn test_user_created_after_date_on_dummy_data_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let user = users.user(1).unwrap();
+        let collection = dummy_data();
+        let user = collection.user(1).unwrap();
 
         assert!(check_created_at_or_after_date(user, 2023, 1, 1));
         assert!(check_created_at_or_after_date(user, 2024, 1, 1));
@@ -537,9 +537,8 @@ pub mod tests {
 
     #[test]
     pub fn test_spam_score_by_date_on_dummy_data_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let user = users.user(1).unwrap();
+        let collection = dummy_data();
+        let user = collection.user(1).unwrap();
         check_spam_score_at_date(user, 2023, 1, 25, None);
         check_spam_score_at_date(user, 2024, 1, 25, Some(SpamScore::One));
         check_spam_score_at_date(user, 2025, 1, 20, Some(SpamScore::One));
@@ -549,16 +548,15 @@ pub mod tests {
 
     #[test]
     fn test_created_by_before_date_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let user = users.user(1).unwrap();
+        let collection = dummy_data();
+        let user = collection.user(1).unwrap();
         assert!(!check_created_at_or_before_date(user, 2023, 12, 31));
         assert!(check_created_at_or_before_date(user, 2024, 1, 1));
         assert!(check_created_at_or_before_date(user, 2024, 1, 2));
         assert!(check_created_at_or_before_date(user, 2024, 1, 2));
         assert!(check_created_at_or_before_date(user, 2025, 12, 31));
 
-        let user = users.user(2).unwrap();
+        let user = collection.user(2).unwrap();
         assert!(!check_created_at_or_before_date(user, 2023, 1, 31));
         assert!(!check_created_at_or_before_date(user, 2024, 1, 1));
         assert!(!check_created_at_or_before_date(user, 2024, 1, 2));

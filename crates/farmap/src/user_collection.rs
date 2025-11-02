@@ -438,4 +438,9 @@ pub mod tests {
             .expect("only one user in collection - cannot collide");
         user_collection
     }
+
+    pub fn dummy_data() -> UserCollection {
+        let db_path = PathBuf::from("data/dummy-data_db.json");
+        UserCollection::create_from_db(&db_path).unwrap()
+    }
 }

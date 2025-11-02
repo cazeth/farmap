@@ -459,6 +459,7 @@ impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
 mod tests {
 
     use super::*;
+    use crate::user_collection::tests::dummy_data;
     use std::path::PathBuf;
 
     fn check_current_spam_score_distribution(result: &UsersSubset, expected: &[f64; 3]) {
@@ -538,8 +539,7 @@ mod tests {
 
     #[test]
     fn test_earliest_date() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
         assert_eq!(set.earliest_spam_score_date.unwrap(), date);
@@ -547,8 +547,7 @@ mod tests {
 
     #[test]
     fn test_earliest_date_after_filter() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let mut set = UsersSubset::from(&users);
         let filter_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         set.filter(|user: &User| user.created_at_or_after_date_with_opt(filter_date).unwrap());
@@ -560,8 +559,7 @@ mod tests {
 
     #[test]
     fn test_latest_data() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
         assert_eq!(set.latest_spam_score_date.unwrap(), date);
@@ -569,8 +567,7 @@ mod tests {
 
     #[test]
     fn filter_test_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let mut set = UsersSubset::from(&users);
         assert_eq!(set.user_count(), 2);
         set.filter(|user: &User| user.fid() != 3);
@@ -581,8 +578,7 @@ mod tests {
 
     #[test]
     fn test_dates_in_monthly_spam_score_distributions() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let monthly_distributions = set.monthly_spam_score_distributions();
         assert_eq!(
@@ -607,8 +603,7 @@ mod tests {
 
     #[test]
     fn test_dates_in_weekly_spam_score_distributions_with_dedicated_type() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let weekly_distributions = set.weekly_spam_score_distributions_with_dedicated_type();
         assert_eq!(
@@ -628,8 +623,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_dates_in_weekly_spam_score_distributions() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let weekly_distributions = set.weekly_spam_score_distributions();
         assert_eq!(
@@ -648,8 +642,7 @@ mod tests {
 
     #[test]
     fn test_spam_score_distribution_at_date_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         assert_eq!(users.user_count(), 2);
         let subset = UsersSubset::from_filter(&users, |user: &User| {
             user.created_at_or_after_date_with_opt(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
@@ -671,8 +664,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_spam_change_matrix_with_new_with_deprecated_spam() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let change_matrix =
             set.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
@@ -686,8 +678,7 @@ mod tests {
 
     #[test]
     fn test_get_user_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         assert!(set.user(3).is_none());
         assert_eq!(
