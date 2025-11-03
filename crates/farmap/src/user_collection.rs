@@ -31,21 +31,6 @@ pub struct UserCollection {
 pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
 
 impl UserCollection {
-    /// add a user to the collection. If the fid already exists, the label is updated.
-    /// This method may fail if the user is considered invalid in UserCollection because of
-    /// SpamScoreCollision.
-    #[deprecated(since = "0.9.1", note = "use add_user_instead")]
-    #[allow(deprecated)]
-    pub fn push_with_res(&mut self, user: User) -> Result<bool, UserError> {
-        if let Some(existing_user) = self.map.get_mut(&user.fid()) {
-            existing_user.merge_user(user)?;
-            Ok(false)
-        } else {
-            self.map.insert(user.fid(), user);
-            Ok(true)
-        }
-    }
-
     /// Returns a vec of all the collision errors, if there are any.
     pub fn add_user_value_iter(
         &mut self,

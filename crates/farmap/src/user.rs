@@ -221,24 +221,6 @@ impl User {
         }
     }
 
-    /// Merges two user objects into one. Both must have the same FID and no contradictory spam
-    /// records (i.e same date but different scores)
-    #[deprecated(note = "use add spam record instead")]
-    pub fn merge_user(&mut self, other: Self) -> Result<(), UserError> {
-        if self.fid != other.fid() {
-            return Err(UserError::DifferentFidMerge {
-                fid_1: self.fid,
-                fid_2: other.fid,
-            });
-        };
-
-        for spam_record in other.all_spam_records_with_opt().unwrap() {
-            self.add_spam_record(spam_record)?
-        }
-
-        Ok(())
-    }
-
     pub fn cast_count(&self) -> Option<u64> {
         Some(self.cast_records.as_ref()?.len() as u64)
     }
