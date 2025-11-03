@@ -322,10 +322,7 @@ pub mod tests {
 
     #[test]
     pub fn test_user_count_on_dir_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-
-        assert_eq!(users.user_count(), 2);
+        assert_eq!(dummy_data().user_count(), 2);
     }
 
     #[test]
