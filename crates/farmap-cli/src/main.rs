@@ -3,6 +3,7 @@ use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
 use farmap::fetch::local_spam_label_importer;
+use farmap::spam_score::DatedSpamUpdateWithFid;
 use farmap::SpamScore;
 use farmap::User;
 use farmap::UserCollection;
@@ -284,9 +285,14 @@ fn import_data_from_file(data_path: &str) -> UserCollection {
         local_spam_label_importer::import_data_from_file_with_collected_res(data_path).unwrap();
     let (oks, errors): (Vec<_>, Vec<_>) = results.into_iter().partition_result();
     for error in errors {
-        warn!("non-fatal error on import: {:?}", error)
+        warn!("non-fatal error on import: {error:?}")
     }
-    UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(oks).0
+    let user_lines: Vec<DatedSpamUpdateWithFid> =
+        oks.into_iter().map(|x| x.try_into().unwrap()).collect_vec();
+    let mut collection = UserCollection::default();
+    collection.add_user_value_iter(user_lines);
+
+    collection
 }
 
 #[cfg(test)]
