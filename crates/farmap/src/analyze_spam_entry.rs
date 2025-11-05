@@ -643,6 +643,19 @@ mod tests {
         }
     }
 
+    mod earliest_date {
+        use super::*;
+        use crate::user_collection::tests::dummy_data;
+
+        #[test]
+        fn test_earliest_date_on_dummy_data() {
+            let users = dummy_data();
+            let set = create_set(&users).unwrap();
+            let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+            assert_eq!(set.earliest_spam_score_date, date);
+        }
+    }
+
     // check that the fid score shifts are equal to the expected values.
     // The format of each array is [from_score, to_score, count]
     fn check_fid_score_shifts(

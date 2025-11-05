@@ -538,14 +538,6 @@ mod tests {
     }
 
     #[test]
-    fn test_earliest_date() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
-        assert_eq!(set.earliest_spam_score_date.unwrap(), date);
-    }
-
-    #[test]
     fn test_earliest_date_after_filter() {
         let users = dummy_data();
         let mut set = UsersSubset::from(&users);
