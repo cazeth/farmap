@@ -526,6 +526,54 @@ mod tests {
         }
     }
 
+    mod filter {
+        use crate::user_collection::tests::dummy_data;
+        use crate::user_with_spam_data::tests::earliest_spam_update::earliest_spam_date_before_date_filter;
+
+        use super::*;
+        pub enum FilterValidity {
+            NonEmpty,
+            Empty,
+        }
+
+        pub fn check_filter(
+            set: &mut SetWithSpamEntries,
+            filter: impl Fn(&UserWithSpamData) -> bool,
+            valid: FilterValidity,
+        ) {
+            match valid {
+                FilterValidity::Empty => assert!(set.filter(filter).is_none()),
+                FilterValidity::NonEmpty => assert!(set.filter(filter).is_some()),
+            }
+        }
+
+        #[test]
+        fn dummy_data_with_emptying_date_filter() {
+            let dummy_data = dummy_data();
+            let mut set = create_set(&dummy_data).unwrap();
+            let date = NaiveDate::default();
+
+            let filter =
+                |user: &UserWithSpamData| earliest_spam_date_before_date_filter(user, date);
+
+            check_filter(&mut set, filter, FilterValidity::Empty);
+        }
+
+        #[test]
+        fn dummy_data_with_nonemptying_date_filter() {
+            let dummy_data = dummy_data();
+            let mut set = create_set(&dummy_data).unwrap();
+            dbg!(&set);
+
+            let date = NaiveDate::parse_from_str("2025-01-01", "%Y-%m-%d").unwrap();
+
+            let filter =
+                |user: &UserWithSpamData| earliest_spam_date_before_date_filter(user, date);
+
+            check_filter(&mut set, filter, FilterValidity::NonEmpty);
+        }
+    }
+
     mod filtered {
         use super::*;
         enum FilterValidity {
