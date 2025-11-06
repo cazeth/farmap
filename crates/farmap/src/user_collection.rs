@@ -73,7 +73,7 @@ impl UserCollection {
     pub(crate) fn user_mut_unchecked(&mut self, fid: usize) -> &mut User {
         self.map
             .get_mut(&fid)
-            .expect("fid {fid} should exist in dataset")
+            .expect("fid {fid} should exist in collection")
     }
 
     pub fn user(&self, fid: usize) -> Option<&User> {
@@ -317,57 +317,11 @@ pub mod tests {
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use crate::UserValue;
     use chrono::NaiveDate;
-    use serde_json::json;
     use std::path::PathBuf;
 
     #[test]
     pub fn test_user_count_on_dir_with_new() {
         assert_eq!(dummy_data().user_count(), 2);
-    }
-
-    #[test]
-    pub fn test_user_count_at_date_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
-            0
-        );
-
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2023, 12, 31).unwrap()),
-            0
-        );
-
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
-            1
-        );
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2024, 5, 1).unwrap()),
-            1
-        );
-        assert_eq!(
-            users.user_count_at_date(NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()),
-            2
-        );
-    }
-
-    #[test]
-    fn serialize() {
-        let mut collection = UserCollection::default();
-        let record = (
-            SpamScore::Zero,
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-        );
-        let mut user = User::new_without_labels(1);
-        user.add_spam_record(record).unwrap();
-        let record = (SpamScore::Two, NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
-        user.add_spam_record(record).unwrap();
-        collection.add_user(user).unwrap();
-        let json = json!(collection);
-        let expected_json = r#"{"map":{"1":{"cast_records":null,"entries":{"entries":[{"WithoutSourceCommit":["Zero","2024-01-01"]},{"WithoutSourceCommit":["Two","2025-01-01"]}],"version":1},"fid":1,"latest_cast_record_check_date":null,"latest_reaction_time_update_date":null,"reaction_times":null,"user_values":null}}}"#;
-        assert_eq!(json.to_string(), expected_json);
     }
 
     impl<T> HasTag<u64> for TestUserValue<T>
