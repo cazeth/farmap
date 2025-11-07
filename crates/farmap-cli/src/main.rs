@@ -4,15 +4,16 @@ use clap::Parser;
 use clap::Subcommand;
 use farmap::fetch::local_spam_label_importer;
 use farmap::spam_score::DatedSpamUpdateWithFid;
+use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
 use farmap::User;
 use farmap::UserCollection;
+use farmap::UserWithSpamData;
 use farmap::UsersSubset;
 use itertools::Itertools;
 use simple_log::log::info;
 use simple_log::log::warn;
 use simple_log::LogConfigBuilder;
-use std::iter::zip;
 use std::path::PathBuf;
 
 /// Returns the spam score distribution of warpcast label data at a certain date.
@@ -127,67 +128,59 @@ fn main() {
         || UsersSubset::from(&users),
         |after_date| {
             UsersSubset::from_filter(&users, |user: &User| {
-                user.created_at_or_after_date_with_opt(
-                    NaiveDate::parse_from_str(&after_date, "%Y-%m-%d").unwrap(),
-                )
-                .unwrap_or(false)
+                UserWithSpamData::try_from(user)
+                    .map(|user| {
+                        user.earliest_spam_update().date()
+                            >= NaiveDate::parse_from_str(&after_date, "%Y-%m-%d").unwrap()
+                    })
+                    .unwrap_or(false)
             })
         },
     );
 
     // Filter on before_date if that input was provided.
-    if let Some(before_date) = args.before_date {
-        set.filter(|user: &User| {
-            user.created_at_or_before_date_with_opt(
-                NaiveDate::parse_from_str(&before_date, "%Y-%m-%d").unwrap(),
-            )
-            .unwrap_or(false)
-        })
-    };
-
-    // filter on spam score at date.
-    if let Some(raw_spam_score_filters) = args.spam_score_at_date {
-        // turn into Date and usize format.
-
-        let mut dates: Vec<NaiveDate> = Vec::new();
-        let mut scores: Vec<SpamScore> = Vec::new();
-
-        // parse raw strings into dates and scores.
-        for (i, input) in raw_spam_score_filters.into_iter().enumerate() {
-            if i % 2 == 0 {
-                dates.push(
-                    NaiveDate::parse_from_str(&input, "%Y-%m-%d").expect("couldn't pass date"),
-                );
-            } else {
-                scores.push(
-                    input
-                        .parse::<usize>()
-                        .expect("couldn't parse into numbes")
-                        .try_into()
-                        .expect("number is not valid spam score"),
-                );
-            }
-        }
-
-        assert_eq!(dates.len(), scores.len());
-
-        for records in zip(dates, scores) {
-            set.filter(|user: &User| {
-                user.spam_score_at_date_with_owned(&records.0) == Some(records.1)
+    if let Some(unparsed_before_date) = args.before_date {
+        if let Ok(parsed_before_date) = NaiveDate::parse_from_str(&unparsed_before_date, "%Y-%m-%d")
+        {
+            set.filter(|user| {
+                UserWithSpamData::try_from(user)
+                    .map(|user| user.earliest_spam_update().date() <= parsed_before_date)
+                    .unwrap_or(false)
             })
         }
     }
 
     if let Some(score) = args.current_spam_score {
+        let expected_spam_score = SpamScore::try_from(score).unwrap();
         set.filter(|user: &User| {
-            if let Some(latest_spam_record) = user.latest_spam_record() {
-                latest_spam_record.0
-                    == SpamScore::try_from(score).expect("spam score must be 0,1 or 2")
-            } else {
-                false
-            }
+            UserWithSpamData::try_from(user)
+                .map(|user| user.latest_spam_update().score() == expected_spam_score)
+                .unwrap_or(false)
         })
-    };
+    }
+
+    if let Some(spam_score_at_date) = args.spam_score_at_date {
+        let date = spam_score_at_date
+            .first()
+            .and_then(|date_str| NaiveDate::parse_from_str(date_str, "%Y-%m-%d").ok());
+        let score = spam_score_at_date
+            .get(1)
+            .and_then(|score| score.parse::<usize>().ok())
+            .and_then(|score| SpamScore::try_from(score).ok());
+        if let Some(date) = date {
+            if let Some(score) = score {
+                set.filter(|user: &User| {
+                    UserWithSpamData::try_from(user)
+                        .map(|user| {
+                            user.spam_score_at_date(date)
+                                .map(|sc| sc == score)
+                                .unwrap_or(false)
+                        })
+                        .unwrap_or(false)
+                })
+            }
+        }
+    }
 
     match args.command {
         Some(Commands::ChangeMatrix { from_date, to_date }) => {
@@ -209,16 +202,17 @@ fn main() {
                 chrono::Local::now().naive_local().date()
             };
             set.filter(|user: &User| {
-                user.created_at_or_before_date_with_opt(analysis_date)
+                UserWithSpamData::try_from(user)
+                    .map(|user| user.earliest_spam_update().date() <= analysis_date)
                     .unwrap_or(false)
             });
-            print_spam_score_distribution(&set, analysis_date);
+            print_spam_score_distribution(set.clone(), analysis_date);
         }
 
         None => {
             // The program returns the spam distribution today if no option is provided
             let analysis_date = chrono::Local::now().naive_local().date();
-            print_spam_score_distribution(&set, analysis_date);
+            print_spam_score_distribution(set.clone(), analysis_date);
         }
 
         Some(Commands::Fid { fid }) => {
@@ -244,40 +238,48 @@ fn print_fid_history(set: &UsersSubset, fid: &usize) {
     }
 }
 
-fn print_spam_score_distribution(set: &UsersSubset, date: NaiveDate) {
-    println!(
-        "Spam score distribution at date {:?}: \n 0: {:.2}% \n 1: {:.2}% \n 2: {:.2}% \n User count in set is {}",
-        date,
-        set.spam_score_distribution_at_date(date).unwrap()[0]*100.0,
-        set.spam_score_distribution_at_date(date).unwrap()[1]*100.0,
-        set.spam_score_distribution_at_date(date).unwrap()[2]*100.0,
-        set.user_count(),
-    );
-}
-
 fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
     //TODO: should be phased out.
     #[allow(deprecated)]
     let matrix = subset.spam_change_matrix(from_date, days);
     for row in matrix {
         for element in row {
-            print!(" {} ", element)
+            print!(" {element} ")
         }
         println!();
     }
 }
 
-#[allow(deprecated)]
-fn import_data_from_dir(data_dir: &str) -> UserCollection {
-    // for now just panic if the path doesn't exist or is not jsonl.
+fn print_spam_score_distribution(set: UsersSubset, date: NaiveDate) {
+    if let Ok(set) = SetWithSpamEntries::try_from(set) {
+        let count = set.user_count();
+        println!(
+         "Spam score distribution at date {:?}: \n 0: {:.2}% \n 1: {:.2}% \n 2: {:.2}% \n User count in set is {}",
+         date,
+        (set.spam_score_count_at_date(date).unwrap().spam() as f64)/ (count as f64)*100.0,
+        (set.spam_score_count_at_date(date).unwrap().maybe_spam() as f64)/ (count as f64)*100.0,
+        (set.spam_score_count_at_date(date).unwrap().non_spam() as f64)/ (count as f64)*100.0,
+        set.user_count(),
+      );
+    } else {
+        println!("no spam score in set");
+    }
+}
 
-    let (users, non_fatal_errors) =
-        UserCollection::create_from_dir_and_collect_non_fatal_errors(data_dir).unwrap();
-    for error in non_fatal_errors {
-        warn!("non-fatal error on import: {:?}", error)
+fn import_data_from_dir(data_dir: &str) -> UserCollection {
+    let results =
+        local_spam_label_importer::import_data_from_dir_with_collected_res(data_dir).unwrap();
+    let (oks, errors): (Vec<_>, Vec<_>) = results.into_iter().partition_result();
+    for error in errors {
+        warn!("non-fatal error on import: {error:?}")
     }
 
-    users
+    let user_lines: Vec<DatedSpamUpdateWithFid> =
+        oks.into_iter().map(|x| x.try_into().unwrap()).collect_vec();
+    let mut collection = UserCollection::default();
+    collection.add_user_value_iter(user_lines);
+
+    collection
 }
 
 fn import_data_from_file(data_path: &str) -> UserCollection {
