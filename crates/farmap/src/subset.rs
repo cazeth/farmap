@@ -452,7 +452,6 @@ mod tests {
 
     use super::*;
     use crate::user_collection::tests::dummy_data;
-    use std::path::PathBuf;
 
     #[test]
     fn empty_set() {
@@ -461,186 +460,60 @@ mod tests {
         assert_eq!(set.user_count(), 0);
     }
 
-    #[test]
-    fn test_user_count_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let mut set = UsersSubset::from(&users);
-        set.filter(|user: &User| {
-            !user
-                .created_at_or_after_date_with_opt(NaiveDate::from_ymd_opt(2023, 12, 29).unwrap())
-                .unwrap()
-        });
-        assert_eq!(set.user_count(), 0);
-        let mut set = UsersSubset::from_filter(&users, |_: &User| true);
-        set.filter(|user: &User| {
-            !user
-                .created_at_or_after_date_with_opt(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
-                .unwrap()
-        });
-        assert_eq!(set.user_count(), 1);
+    pub fn create_set(collection: &UserCollection) -> UsersSubset {
+        UsersSubset::from(collection)
     }
 
-    #[test]
-    fn test_earliest_date_after_filter() {
-        let users = dummy_data();
-        let mut set = UsersSubset::from(&users);
-        let filter_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
-        set.filter(|user: &User| user.created_at_or_after_date_with_opt(filter_date).unwrap());
-        assert_eq!(
-            set.earliest_spam_score_date.unwrap(),
-            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
-        );
+    mod test_user_count {
+        use super::*;
+        use crate::user::tests::test_fid::is_fid;
+
+        #[track_caller]
+        pub fn check_user_count(set: &UsersSubset, count: usize) {
+            assert_eq!(set.user_count(), count);
+        }
+
+        #[test]
+        fn test_user_count_with_new() {
+            let users = dummy_data();
+            let set = create_set(&users);
+            check_user_count(&set, 2);
+        }
+
+        #[test]
+        fn test_user_count_on_empty_set() {
+            let users = crate::user_collection::tests::empty_collection();
+            let set = create_set(&users);
+            check_user_count(&set, 0);
+        }
+
+        #[test]
+        fn test_user_count_before_and_after_filter() {
+            let users = dummy_data();
+            let mut set = create_set(&users);
+            let fid_filter = |user: &User| is_fid(user, 1);
+            check_user_count(&set, 2);
+            test_filter::check_filter(&mut set, fid_filter);
+            check_user_count(&set, 1);
+        }
+
+        #[test]
+        fn test_user_count_before_and_after_filter_two() {
+            let users = dummy_data();
+            let mut set = create_set(&users);
+            let fid_filter = |user: &User| !is_fid(user, 3);
+            check_user_count(&set, 2);
+            test_filter::check_filter(&mut set, fid_filter);
+            check_user_count(&set, 2);
+        }
     }
 
-    #[test]
-    fn test_latest_data() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        assert_eq!(set.latest_spam_score_date.unwrap(), date);
-    }
+    mod test_filter {
+        use super::*;
 
-    #[test]
-    fn filter_test_with_new() {
-        let users = dummy_data();
-        let mut set = UsersSubset::from(&users);
-        assert_eq!(set.user_count(), 2);
-        set.filter(|user: &User| user.fid() != 3);
-        assert_eq!(set.user_count(), 2);
-        set.filter(|user: &User| user.fid() == 1);
-        assert_eq!(set.user_count(), 1);
-    }
-
-    #[test]
-    fn test_dates_in_monthly_spam_score_distributions() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let monthly_distributions = set.monthly_spam_score_distributions();
-        assert_eq!(
-            monthly_distributions.first().unwrap().0,
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-        );
-
-        assert_eq!(
-            monthly_distributions.last().unwrap().0,
-            NaiveDate::from_ymd_opt(2025, 2, 1).unwrap()
-        );
-    }
-
-    #[test]
-    fn test_weekly_spam_score_counts() {
-        let db_path = PathBuf::from("data/dummy-data/spam_2.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let set = UsersSubset::from(&users);
-        let result = set.weekly_spam_score_counts();
-        assert_eq!(result.len(), 1);
-    }
-
-    #[test]
-    fn test_dates_in_weekly_spam_score_distributions_with_dedicated_type() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let weekly_distributions = set.weekly_spam_score_distributions_with_dedicated_type();
-        assert_eq!(
-            weekly_distributions.first().unwrap().0,
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-        );
-
-        assert!(
-            weekly_distributions.last().unwrap().0 >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
-        );
-
-        assert!(
-            weekly_distributions.last().unwrap().0 <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
-        );
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn test_dates_in_weekly_spam_score_distributions() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let weekly_distributions = set.weekly_spam_score_distributions();
-        assert_eq!(
-            weekly_distributions.first().unwrap().0,
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-        );
-
-        assert!(
-            weekly_distributions.last().unwrap().0 >= NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
-        );
-
-        assert!(
-            weekly_distributions.last().unwrap().0 <= NaiveDate::from_ymd_opt(2025, 1, 30).unwrap()
-        );
-    }
-
-    #[test]
-    fn test_spam_score_distribution_at_date_with_new() {
-        let users = dummy_data();
-        assert_eq!(users.user_count(), 2);
-        let subset = UsersSubset::from_filter(&users, |user: &User| {
-            user.created_at_or_after_date_with_opt(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
-                .unwrap()
-        });
-
-        assert!(subset
-            .spam_score_distribution_at_date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())
-            .is_none(),);
-
-        assert_eq!(
-            subset
-                .spam_score_distribution_at_date(NaiveDate::from_ymd_opt(2025, 1, 23).unwrap())
-                .unwrap(),
-            [0.0, 0.0, 1.0]
-        );
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn test_spam_change_matrix_with_new_with_deprecated_spam() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let change_matrix =
-            set.spam_change_matrix(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), Days::new(700));
-        assert_eq!(change_matrix, [[0, 0, 0], [1, 0, 0], [0, 0, 0]]);
-        let change_matrix = set.spam_change_matrix(
-            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
-            Days::new(700),
-        );
-        assert_eq!(change_matrix, [[1, 0, 0], [0, 0, 0], [0, 0, 1]]);
-    }
-
-    #[test]
-    fn test_get_user_with_new() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        assert!(set.user(3).is_none());
-        assert_eq!(
-            set.user(1).unwrap().earliest_spam_record().unwrap().1,
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-        );
-
-        assert_eq!(
-            set.user(2).unwrap().earliest_spam_record().unwrap().1,
-            NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
-        );
-    }
-
-    #[test]
-    fn test_full_set_from_data_with_new() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        assert_eq!(users.user_count(), set.user_count());
-    }
-
-    #[test]
-    fn test_update_counts() {
-        let users = dummy_data();
-        let set = UsersSubset::from(&users);
-        let result = set.count_updates();
-        let sum: usize = result.values().sum();
-        assert_eq!(sum, 3);
+        #[track_caller]
+        pub fn check_filter(set: &mut UsersSubset, filter: impl Fn(&User) -> bool) {
+            set.filter(filter);
+        }
     }
 }

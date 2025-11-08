@@ -344,6 +344,14 @@ pub mod tests {
 
     use super::*;
 
+    pub mod test_fid {
+        use super::*;
+
+        pub fn is_fid(user: &User, fid: usize) -> bool {
+            user.fid() == fid
+        }
+    }
+
     pub fn create_user(fid: usize) -> User {
         User::new_without_labels(fid)
     }
