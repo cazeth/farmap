@@ -83,31 +83,6 @@ impl<'a> UsersSubset<'a> {
         new
     }
 
-    /// Returns the spam score count for a set at a weekly cadence. The first value is at the
-    /// earliest spam score date in the set and the last value is always the current date even if
-    /// it is the fewer than seven days between it and the next-to-last value.
-    pub fn weekly_spam_score_counts(&self) -> Vec<DatedSpamScoreCount> {
-        if self.map.is_empty() {
-            return Vec::new();
-        }
-        // since the struct is not empty the unwrap should never trigger.
-        let mut date = self.earliest_spam_score_date.unwrap();
-        let end_date = self.latest_spam_score_date.unwrap();
-        let mut result: Vec<DatedSpamScoreCount> = Vec::new();
-        while date <= end_date {
-            result.push(self.spam_score_count_at_date(date).unwrap());
-            date += Duration::days(7);
-        }
-
-        // always include the last date.
-        if date < end_date {
-            // since end date is a valid date the unwrap should never trigger.
-            result.push(self.spam_score_count_at_date(end_date).unwrap());
-        };
-
-        result
-    }
-
     pub fn into_map(self) -> HashMap<usize, &'a User> {
         self.map
     }
@@ -362,30 +337,6 @@ impl<'a> UsersSubset<'a> {
             self.spam_score_distribution_at_date_with_dedicated_type(date)
                 .unwrap(),
         ));
-
-        result
-    }
-
-    /// Checks the distribution, starting at the date of the earliest spam score date an
-    /// incrementing by seven days until the last spam score change in the data.
-    #[deprecated(
-        since = "0.1.2",
-        note = "use weekly_spam_score_distribution_with_dedicated_type instead"
-    )]
-    pub fn weekly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
-        // return an empty vec if the set is empty.
-        if self.map.is_empty() {
-            return Vec::new();
-        }
-
-        let mut result: Vec<(NaiveDate, [f32; 3])> = Vec::new();
-        let mut date = self.earliest_spam_score_date.unwrap();
-        let end_date = self.latest_spam_score_date.unwrap();
-        while date <= end_date {
-            result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
-            date += Duration::days(7);
-        }
-        result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
 
         result
     }
