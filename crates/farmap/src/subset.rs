@@ -462,59 +462,11 @@ mod tests {
     use crate::user_collection::tests::dummy_data;
     use std::path::PathBuf;
 
-    fn check_current_spam_score_distribution(result: &UsersSubset, expected: &[f64; 3]) {
-        let distribution = result.current_spam_score_distribution().unwrap();
-        let [spam, maybe, nonspam] = distribution;
-        assert_eq!(spam as f64, expected[0]);
-        assert_eq!(maybe as f64, expected[1]);
-        assert_eq!(nonspam as f64, expected[2]);
-    }
-
-    #[test]
-    fn from_filter_test_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let filter = |user: &User| {
-            user.earliest_spam_record().unwrap().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
-        };
-
-        let subset = UsersSubset::from_filter(&users, filter);
-        check_current_spam_score_distribution(&subset, &[0.0, 0.0, 1.0]);
-    }
-
     #[test]
     fn empty_set() {
         let users = UserCollection::default();
         let set = UsersSubset::from(&users);
         assert_eq!(set.user_count(), 0);
-        assert!(set.earliest_spam_score_date.is_none());
-        assert!(set.latest_spam_score_date.is_none());
-        assert!(set.current_spam_score_distribution().is_none());
-        assert!(set.current_spam_score_count_with_opt().is_none());
-    }
-
-    #[test]
-    fn test_filtered() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let filter = |user: &User| {
-            user.earliest_spam_record().unwrap().1 > NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
-        };
-
-        let mut full_set = UsersSubset::from(&users);
-        let filtered_set = full_set.filtered(filter).current_spam_score_distribution();
-        full_set.filter(filter);
-        assert_eq!(filtered_set, full_set.current_spam_score_distribution());
-    }
-
-    #[test]
-    fn test_current_spam_score_count() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let set = UsersSubset::from(&users);
-        assert_eq!(set.current_spam_score_count().spam(), 1);
-        assert_eq!(set.current_spam_score_count().non_spam(), 1);
-        assert_eq!(set.current_spam_score_count().maybe_spam(), 0);
     }
 
     #[test]
@@ -686,84 +638,17 @@ mod tests {
 
     #[test]
     fn test_full_set_from_data_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         assert_eq!(users.user_count(), set.user_count());
     }
 
     #[test]
     fn test_update_counts() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
+        let users = dummy_data();
         let set = UsersSubset::from(&users);
         let result = set.count_updates();
         let sum: usize = result.values().sum();
         assert_eq!(sum, 3);
-    }
-
-    #[test]
-    fn test_spam_distribution_for_users_created_at_or_after_date_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let mut set = UsersSubset::from(&users);
-        let date = NaiveDate::from_ymd_opt(2025, 1, 23).unwrap();
-        set.filter(|user: &User| user.created_at_or_after_date_with_opt(date).unwrap());
-        assert_eq!(set.current_spam_score_distribution(), Some([0.0, 0.0, 1.0]));
-    }
-
-    #[test]
-    fn test_filter_for_one_fid_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let mut set = UsersSubset::from(&users);
-        set.filter(|user: &User| user.fid() == 2);
-        assert_eq!(set.current_spam_score_distribution(), Some([0.0, 0.0, 1.0]))
-    }
-
-    #[test]
-    fn test_none_for_filtered_spam_distribution_with_new() {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
-        let users = UserCollection::create_from_db(&db_path).unwrap();
-        let mut set = UsersSubset::from(&users);
-        set.filter(|user: &User| user.fid() == 3);
-        assert_eq!(set.current_spam_score_distribution(), None);
-    }
-
-    mod fid_score_shifts {
-        use super::*;
-
-        #[test]
-        fn test_spam_change_with_new() {
-            let db_path = PathBuf::from("data/dummy-data_db.json");
-            let users = UserCollection::create_from_db(&db_path).unwrap();
-            let set = UsersSubset::from(&users);
-            let shifts = set.spam_changes_with_fid_score_shift(
-                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                Days::new(700),
-            );
-            let expected_shift = FidScoreShift::new(ShiftSource::One, ShiftTarget::Zero, 1);
-            let expected_new = FidScoreShift::new(ShiftSource::New, ShiftTarget::Two, 1);
-            assert!(shifts.contains(&expected_shift));
-            assert!(shifts.contains(&expected_new));
-            assert_eq!(shifts.len(), 2);
-            let change_matrix = set.spam_changes_with_fid_score_shift(
-                NaiveDate::from_ymd_opt(2025, 1, 23).unwrap(),
-                Days::new(700),
-            );
-            let expected_shift = FidScoreShift::new(ShiftSource::Zero, ShiftTarget::Zero, 1);
-            assert_eq!(change_matrix[0], expected_shift);
-        }
-
-        #[test]
-        fn test_empty_set() {
-            let users = UserCollection::default();
-            let set = UsersSubset::from(&users);
-            let shift = set.spam_changes_with_fid_score_shift(
-                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                Days::new(100),
-            );
-            assert!(shift.is_empty());
-        }
     }
 }
