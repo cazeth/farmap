@@ -83,14 +83,6 @@ impl<'a> UsersSubset<'a> {
         new
     }
 
-    /// Returns none if the subset is empty
-    pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
-        let spam_score_counts = self.current_spam_score_count_with_opt()?;
-        let distributions: DatedSpamScoreDistribution = spam_score_counts.try_map_into().ok()?;
-        let result: [f32; 3] = distributions.into_inner().into();
-        Some(result)
-    }
-
     /// Returns the spam score count for a set at a weekly cadence. The first value is at the
     /// earliest spam score date in the set and the last value is always the current date even if
     /// it is the fewer than seven days between it and the next-to-last value.
