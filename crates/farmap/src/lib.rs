@@ -14,6 +14,7 @@ mod collidable;
 mod dated;
 pub mod fetch;
 pub mod fid_score_shift;
+mod fidded;
 mod has_tag;
 mod is_user;
 pub mod spam_score;
@@ -29,6 +30,7 @@ mod utils;
 pub use crate::has_tag::HasTag;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
+pub use fidded::Fidded;
 pub use is_user::IsUser;
 pub use spam_score::DatedSpamScoreCount;
 pub use spam_score::SpamRecord;
