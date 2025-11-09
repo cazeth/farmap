@@ -266,6 +266,10 @@ impl<'a> TryFrom<UsersSubset<'a>> for SetWithSpamEntries<'a> {
                 > 0
         });
 
+        if new_subset.user_count() == 0 {
+            return Err(EmptySetError);
+        }
+
         let earliest_spam_score_date = earliest_spam_score_date(new_subset.iter());
         let latest_spam_score_date = latest_spam_score_date(new_subset.iter());
 
