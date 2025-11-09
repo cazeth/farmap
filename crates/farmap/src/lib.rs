@@ -18,6 +18,7 @@ mod has_tag;
 mod is_user;
 pub mod spam_score;
 pub mod subset;
+mod try_from_user_set;
 mod unprocessed_user_line;
 pub mod user;
 pub mod user_collection;
@@ -35,6 +36,7 @@ pub use spam_score::SpamScore;
 pub use spam_score::SpamScoreDistribution;
 #[doc(inline)]
 pub use subset::UsersSubset;
+pub use try_from_user_set::TryFromUserSet;
 pub use unprocessed_user_line::UnprocessedUserLine;
 pub use user::InvalidInputError;
 pub use user::User;
