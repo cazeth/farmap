@@ -1,5 +1,7 @@
 use crate::fid_score_shift::ShiftSource;
+use crate::spam_score::DatedSpamScoreDistribution;
 use crate::spam_score::DatedSpamUpdate;
+use crate::time_utils::TimeIterator;
 use crate::DatedSpamScoreCount;
 use crate::FidScoreShift;
 use crate::SpamScore;
@@ -251,6 +253,22 @@ impl<'a> SetWithSpamEntries<'a> {
         };
 
         result
+    }
+
+    pub fn monthly_spam_score_distributions(&self) -> Vec<DatedSpamScoreDistribution> {
+        TimeIterator::new()
+            .with_monthly_cadence()
+            .with_start_date(self.earliest_spam_score_date)
+            .with_end_date(self.latest_spam_score_date)
+            .build()
+            .map(|date| {
+                let distribution = (*self.spam_score_count_at_date(date).unwrap().as_inner())
+                    .try_into()
+                    .unwrap();
+                let dated_distribution: DatedSpamScoreDistribution = (distribution, date).into();
+                dated_distribution
+            })
+            .collect()
     }
 }
 
