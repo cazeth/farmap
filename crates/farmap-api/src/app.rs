@@ -6,7 +6,9 @@ use axum::{
 };
 use chrono::prelude::*;
 use chrono::{Days, Months, NaiveDate};
+use farmap::SetWithCastData;
 use farmap::SetWithSpamEntries;
+use farmap::TryFromUserSet;
 use farmap::User;
 use farmap::UserCollection;
 use farmap::UserWithSpamData;
@@ -117,7 +119,14 @@ async fn spam_score_distributions_for_cohort(
     State(users): State<Arc<UserCollection>>,
 ) -> Result<Json<Value>, StatusCode> {
     let users_ref: &UserCollection = &users;
-    let mut set = UsersSubset::from(users_ref);
+    let set = SetWithSpamEntries::new(users_ref);
+
+    let mut set = if let Some(set) = set {
+        set
+    } else {
+        return Err(StatusCode::NO_CONTENT);
+    };
+
     let cohort_start_date =
         if let Some(date) = NaiveDate::from_ymd_opt(year as i32, month as u32, 1) {
             date
@@ -133,20 +142,20 @@ async fn spam_score_distributions_for_cohort(
         .checked_add_months(Months::new(1))
         .unwrap();
 
-    set.filter(|user: &User| {
-        user.created_at_or_before_date_with_opt(cohort_end_date)
-            .unwrap_or(false)
-    });
-
-    set.filter(|user: &User| {
-        user.created_at_or_after_date_with_opt(cohort_start_date)
-            .unwrap_or(false)
+    set.filter(|user: &UserWithSpamData| {
+        let earliest_spam_date = user.earliest_spam_update().date();
+        earliest_spam_date <= cohort_end_date && earliest_spam_date >= cohort_start_date
     });
 
     let result = set.monthly_spam_score_distributions();
     let result = result
         .iter()
-        .map(|(date, y)| (date.to_string(), *y))
+        .map(|dated_distribution| {
+            (
+                dated_distribution.date().to_string(),
+                (*dated_distribution.as_inner()).into(),
+            )
+        })
         .collect::<Vec<(String, [f32; 3])>>();
 
     Ok(Json(json!(result)))
@@ -205,7 +214,6 @@ async fn casts_for_moved(
     Path((from, to, timespan)): Path<(u64, u64, u64)>,
 ) -> Result<Json<Value>, StatusCode> {
     if from > 2 || to > 2 || timespan > 100 {
-        // return some sort of error here since the input is invalid.
         return Err(StatusCode::BAD_REQUEST);
     };
 
@@ -213,28 +221,39 @@ async fn casts_for_moved(
     let begin_date: NaiveDate = current_time.checked_sub_days(Days::new(timespan)).unwrap();
 
     let users_ref: &UserCollection = &users;
-    let mut set = UsersSubset::from(users_ref);
+    let mut set = SetWithSpamEntries::new(users_ref).ok_or(StatusCode::NO_CONTENT)?;
 
     info!("checking with begin date {begin_date}");
     info!("checking with current time {current_time}");
 
-    set.filter(|user: &User| {
-        user.spam_score_at_date_with_owned(&begin_date)
-            .is_some_and(|u| Ok(u) == (from as usize).try_into())
+    set.filter(|user: &UserWithSpamData| {
+        user.spam_score_at_date(begin_date).is_some_and(|u| {
+            u == (from as usize)
+                .try_into()
+                .expect("already checked spam_score range")
+        })
     });
 
     let set_size = set.user_count();
+
     info!("set size after begin_date filtering is {set_size}");
 
-    set.filter(|user: &User| {
-        if let Some(latest_spam_record) = user.latest_spam_record() {
-            Ok(latest_spam_record.0) == (to as usize).try_into()
-        } else {
-            false
-        }
+    set.filter(|user: &UserWithSpamData| {
+        user.latest_spam_update().score()
+            == (to as usize)
+                .try_into()
+                .expect("already checked spam score range")
     });
+
     info!("set size is {set_size}");
-    Ok(Json(json!(set.average_total_casts())))
+
+    let average_total_casts = if let Ok(cast_users) = SetWithCastData::try_from_set(set) {
+        cast_users.average_total_casts()
+    } else {
+        0.0
+    };
+
+    Ok(Json(json!([set_size, average_total_casts])))
 }
 
 #[derive(Deserialize)]

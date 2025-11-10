@@ -1,6 +1,7 @@
 use super::ImporterError;
-use crate::cast_meta::CastMeta;
-use crate::cast_meta::CastType;
+use crate::dated::Dated;
+use crate::fidded::Fidded;
+use crate::CastType;
 use chrono::Duration;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
@@ -76,7 +77,7 @@ pub async fn reaction_times_from_response(
 
 pub async fn cast_meta_from_pinata_response(
     response: Response,
-) -> Result<Vec<CastMeta>, ImporterError> {
+) -> Result<Vec<Fidded<Dated<CastType>>>, ImporterError> {
     let json = raw_json_from_response(response).await?;
     let json_vec = json["messages"].as_array().unwrap();
     json_vec
@@ -84,10 +85,16 @@ pub async fn cast_meta_from_pinata_response(
         .map(|x| {
             date_from_object(x)
                 .and_then(|date| type_from_object(x).map(|cast_type| (date, cast_type)))
-                .and_then(|(date, cast_type)| fid_from_object(x).map(|fid| (date, cast_type, fid)))
-                .map(|x| CastMeta::new(x.0, x.1, x.2))
+                .and_then(|(date, cast_type)| {
+                    fid_from_object(x).map(|fid| (date, cast_type, fid as usize))
+                })
+                .map(|x| {
+                    let dated_cast_type = Dated::<CastType>::from(x.0, x.1);
+                    let result: Fidded<Dated<CastType>> = (dated_cast_type, x.2).into();
+                    result
+                })
         })
-        .collect::<Result<Vec<CastMeta>, ImporterError>>()
+        .collect::<Result<Vec<Fidded<Dated<CastType>>>, ImporterError>>()
 }
 
 pub async fn followers_from_pinata_response(response: Response) -> Result<Vec<u64>, ImporterError> {

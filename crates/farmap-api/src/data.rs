@@ -9,7 +9,7 @@ use farmap::fetch::PinataFetcher;
 use farmap::spam_score::DatedSpamUpdateWithFid;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
-use farmap::{UserCollection, UsersSubset};
+use farmap::UserCollection;
 use futures::stream::{self, StreamExt};
 use futures::TryStreamExt;
 use itertools::iproduct;
@@ -76,7 +76,6 @@ pub async fn get_data() -> UserCollection {
 }
 
 pub async fn import_pinata_data(users: &mut UserCollection) {
-    let current_time = Local::now().date_naive();
     let fetch_list = pinata_fetch_list(&*users);
 
     let pinata_fetcher = PinataFetcher::default();
@@ -99,17 +98,24 @@ pub async fn import_pinata_data(users: &mut UserCollection) {
         .flatten()
         .collect();
 
-    for cast_metas in results {
-        let cast_meta = cast_metas.first();
-
-        let fid = if let Some(cast_meta) = cast_meta {
-            cast_meta.fid()
-        } else {
+    for fidded_cast_metas in results {
+        if fidded_cast_metas.is_empty() {
             continue;
         };
 
-        if let Some(user) = users.user_mut(fid as usize) {
-            user.add_cast_records(cast_metas, current_time);
+        let fid = fidded_cast_metas
+            .first()
+            .expect("cannot be empty this point")
+            .fid();
+        let cast_metas = fidded_cast_metas
+            .into_iter()
+            .map(|x| x.unfid())
+            .collect_vec();
+
+        if let Some(user) = users.user_mut(fid) {
+            for value in cast_metas {
+                let _ = user.add_user_value(value);
+            }
             trace!("adding cast records to fid {fid}");
         } else {
             continue;
@@ -265,21 +271,22 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
 
     let add_fids_rate_for_from_two_pair =
         |result_fids: &mut HashSet<u64>, from: SpamScore, to: SpamScore| {
-            let mut subset = UsersSubset::from(users);
-            subset.filter(|user| {
-                user.spam_score_at_date_with_owned(&previous_date)
-                    .map(|x| x == from)
-                    .unwrap_or(false)
-            });
-            subset.filter(|user| {
-                user.spam_score_at_date_with_owned(&previous_date)
-                    .map(|x| x == to)
-                    .unwrap_or(false)
-            });
+            if let Some(mut subset) = SetWithSpamEntries::new(users) {
+                subset.filter(|user| {
+                    user.spam_score_at_date(previous_date)
+                        .map(|x| x == from)
+                        .unwrap_or(false)
+                });
+                subset.filter(|user| {
+                    user.spam_score_at_date(previous_date)
+                        .map(|x| x == to)
+                        .unwrap_or(false)
+                });
 
-            subset.iter().map(|x| x.fid()).for_each(|x| {
-                result_fids.insert(x as u64);
-            });
+                subset.into_iter().map(|x| x.fid()).for_each(|x| {
+                    result_fids.insert(x as u64);
+                });
+            };
         };
 
     add_fids_rate_for_from_two_pair(&mut result_fids, lowest_fill_rate.1, lowest_fill_rate.2);
