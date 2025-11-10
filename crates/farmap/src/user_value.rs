@@ -1,3 +1,5 @@
+use crate::cast_type::CastType;
+use crate::dated::Dated;
 use crate::spam_score::{DatedSpamUpdate, SpamScore, SpamUpdate};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
@@ -17,10 +19,12 @@ pub trait UserValue:
 pub trait UserValueSeal {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[non_exhaustive]
 pub enum AnyUserValue {
     DatedSpamUpdate(DatedSpamUpdate),
     SpamUpdate(SpamUpdate),
     SpamScore(SpamScore),
+    DatedCastType(Dated<CastType>),
 }
 
 impl AnyUserValue {

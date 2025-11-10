@@ -10,6 +10,7 @@
 mod analyze_spam_entry;
 pub use analyze_spam_entry::SetWithSpamEntries;
 pub mod cast_meta;
+mod cast_type;
 mod collidable;
 mod dated;
 pub mod fetch;
@@ -28,6 +29,8 @@ mod user_value;
 mod user_with_spam_data;
 mod utils;
 pub use crate::has_tag::HasTag;
+pub use cast_type::CastType;
+pub use cast_type::InvalidCastInputError;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
 pub use fidded::Fidded;
