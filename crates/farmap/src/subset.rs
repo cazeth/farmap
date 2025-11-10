@@ -1,5 +1,6 @@
 use crate::fid_score_shift::ShiftSource;
 use crate::fid_score_shift::ShiftTarget;
+use crate::is_user::IsUser;
 use crate::spam_score::{DatedSpamScoreCount, DatedSpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
@@ -90,6 +91,11 @@ impl<'a> UsersSubset<'a> {
     pub fn drop_fid(&mut self, fid: usize) -> Option<&User> {
         self.map.get(&fid).map(|v| &**v)
     }
+
+    pub fn add_user(&mut self, user: impl IsUser<'a>) {
+        self.map.insert(user.fid(), user.user());
+    }
+
     pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<DatedSpamScoreCount> {
         if date < self.earliest_spam_score_date? {
             return None;
