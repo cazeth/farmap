@@ -46,8 +46,7 @@ impl GithubFetcher {
         }
     }
 
-    /// this method is used to show what the url would be for a particual call. Its primary use
-    /// case is for testing.
+    /// Show the URL for a call.
     pub fn api_call_from_endpoint(&self, endpoint: &str) -> Result<Url, ImporterError> {
         self.build_path(endpoint)
             .map_err(|_| ImporterError::InvalidEndpoint)
