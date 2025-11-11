@@ -16,7 +16,7 @@ pub(crate) fn date(date: &str) -> NaiveDate {
 ///
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TimeIterator<S, I: Default> {
+pub struct TimeIterator<S, I: Default + IterInterval> {
     current: NaiveDate,
     end_date: Option<NaiveDate>,
     fused: bool,
@@ -25,7 +25,7 @@ pub struct TimeIterator<S, I: Default> {
     marker: std::marker::PhantomData<S>,
 }
 
-impl<S, I: Default> Default for TimeIterator<S, I> {
+impl<S, I: Default + IterInterval> Default for TimeIterator<S, I> {
     fn default() -> Self {
         Self {
             first: true,
@@ -44,7 +44,7 @@ impl TimeIterator<Unstarted, Daily> {
     }
 }
 
-impl<I: Default> TimeIterator<Unstarted, I> {
+impl<I: Default + IterInterval> TimeIterator<Unstarted, I> {
     pub fn with_start_date(mut self, start_date: NaiveDate) -> Self {
         self.current = start_date;
         self
@@ -67,6 +67,17 @@ impl<I: Default> TimeIterator<Unstarted, I> {
         }
     }
 
+    pub fn with_weekly_cadence(self) -> TimeIterator<Unstarted, Weekly> {
+        TimeIterator::<Unstarted, Weekly> {
+            current: self.current,
+            end_date: self.end_date,
+            fused: self.fused,
+            first: self.first,
+            time_specific: Weekly,
+            marker: std::marker::PhantomData,
+        }
+    }
+
     pub fn build(self) -> TimeIterator<Ready, I> {
         TimeIterator::<Ready, I> {
             first: self.first,
@@ -79,88 +90,22 @@ impl<I: Default> TimeIterator<Unstarted, I> {
     }
 }
 
-impl TimeIterator<Unstarted, Monthly> {
-    pub fn with_date_of_month(mut self, day_in_month: u8) -> Self {
-        assert!(day_in_month < 28);
-        self.time_specific.day_in_month = day_in_month;
-        self
+impl<I: Default + IterInterval> TimeIterator<Ready, I> {
+    pub fn handle_first_iteration(&mut self) -> Option<NaiveDate> {
+        self.first = false;
+
+        if self.end_date.is_some() && self.current == self.end_date.unwrap() {
+            self.fused = true;
+        }
+
+        Some(self.current)
     }
-}
 
-#[derive(Default)]
-pub struct Daily;
-
-pub struct Monthly {
-    day_in_month: u8,
-}
-
-pub struct Unstarted;
-
-pub struct Ready;
-
-impl Default for Monthly {
-    fn default() -> Self {
-        Monthly { day_in_month: 1 }
-    }
-}
-
-impl Iterator for TimeIterator<Ready, Daily> {
-    type Item = NaiveDate;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.fused {
-            return None;
-        };
-
-        if self.first {
-            self.first = false;
-            if self.end_date.is_some() && self.current == self.end_date.unwrap() {
-                self.fused = true;
-            }
-
-            return Some(self.current);
-        }
-
-        let next_date = self.current.checked_add_days(Days::new(1)).unwrap();
-
-        if let Some(end_date) = self.end_date {
-            if next_date < end_date {
-                self.current = next_date;
-                Some(self.current)
-            } else if next_date == end_date {
-                self.fused = true;
-                self.current = next_date;
-                Some(self.current)
-            } else {
-                self.fused = true;
-                Some(end_date)
-            }
-        } else {
-            self.current = next_date;
-            Some(self.current)
-        }
-    }
-}
-
-impl Iterator for TimeIterator<Ready, Monthly> {
-    type Item = NaiveDate;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.fused {
-            return None;
-        }
-
-        if self.first {
-            self.first = false;
-            if self.end_date.is_some() && self.current == self.end_date.unwrap() {
-                self.fused = true
-            }
-
-            return Some(self.current);
-        }
-
-        let next_date_candidate = self.current.checked_add_months(Months::new(1)).unwrap();
-        let next_date_candidate = next_date_candidate.with_day(1).unwrap();
-
-        match (self.end_date, next_date_candidate) {
+    pub fn handle_non_first_iteration(&mut self) -> Option<NaiveDate> {
+        match (
+            self.end_date,
+            self.time_specific.next_date_candidate(self.current)?,
+        ) {
             (Some(end_date), next_date_candidate) if next_date_candidate < end_date => {
                 self.current = next_date_candidate;
                 Some(self.current)
@@ -175,14 +120,87 @@ impl Iterator for TimeIterator<Ready, Monthly> {
                 self.fused = true;
                 Some(self.current)
             }
-            (Some(_), _) => {
-                unreachable!();
-            }
             (None, next_date_candidate) => {
                 self.current = next_date_candidate;
                 Some(self.current)
             }
+            (_, _) => {
+                unreachable!();
+            }
         }
+    }
+}
+
+impl TimeIterator<Unstarted, Monthly> {
+    pub fn with_date_of_month(mut self, day_in_month: u8) -> Self {
+        assert!(day_in_month < 28);
+        self.time_specific.day_in_month = day_in_month;
+        self
+    }
+}
+
+#[allow(private_bounds)]
+pub trait IterInterval: IterIntervalSeal {
+    fn next_date_candidate(&self, previous_date: NaiveDate) -> Option<NaiveDate>;
+}
+
+trait IterIntervalSeal {}
+
+pub struct Unstarted;
+pub struct Ready;
+
+#[derive(Default)]
+pub struct Daily;
+
+pub struct Monthly {
+    day_in_month: u8,
+}
+
+#[derive(Default)]
+pub struct Weekly;
+
+impl IterIntervalSeal for Daily {}
+impl IterIntervalSeal for Weekly {}
+impl IterIntervalSeal for Monthly {}
+
+impl IterInterval for Daily {
+    fn next_date_candidate(&self, previous_date: NaiveDate) -> Option<NaiveDate> {
+        previous_date.checked_add_days(Days::new(1))
+    }
+}
+
+impl IterInterval for Weekly {
+    fn next_date_candidate(&self, previous_date: NaiveDate) -> Option<NaiveDate> {
+        previous_date.checked_add_days(Days::new(7))
+    }
+}
+
+impl Default for Monthly {
+    fn default() -> Self {
+        Monthly { day_in_month: 1 }
+    }
+}
+
+impl IterInterval for Monthly {
+    fn next_date_candidate(&self, previous_date: NaiveDate) -> Option<NaiveDate> {
+        previous_date
+            .checked_add_months(Months::new(1))
+            .and_then(|x| x.with_day(1))
+    }
+}
+
+impl<I: IterInterval + Default> Iterator for TimeIterator<Ready, I> {
+    type Item = NaiveDate;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.fused {
+            return None;
+        };
+
+        if self.first {
+            return self.handle_first_iteration();
+        };
+
+        self.handle_non_first_iteration()
     }
 }
 
