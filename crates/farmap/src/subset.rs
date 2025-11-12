@@ -1,16 +1,11 @@
-use crate::fid_score_shift::ShiftSource;
-use crate::fid_score_shift::ShiftTarget;
 use crate::is_user::IsUser;
 use crate::spam_score::{DatedSpamScoreCount, DatedSpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
-use crate::FidScoreShift;
 use chrono::Datelike;
 use chrono::Days;
-use chrono::Duration;
 use chrono::Months;
 use chrono::NaiveDate;
-use chrono::NaiveDateTime;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -119,16 +114,6 @@ impl<'a> UsersSubset<'a> {
         )
     }
 
-    /// Returns none when the set is empty
-    pub fn current_spam_score_count_with_opt(&self) -> Option<DatedSpamScoreCount> {
-        self.spam_score_count_at_date(self.latest_spam_score_date?)
-    }
-
-    pub fn current_spam_score_count(&self) -> DatedSpamScoreCount {
-        let date = self.latest_spam_score_date.unwrap();
-        self.spam_score_count_at_date(date).unwrap()
-    }
-
     /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
     /// it means that 1 user has moved from spam score i to spam score j during the period.
     #[doc(hidden)]
@@ -154,73 +139,6 @@ impl<'a> UsersSubset<'a> {
         result
     }
 
-    pub fn spam_changes_with_fid_score_shift(
-        &self,
-        initial_date: NaiveDate,
-        days: Days,
-    ) -> Vec<FidScoreShift> {
-        #[allow(deprecated)]
-        let matrix = self.spam_change_matrix(initial_date, days);
-        let mut shifts: Vec<FidScoreShift> = Vec::new();
-        let sources = [
-            ShiftSource::Zero,
-            ShiftSource::One,
-            ShiftSource::Two,
-            ShiftSource::New,
-        ];
-        let targets = [ShiftTarget::Zero, ShiftTarget::One, ShiftTarget::Two];
-        for (i, source) in sources.iter().enumerate().take(3) {
-            for (j, target) in targets.iter().enumerate() {
-                if matrix[i][j] > 0 {
-                    shifts.push(FidScoreShift::new(*source, *target, matrix[i][j]))
-                };
-            }
-        }
-
-        // also add new users.
-
-        let new_users = self.filtered(|user: &User| {
-            user.created_at_or_after_date_with_opt(
-                initial_date.checked_add_days(Days::new(1)).unwrap(),
-            )
-            .unwrap_or(false)
-        });
-
-        let new_user_counts = new_users.spam_score_count_at_date(
-            initial_date
-                .checked_add_days(days)
-                .unwrap_or(NaiveDate::MAX),
-        );
-
-        if let Some(counts) = new_user_counts {
-            if counts.spam() != 0 {
-                shifts.push(FidScoreShift::new(
-                    ShiftSource::New,
-                    ShiftTarget::Zero,
-                    counts.spam() as usize,
-                ));
-            }
-
-            if counts.maybe_spam() != 0 {
-                shifts.push(FidScoreShift::new(
-                    ShiftSource::New,
-                    ShiftTarget::One,
-                    counts.maybe_spam() as usize,
-                ))
-            }
-
-            if counts.non_spam() != 0 {
-                shifts.push(FidScoreShift::new(
-                    ShiftSource::New,
-                    ShiftTarget::Two,
-                    counts.non_spam() as usize,
-                ))
-            }
-        }
-
-        shifts
-    }
-
     pub fn spam_score_distribution_at_date_with_dedicated_type(
         &self,
         date: NaiveDate,
@@ -239,41 +157,6 @@ impl<'a> UsersSubset<'a> {
         let distributions: DatedSpamScoreDistribution =
             self.spam_score_count_at_date(date)?.try_map_into().ok()?;
         Some(distributions.into_inner().into())
-    }
-
-    /// Returns the average total casts of the users in the group along with the fraction of users
-    /// in the group where this data is available. If no data is available or if the set is empty the option is none.
-    pub fn average_total_casts(&self) -> Option<[f32; 2]> {
-        let total = self.map.len();
-        let [sum, count] = self
-            .map
-            .values()
-            .filter_map(|x| x.cast_count())
-            .fold([0, 0], |acc, x| [acc[0] + x, acc[1] + 1]);
-        if count > 0 {
-            Some([sum as f32 / count as f32, count as f32 / total as f32])
-        } else {
-            None
-        }
-    }
-
-    pub fn casts_data_fill_rate(&self) -> f32 {
-        let filled_count = self.iter().filter(|user| user.has_cast_data()).count();
-        let total = self.user_count();
-        filled_count as f32 / total as f32
-    }
-
-    pub fn reaction_times(&self) -> Option<Vec<&NaiveDateTime>> {
-        if self.iter().map(|x| x.reaction_times()).all(|x| x.is_none()) {
-            return None;
-        };
-
-        Some(
-            self.iter()
-                .flat_map(|x| x.reaction_times())
-                .flat_map(|x| x.iter())
-                .collect(),
-        )
     }
 
     /// Returns a hashmap of the update count that occured at each date.
@@ -314,35 +197,6 @@ impl<'a> UsersSubset<'a> {
             date = date.checked_add_months(Months::new(1)).unwrap();
         }
         result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
-
-        result
-    }
-
-    #[allow(deprecated)]
-    pub fn weekly_spam_score_distributions_with_dedicated_type(
-        &self,
-    ) -> Vec<(NaiveDate, DatedSpamScoreDistribution)> {
-        // return an empty vec if the set is empty.
-        if self.map.is_empty() {
-            return Vec::new();
-        }
-
-        let mut result: Vec<(NaiveDate, DatedSpamScoreDistribution)> = Vec::new();
-        let mut date = self.earliest_spam_score_date.unwrap();
-        let end_date = self.latest_spam_score_date.unwrap();
-        while date <= end_date {
-            result.push((
-                date,
-                self.spam_score_distribution_at_date_with_dedicated_type(date)
-                    .unwrap(),
-            ));
-            date += Duration::days(7);
-        }
-        result.push((
-            date,
-            self.spam_score_distribution_at_date_with_dedicated_type(date)
-                .unwrap(),
-        ));
 
         result
     }
