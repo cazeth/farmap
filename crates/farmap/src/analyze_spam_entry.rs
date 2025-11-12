@@ -255,6 +255,22 @@ impl<'a> SetWithSpamEntries<'a> {
         result
     }
 
+    pub fn weekly_spam_score_distributions(&self) -> Vec<DatedSpamScoreDistribution> {
+        TimeIterator::new()
+            .with_weekly_cadence()
+            .with_start_date(self.earliest_spam_score_date)
+            .with_end_date(self.latest_spam_score_date)
+            .build()
+            .map(|date| {
+                let distribution = (*self.spam_score_count_at_date(date).unwrap().as_inner())
+                    .try_into()
+                    .unwrap();
+                let dated_distribution: DatedSpamScoreDistribution = (distribution, date).into();
+                dated_distribution
+            })
+            .collect()
+    }
+
     pub fn monthly_spam_score_distributions(&self) -> Vec<DatedSpamScoreDistribution> {
         TimeIterator::new()
             .with_monthly_cadence()
