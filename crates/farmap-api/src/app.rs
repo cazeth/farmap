@@ -9,11 +9,8 @@ use chrono::{Days, Months, NaiveDate};
 use farmap::SetWithCastData;
 use farmap::SetWithSpamEntries;
 use farmap::TryFromUserSet;
-use farmap::User;
 use farmap::UserCollection;
 use farmap::UserWithSpamData;
-use farmap::UsersSubset;
-use itertools::Itertools;
 use log::info;
 use log::trace;
 use serde::Deserialize;
@@ -161,32 +158,40 @@ async fn spam_score_distributions_for_cohort(
     Ok(Json(json!(result)))
 }
 
-async fn monthly_spam_score_distributions(State(users): State<Arc<UserCollection>>) -> Json<Value> {
+async fn monthly_spam_score_distributions(
+    State(users): State<Arc<UserCollection>>,
+) -> Result<Json<Value>, StatusCode> {
     let users_ref: &UserCollection = &users;
-    let set = UsersSubset::from(users_ref);
+    let set = SetWithSpamEntries::new(users_ref).ok_or(StatusCode::NO_CONTENT)?;
     let result = set.monthly_spam_score_distributions();
     let result = result
         .iter()
-        .map(|(date, y)| (date.to_string(), *y))
+        .map(|distribution| {
+            (
+                distribution.date().to_string(),
+                (*distribution.as_inner()).into(),
+            )
+        })
         .collect::<Vec<(String, [f32; 3])>>();
-    Json(json!(result))
+    Ok(Json(json!(result)))
 }
 
 async fn weekly_spam_score_distributions(
     Query(filters): Query<Filters>,
     State(users): State<Arc<UserCollection>>,
-) -> Json<Value> {
+) -> Result<Json<Value>, StatusCode> {
     let users_ref: &UserCollection = &users;
-    let mut set = UsersSubset::from(users_ref);
+    let mut set = SetWithSpamEntries::new(users_ref).ok_or(StatusCode::NO_CONTENT)?;
     if let Some(to_fid) = filters.to_fid {
-        set.filter(|user: &User| user.fid() as u64 <= to_fid);
+        set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
     };
     if let Some(from_fid) = filters.from_fid {
-        set.filter(|user: &User| user.fid() as u64 >= from_fid);
+        set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
     };
-    let result = set.weekly_spam_score_distributions_with_dedicated_type();
-    let result = result.iter().map(|(_, obj)| obj).collect_vec();
-    Json(json!(result))
+
+    let result = set.weekly_spam_score_distributions();
+
+    Ok(Json(json!(result)))
 }
 
 async fn weekly_spam_score_counts(
