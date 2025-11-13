@@ -134,11 +134,6 @@ impl User {
         }
     }
 
-    pub fn add_cast_records(&mut self, records: Vec<CastMeta>, check_date: NaiveDate) {
-        self.cast_records = Some(records);
-        self.latest_cast_record_check_date = Some(check_date);
-    }
-
     pub fn update_reaction_times(
         &mut self,
         reaction_times: Vec<NaiveDateTime>,

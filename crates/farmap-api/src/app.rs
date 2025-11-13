@@ -103,12 +103,10 @@ async fn fid(
     Path(fid): Path<u64>,
     State(users): State<Arc<UserCollection>>,
 ) -> Result<Json<Value>, StatusCode> {
-    let spam_score = users.spam_score_by_fid(fid as usize);
-    if let Some(score) = spam_score {
-        Ok(Json(json!(score as u8)))
-    } else {
-        Err(StatusCode::NOT_FOUND)
-    }
+    let user = users.user(fid as usize).ok_or(StatusCode::NOT_FOUND)?;
+    let spam_user = UserWithSpamData::try_from(user).map_err(|_| StatusCode::NOT_FOUND)?;
+    let score = spam_user.latest_spam_update().score();
+    Ok(Json(json!(score as u8)))
 }
 
 async fn spam_score_distributions_for_cohort(
