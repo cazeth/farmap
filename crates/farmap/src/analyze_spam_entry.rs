@@ -291,6 +291,13 @@ impl<'a> SetWithSpamEntries<'a> {
 impl<'a> TryFrom<UsersSubset<'a>> for SetWithSpamEntries<'a> {
     type Error = EmptySetError;
     fn try_from(value: UsersSubset<'a>) -> Result<Self, Self::Error> {
+        TryFrom::try_from(&value)
+    }
+}
+
+impl<'a> TryFrom<&UsersSubset<'a>> for SetWithSpamEntries<'a> {
+    type Error = EmptySetError;
+    fn try_from(value: &UsersSubset<'a>) -> Result<Self, Self::Error> {
         let new_subset = value.filtered(|user| {
             user.all_user_values()
                 .iter()
