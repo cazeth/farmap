@@ -1,15 +1,11 @@
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::spam_score::DatedSpamUpdate;
-use crate::spam_score::SpamEntry;
-use crate::spam_score::SpamScore;
 use crate::user::InvalidInputError;
 use crate::user::User;
 use crate::user::UserError;
-use crate::utils::distribution_from_counts;
 use crate::UnprocessedUserLine;
 use crate::UsersSubset;
-use chrono::NaiveDate;
 use itertools::Itertools;
 use log::warn;
 use serde::Deserialize;
@@ -59,13 +55,6 @@ impl UserCollection {
         errors
     }
 
-    /// Return `Some(SpamScore)` if the fid exists, otherwise returns none.
-    /// Return None if the user if exists but has no spam record.
-    pub fn spam_score_by_fid(&self, fid: usize) -> Option<SpamScore> {
-        let user = self.map.get(&fid)?;
-        Some(user.latest_spam_record()?.0)
-    }
-
     pub fn user_mut(&mut self, fid: usize) -> Option<&mut User> {
         self.map.get_mut(&fid)
     }
@@ -82,25 +71,6 @@ impl UserCollection {
 
     pub fn user_count(&self) -> usize {
         self.map.len()
-    }
-
-    pub fn user_count_at_date(&self, date: NaiveDate) -> usize {
-        self.map
-            .iter()
-            .filter(|(_, user)| user.spam_score_at_date_with_owned(&date).is_some())
-            .count()
-    }
-
-    /// A data importer that keeps running in case of nonfatal errors.
-    /// Nonfatal errors are spam collision errors or invalid parameter data. In case of such error
-    /// the import continues to run and returns the errors in a vec alongside the return data.
-    #[deprecated(note = "use local_spam_label_importer instead")]
-    #[allow(deprecated)]
-    pub fn create_from_dir_and_collect_non_fatal_errors(dir: &str) -> CreateResult {
-        // these errors are considered fatal for now.
-        let lines = UnprocessedUserLine::import_data_from_dir_with_res(dir)?;
-
-        Ok(UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(lines))
     }
 
     // the problem with this is that when the file does not exist the program will fail because
@@ -161,49 +131,6 @@ impl UserCollection {
         Ok(())
     }
 
-    pub fn create_from_unprocessed_user_lines_and_collect_non_fatal_errors(
-        lines: Vec<UnprocessedUserLine>,
-    ) -> (UserCollection, Vec<DataCreationError>) {
-        let mut users = UserCollection::default();
-        let mut non_fatal_errors: Vec<DataCreationError> = Vec::new();
-
-        for line in lines {
-            let fid = line.fid();
-            let spam_entry: SpamEntry = match SpamEntry::try_from(line) {
-                Ok(spam_entry) => spam_entry,
-                Err(err) => {
-                    non_fatal_errors.push(DataCreationError::InvalidInputError(err));
-                    continue;
-                }
-            };
-
-            if let Some(user) = users.user_mut(fid) {
-                if user.add_spam_record(spam_entry.record()).is_err() {
-                    non_fatal_errors.push(DataCreationError::UserError(
-                        UserError::SpamScoreCollision {
-                            fid,
-                            date: spam_entry.date(),
-                            old_spam_score: user
-                                .spam_score_at_date_with_owned(&spam_entry.date())
-                                .unwrap(),
-                            new_spam_score: spam_entry.score(),
-                        },
-                    ))
-                };
-            } else {
-                let mut new_user = User::new_without_labels(fid);
-                new_user
-                    .add_spam_record(spam_entry.record())
-                    .expect("adding spam entry should not fail for new user");
-                users
-                    .add_user(new_user)
-                    .expect("adding user should not fail for if user doesn't exist in collection");
-            }
-        }
-
-        (users, non_fatal_errors)
-    }
-
     /// Applies a filter to the user data. Use with caution since the data is removed from the
     /// struct. For most situations it is preferred to create a subset of the data.
     pub fn apply_filter<F>(&mut self, filter: F)
@@ -217,41 +144,6 @@ impl UserCollection {
             .map(|user| (user.fid(), user))
             .collect::<HashMap<usize, User>>();
         self.map = new_map;
-    }
-
-    /// Returns the distribution of spam scores at a certain date. Excludes users that did not
-    /// exist at the given date.
-    /// Returns none if the struct contains no users
-    pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
-        let mut counts = [0; 3];
-
-        for spam_score in self
-            .map
-            .iter()
-            .filter_map(|(_, user)| user.spam_score_at_date_with_owned(&date))
-        {
-            match spam_score {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-
-        distribution_from_counts(&counts)
-    }
-
-    #[deprecated(note = "prefer using the equivalent functionality in subset instead")]
-    pub fn current_spam_score_distribution(&self) -> Option<[f32; 3]> {
-        let mut counts = [0; 3];
-        for (_, user) in self.map.iter() {
-            match user.latest_spam_record()?.0 {
-                SpamScore::Zero => counts[0] += 1,
-                SpamScore::One => counts[1] += 1,
-                SpamScore::Two => counts[2] += 1,
-            }
-        }
-
-        distribution_from_counts(&counts)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &User> {
