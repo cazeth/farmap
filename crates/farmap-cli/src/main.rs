@@ -3,6 +3,8 @@ use chrono::NaiveDate;
 use clap::Parser;
 use clap::Subcommand;
 use farmap::fetch::local_spam_label_importer;
+use farmap::fid_score_shift::ShiftSource;
+use farmap::fid_score_shift::ShiftTarget;
 use farmap::spam_score::DatedSpamUpdateWithFid;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
@@ -239,14 +241,27 @@ fn print_fid_history(set: &UsersSubset, fid: &usize) {
 }
 
 fn print_change_matrix(subset: &UsersSubset, from_date: NaiveDate, days: Days) {
-    //TODO: should be phased out.
-    #[allow(deprecated)]
-    let matrix = subset.spam_change_matrix(from_date, days);
-    for row in matrix {
-        for element in row {
-            print!(" {element} ")
+    if let Ok(spam_set) = SetWithSpamEntries::try_from(subset) {
+        let matrix = spam_set.spam_changes_with_fid_score_shift(from_date, days);
+        for row in matrix {
+            let source_disp = match row.source() {
+                ShiftSource::Zero => "spam",
+                ShiftSource::One => "maybe",
+                ShiftSource::Two => "nonspam",
+                ShiftSource::New => "new",
+            };
+
+            let target_disp = match row.target() {
+                ShiftTarget::Zero => "spam",
+                ShiftTarget::One => "maybe",
+                ShiftTarget::Two => "nonspam",
+                ShiftTarget::Removed => "removed",
+            };
+
+            println!("from {} to {}: {}", source_disp, target_disp, row.count());
         }
-        println!();
+    } else {
+        println!("no spam data in set");
     }
 }
 
