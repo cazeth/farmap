@@ -1,18 +1,12 @@
 use crate::is_user::IsUser;
-use crate::spam_score::{DatedSpamScoreCount, DatedSpamScoreDistribution};
 use crate::user::User;
 use crate::user_collection::UserCollection;
-use chrono::Datelike;
-use chrono::Days;
-use chrono::Months;
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct UsersSubset<'a> {
     map: HashMap<usize, &'a User>,
-    earliest_spam_score_date: Option<NaiveDate>,
-    latest_spam_score_date: Option<NaiveDate>,
 }
 
 impl<'a> UsersSubset<'a> {
@@ -26,15 +20,7 @@ impl<'a> UsersSubset<'a> {
             .map(|user| (user.fid(), user))
             .collect();
 
-        let mut res = Self {
-            map: filtered_map,
-            earliest_spam_score_date: None,
-            latest_spam_score_date: None,
-        };
-
-        res.update_earliest_spam_score_date();
-        res.update_latest_spam_score_date();
-        res
+        Self { map: filtered_map }
     }
 
     /// apply filter to existing subset and mutate subset.
@@ -48,25 +34,6 @@ impl<'a> UsersSubset<'a> {
             .filter(|user| filter(user))
             .map(|user| (user.fid(), *user))
             .collect::<HashMap<usize, &User>>();
-
-        self.update_earliest_spam_score_date();
-        self.update_latest_spam_score_date();
-    }
-
-    fn update_earliest_spam_score_date(&mut self) {
-        self.earliest_spam_score_date = self
-            .map
-            .values()
-            .flat_map(|user| user.earliest_spam_score_date_with_opt())
-            .min()
-    }
-
-    fn update_latest_spam_score_date(&mut self) {
-        self.latest_spam_score_date = self
-            .map
-            .values()
-            .flat_map(|user| user.latest_spam_score_date_with_opt())
-            .max();
     }
 
     /// return a new struct with filter applied
@@ -91,75 +58,7 @@ impl<'a> UsersSubset<'a> {
         self.map.insert(user.fid(), user.user());
     }
 
-    pub fn spam_score_count_at_date(&self, date: NaiveDate) -> Option<DatedSpamScoreCount> {
-        if date < self.earliest_spam_score_date? {
-            return None;
-        };
-
-        if self.user_count() == 0 {
-            return None;
-        };
-
-        Some(
-            self.map
-                .iter()
-                .filter_map(|(_, user)| user.spam_score_at_date_with_owned(&date))
-                .fold(
-                    DatedSpamScoreCount::default_with_date(date),
-                    |mut acc, user| {
-                        acc.add(user);
-                        acc
-                    },
-                ),
-        )
-    }
-
-    /// Returns a matrix that records the spam score changes between two dates. If matrix[i][j] = 1
-    /// it means that 1 user has moved from spam score i to spam score j during the period.
-    #[doc(hidden)]
-    #[deprecated(note = "use spam changes with fid score shift instead")]
-    pub fn spam_change_matrix(&self, initial_date: NaiveDate, days: Days) -> [[usize; 3]; 3] {
-        let end_date = initial_date
-            .checked_add_days(days)
-            .unwrap_or(NaiveDate::MAX);
-
-        let mut result: [[usize; 3]; 3] = [[0; 3]; 3];
-
-        for user in self.map.values() {
-            if let Some(from_spam_score) = user.spam_score_at_date_with_owned(&initial_date) {
-                let from_index = from_spam_score as usize;
-                let to_spam_score = user.spam_score_at_date_with_owned(&end_date).unwrap(); // must be Some if
-                                                                                            // intial_date
-                                                                                            // is Some.
-                let to_index = to_spam_score as usize;
-                result[from_index][to_index] += 1;
-            }
-        }
-
-        result
-    }
-
-    pub fn spam_score_distribution_at_date_with_dedicated_type(
-        &self,
-        date: NaiveDate,
-    ) -> Option<DatedSpamScoreDistribution> {
-        self.spam_score_count_at_date(date)?.try_map_into().ok()
-    }
-
-    /// Returns the distribution of spam scores at a certain date. Excludes users that did not
-    /// exist at the given date.
-    /// Returns none if the struct contains no users or if no users existed at the provided date.
-    #[deprecated(
-        since = "TBD",
-        note = "use spam_score_distribution_at_date_with_dedicated_type instead"
-    )]
-    pub fn spam_score_distribution_at_date(&self, date: NaiveDate) -> Option<[f32; 3]> {
-        let distributions: DatedSpamScoreDistribution =
-            self.spam_score_count_at_date(date)?.try_map_into().ok()?;
-        Some(distributions.into_inner().into())
-    }
-
-    /// Returns a hashmap of the update count that occured at each date.
+    /// Returns a hashmap of the update count that occurred at each date.
     pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
         let mut result: HashMap<NaiveDate, usize> = HashMap::new();
         for date in self
@@ -174,30 +73,6 @@ impl<'a> UsersSubset<'a> {
                 result.insert(date, 1);
             }
         }
-        result
-    }
-
-    /// Checks the distribution at each month from the first spam score that exists in the set to
-    /// the last. The check is done the first of each month.
-    pub fn monthly_spam_score_distributions(&self) -> Vec<(NaiveDate, [f32; 3])> {
-        // return an empty vec if the set is empty.
-        if self.map.is_empty() {
-            return Vec::new();
-        }
-
-        let mut result: Vec<(NaiveDate, [f32; 3])> = Vec::new();
-        let mut date = self.earliest_spam_score_date.unwrap();
-        let end_date = self.latest_spam_score_date.unwrap();
-        let date_of_month = 1; // determines which date of the month the check is done.
-        while date <= end_date {
-            result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
-            if date.day0() != 0 {
-                date = date.with_day(date_of_month).unwrap();
-            }
-            date = date.checked_add_months(Months::new(1)).unwrap();
-        }
-        result.push((date, self.spam_score_distribution_at_date(date).unwrap()));
-
         result
     }
 
@@ -225,10 +100,7 @@ impl<'a> IntoIterator for UsersSubset<'a> {
 
 impl<'a> From<HashMap<usize, &'a User>> for UsersSubset<'a> {
     fn from(value: HashMap<usize, &'a User>) -> Self {
-        Self {
-            map: value,
-            ..Default::default()
-        }
+        Self { map: value }
     }
 }
 
@@ -240,21 +112,7 @@ impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
             .map(|(key, value)| (*key, value))
             .collect();
 
-        let earliest_spam_score_date = users
-            .iter()
-            .flat_map(|user| user.earliest_spam_score_date_with_opt())
-            .min();
-
-        let latest_spam_score_date = users
-            .iter()
-            .flat_map(|user| user.latest_spam_score_date_with_opt())
-            .max();
-
-        Self {
-            map,
-            earliest_spam_score_date,
-            latest_spam_score_date,
-        }
+        Self { map }
     }
 }
 
