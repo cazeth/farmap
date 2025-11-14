@@ -429,10 +429,12 @@ mod tests {
 
     use crate::fid_score_shift::ShiftTarget;
     use crate::spam_score::DatedSpamUpdate;
+    use crate::time_utils::date;
     use crate::user_collection::tests::basic_single_user_test_collection_with_n_spam_updates;
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use crate::SpamScore;
     use std::collections::HashSet;
+    use std::iter::successors;
 
     use super::*;
 
@@ -469,80 +471,59 @@ mod tests {
         );
     }
 
-    // an iterator that returns DatedSpamUpdate with SpamScore One.
-    // It begins with a user-defined date an increments from there.
-    // It ends after user-define len.
-    struct SpamScoreOneIter {
-        pub current_date: NaiveDate,
-        pub len: u64,
-        pub count: u64,
-    }
-
-    impl Iterator for SpamScoreOneIter {
-        type Item = DatedSpamUpdate;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            if self.count < self.len {
-                let value = Some(DatedSpamUpdate::from(self.current_date, SpamScore::One));
-                self.count += 1;
-                self.current_date.checked_add_days(Days::new(1)).unwrap();
-                value
-            } else {
-                None
-            }
-        }
+    fn iter_from_spam_incrementor(
+        n: usize,
+        start_score: SpamScore,
+        score_incrementor: fn(SpamScore) -> SpamScore,
+    ) -> impl Iterator<Item = DatedSpamUpdate> {
+        let start_date = date("2020-01-01");
+        successors(
+            Some(DatedSpamUpdate::from(start_date, start_score)),
+            move |prev| {
+                let next_date = prev.date().checked_add_days(Days::new(1))?;
+                let next_score = score_incrementor(prev.score());
+                Some(DatedSpamUpdate::from(next_date, next_score))
+            },
+        )
+        .take(n)
     }
 
     fn create_users_with_spam_label_one(n: usize) -> UserCollection {
-        let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-        let new_iter = SpamScoreOneIter {
-            current_date: start_date,
-            len: n as u64,
-            count: 0,
-        };
-
-        crate::user_collection::tests::new_collection_from_user_value_iter(new_iter)
-    }
-
-    // an iterator that returns DatedSpamUpdate cycling through them: 0,1,2,0,1,2,0...
-    // It begins with a user-defined date an increments from there.
-    // It ends after user-define len.
-    struct SpamScoreCyclingIter {
-        pub current_date: NaiveDate,
-        pub len: u64,
-        pub count: u64,
-        pub spam_score: u64,
-    }
-
-    impl Iterator for SpamScoreCyclingIter {
-        type Item = DatedSpamUpdate;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            if self.count < self.len {
-                let value = Some(DatedSpamUpdate::from(
-                    self.current_date,
-                    SpamScore::try_from(self.spam_score as usize).unwrap(),
-                ));
-                self.count += 1;
-                self.current_date.checked_add_days(Days::new(1)).unwrap();
-                self.spam_score = (self.spam_score + 1) % 3;
-                value
-            } else {
-                None
-            }
+        fn spam_score_is_constant_one(_: SpamScore) -> SpamScore {
+            SpamScore::One
         }
+
+        let iter = iter_from_spam_incrementor(n, SpamScore::One, spam_score_is_constant_one);
+
+        crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
     fn create_users_with_cycling_spam_labels(n: usize) -> UserCollection {
-        let start_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
-        let new_iter = SpamScoreCyclingIter {
-            current_date: start_date,
-            len: n as u64,
-            count: 0,
-            spam_score: 0,
-        };
+        fn cycling_spam_score(prev: SpamScore) -> SpamScore {
+            match prev {
+                SpamScore::Zero => SpamScore::One,
+                SpamScore::One => SpamScore::Two,
+                SpamScore::Two => SpamScore::Zero,
+            }
+        }
 
-        crate::user_collection::tests::new_collection_from_user_value_iter(new_iter)
+        let iter = iter_from_spam_incrementor(n, SpamScore::Zero, cycling_spam_score);
+
+        crate::user_collection::tests::new_collection_from_user_value_iter(iter)
+    }
+
+    fn create_users_with_spam_labels_ones_and_twos(n: usize) -> UserCollection {
+        fn one_and_two_alternating(prev: SpamScore) -> SpamScore {
+            match prev {
+                SpamScore::One => SpamScore::Two,
+                SpamScore::Two => SpamScore::One,
+                SpamScore::Zero => unreachable!(),
+            }
+        }
+
+        let iter = iter_from_spam_incrementor(n, SpamScore::One, one_and_two_alternating);
+
+        crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
     mod test_new {
@@ -561,6 +542,14 @@ mod tests {
             let collection = create_users_with_spam_label_one(10);
             let set = create_set(&collection);
             assert!(set.is_some());
+        }
+
+        #[test]
+        fn ones_and_twos() {
+            let collection = create_users_with_spam_labels_ones_and_twos(2);
+            let set = create_set(&collection);
+            dbg!(&set);
+            assert!(set.is_some())
         }
 
         #[test]
@@ -668,7 +657,7 @@ mod tests {
         use super::*;
 
         #[track_caller]
-        fn check_count(set: &SetWithSpamEntries, nonspam: u64, maybe: u64, spam: u64) {
+        fn check_count(set: &SetWithSpamEntries, spam: u64, maybe: u64, nonspam: u64) {
             let counts = set.current_spam_score_count();
             assert_eq!(counts.non_spam(), nonspam);
             assert_eq!(counts.maybe_spam(), maybe);
@@ -680,6 +669,13 @@ mod tests {
             let collection = create_users_with_cycling_spam_labels(3);
             let set = create_set(&collection).unwrap();
             check_count(&set, 1, 1, 1);
+        }
+
+        #[test]
+        fn ones_and_twos() {
+            let collection = create_users_with_spam_labels_ones_and_twos(2);
+            let set = create_set(&collection).unwrap();
+            check_count(&set, 0, 1, 1);
         }
     }
 
