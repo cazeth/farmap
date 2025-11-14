@@ -6,7 +6,7 @@ use serde_json::Value;
 
 pub async fn parse_follow_response(response: Response) -> Result<Vec<u64>, ImporterError> {
     let json = parse_json_from_response(response).await?;
-    trace!("succesfully parsed into raw json {json:?}");
+    trace!("successfully parsed into raw json {json:?}");
     parse_raw_json(json)
 }
 

@@ -27,18 +27,19 @@ impl Default for GithubFetcher {
 }
 
 impl GithubFetcher {
-    /// set the base url of the fetches made to Github.
+    /// Set the base url of the fetches made to GitHub.
     pub fn with_base_url(mut self, base_url: Url) -> Self {
         self.base_url = base_url;
         self
     }
 
-    // set the url that returns a summary of all the commits.
+    /// Set the URL that returns a summary of all commits.
     pub fn with_status_url(mut self, status_url: Url) -> Self {
         self.status_url = status_url;
         self
     }
 
+    /// Set the API header used for calls.
     pub fn with_api_header(self, map: HeaderMap) -> Self {
         Self {
             header_map: Some(map),
@@ -46,7 +47,7 @@ impl GithubFetcher {
         }
     }
 
-    /// Show the URL for a call.
+    /// Show the URL for a call without actually making a call.
     pub fn api_call_from_endpoint(&self, endpoint: &str) -> Result<Url, ImporterError> {
         self.build_path(endpoint)
             .map_err(|_| ImporterError::InvalidEndpoint)
