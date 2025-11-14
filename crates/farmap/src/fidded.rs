@@ -1,6 +1,7 @@
-//! A wrapper to add a fid tag to data.
 use crate::HasTag;
 use crate::UserValue;
+
+/// A fid value wrapper.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub struct Fidded<T> {
     inner: T,
