@@ -1,3 +1,5 @@
+use crate::spam_score::DatedSpamUpdate;
+use crate::Fidded;
 use crate::UnprocessedUserLine;
 
 use super::ImporterError;
@@ -34,4 +36,12 @@ pub fn parse_commit_hash_body(body: &str) -> (Vec<UnprocessedUserLine>, Vec<Impo
         .read_all::<UnprocessedUserLine>()
         .map(|x| x.map_err(|res| ImporterError::BadApiResponse(format!("{res:?}"))))
         .partition_result()
+}
+
+pub fn into_fidded_user_value_iter(
+    previous_iter: impl IntoIterator<Item = UnprocessedUserLine>,
+) -> impl Iterator<Item = Fidded<DatedSpamUpdate>> {
+    previous_iter
+        .into_iter()
+        .map(|x| Fidded::<DatedSpamUpdate>::try_from(x).unwrap())
 }
