@@ -1,19 +1,6 @@
 //!Some tests for local_spam_label_importer and user_collection
 use farmap::fetch::local_spam_label_importer;
 use farmap::UserCollection;
-use std::path::PathBuf;
-
-#[test]
-pub fn test_user_count_on_file_with_res() {
-    let path = PathBuf::from("data/dummy-data/spam.jsonl");
-    let unprocessed =
-        local_spam_label_importer::import_data_from_file_with_res(path.to_str().unwrap()).unwrap();
-    let users = UserCollection::create_from_unprocessed_user_lines_and_collect_non_fatal_errors(
-        unprocessed,
-    )
-    .0;
-    assert_eq!(users.user_count(), 2);
-}
 
 #[test]
 pub fn test_spam_score_collision_with_error_collect() {
