@@ -1,6 +1,10 @@
+use crate::fetch::ConversionError;
 use crate::fetch::DataReadError;
 use crate::fetch::InvalidJsonlError;
+use crate::spam_score::DatedSpamUpdate;
+use crate::Fidded;
 use crate::InvalidInputError;
+use crate::SpamScore;
 use chrono::DateTime;
 use chrono::NaiveDate;
 use itertools::Itertools;
@@ -107,6 +111,21 @@ impl UnprocessedUserLine {
                 acc.append(&mut x);
                 acc
             })
+    }
+}
+
+impl TryFrom<UnprocessedUserLine> for Fidded<DatedSpamUpdate> {
+    type Error = ConversionError;
+    fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
+        let fid = value.fid();
+        let date = value.date().map_err(|_| ConversionError::ConversionError)?;
+        value.label_value();
+        let spam_score = SpamScore::try_from(value.label_value())
+            .map_err(|_| ConversionError::ConversionError)?;
+
+        let dated_spam_update = DatedSpamUpdate::from(date, spam_score);
+        let fidded: Fidded<DatedSpamUpdate> = Fidded::from((dated_spam_update, fid));
+        Ok(fidded)
     }
 }
 
