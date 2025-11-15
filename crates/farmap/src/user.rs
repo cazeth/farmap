@@ -1,4 +1,3 @@
-use crate::cast_meta::CastMeta;
 use crate::collidable::Collidable;
 use crate::spam_score::SpamEntries;
 use crate::spam_score::SpamEntry;
@@ -7,7 +6,6 @@ use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
 use crate::UnprocessedUserLine;
 use crate::UserValue;
-use chrono::Datelike;
 use chrono::Local;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
@@ -23,7 +21,6 @@ pub struct User {
 
     /// Some(Empty vec): has been checked and there were no cast records.
     /// None: Has not been checked.
-    cast_records: Option<Vec<CastMeta>>,
     reaction_times: Option<Vec<NaiveDateTime>>,
     latest_reaction_time_update_date: Option<NaiveDateTime>,
     latest_cast_record_check_date: Option<NaiveDate>,
@@ -126,7 +123,6 @@ impl User {
         Self {
             fid,
             labels: None,
-            cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
@@ -154,14 +150,6 @@ impl User {
         self.fid
     }
 
-    pub fn latest_spam_record(&self) -> Option<SpamRecord> {
-        Some(self.labels.as_ref()?.last_spam_entry().record())
-    }
-
-    pub fn earliest_spam_record(&self) -> Option<SpamRecord> {
-        Some(self.labels.as_ref()?.earliest_spam_entry().record())
-    }
-
     pub fn all_spam_records_with_opt(&self) -> Option<Vec<SpamRecord>> {
         let records = self
             .labels
@@ -174,87 +162,12 @@ impl User {
         Some(records)
     }
 
-    /// None: there is no spam_score data in the dataset.
-    pub fn created_at_or_after_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
-        Some(self.earliest_spam_record()?.1 >= date)
-    }
-
-    pub fn created_at_or_before_date_with_opt(&self, date: NaiveDate) -> Option<bool> {
-        Some(self.earliest_spam_record()?.1 <= date)
-    }
-
     pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
         self.latest_reaction_time_update_date
     }
 
-    /// Adds a new spam record to a user. There are three scenarios that may happen:
-    ///
-    /// The user already has a spam record with the same date and the same record. The method
-    /// returns Ok without doing anything.
-    ///
-    /// The user already has a spam record with a different spam score at the same date.
-    /// The method does not change the struct and returns an error.
-    ///
-    /// There is no collision and the list is updated while remaining sorted.
-    ///
-    pub fn add_spam_record(&mut self, new_record: SpamRecord) -> Result<(), UserError> {
-        let new_entry = SpamEntry::WithoutSourceCommit(new_record);
-        if let Some(labels) = &mut self.labels {
-            labels
-                .add_spam_entry(new_entry)
-                .map_err(|_| UserError::SpamScoreCollision {
-                    fid: self.fid(),
-                    date: new_entry.date(),
-                    old_spam_score: self
-                        .spam_score_at_date_with_owned(&new_entry.date())
-                        .unwrap(),
-                    new_spam_score: new_entry.score(),
-                })
-        } else {
-            self.labels = Some(SpamEntries::new(new_entry));
-            Ok(())
-        }
-    }
-
-    pub fn cast_count(&self) -> Option<u64> {
-        Some(self.cast_records.as_ref()?.len() as u64)
-    }
-
     pub fn reaction_times(&self) -> &Option<Vec<NaiveDateTime>> {
         &self.reaction_times
-    }
-
-    pub fn average_monthly_cast_rate(&self) -> Option<f32> {
-        let [sum, count] = self
-            .monthly_cast_counts()?
-            .iter()
-            .fold([0, 0], |acc, (x, _)| [acc[0] + x, acc[1] + 1]);
-
-        Some(sum as f32 / count as f32)
-    }
-
-    pub fn monthly_cast_counts(&self) -> Option<Vec<(usize, NaiveDate)>> {
-        let cast_records = if let Some(cast_records) = &self.cast_records {
-            cast_records
-        } else {
-            return None;
-        };
-
-        Some(
-            cast_records
-                .iter()
-                .map(|x| {
-                    NaiveDate::from_ymd_opt(x.cast_date().year(), x.cast_date().month(), 1)
-                        .expect("date parsing inside monthly_cast_count should work")
-                })
-                .sorted()
-                .dedup_with_count()
-                .collect::<Vec<_>>(),
-        )
-    }
-
-    pub fn has_cast_data(&self) -> bool {
-        self.cast_records.is_some()
     }
 
     pub fn latest_cast_record_check_date(&self) -> Option<NaiveDate> {
@@ -271,14 +184,6 @@ impl User {
 
     pub fn latest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
         Some(self.labels.as_ref()?.last_spam_entry().date())
-    }
-
-    /// If the user didn't exist at the date, the function returns none.
-    pub fn spam_score_at_date_with_owned(&self, date: &NaiveDate) -> Option<SpamScore> {
-        if date < &self.earliest_spam_record()?.1 {
-            return None;
-        };
-        Some(self.labels.as_ref()?.spam_score_at_date(*date)?)
     }
 }
 
@@ -316,7 +221,6 @@ impl TryFrom<UnprocessedUserLine> for User {
         Ok(Self {
             fid,
             labels: Some(entries),
-            cast_records: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
