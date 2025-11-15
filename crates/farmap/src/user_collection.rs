@@ -173,12 +173,8 @@ pub enum DataCreationError {
     DataReadError(#[from] DataReadError),
 
     #[error("DuplicateUserError")]
-    DuplicateUserError(#[from] DuplicateUserError),
+    DuplicateUserError,
 }
-
-#[derive(Error, Debug, PartialEq)]
-#[error("user already exists in collection")]
-pub struct DuplicateUserError;
 
 #[derive(Error, Debug)]
 pub enum DbReadError {
