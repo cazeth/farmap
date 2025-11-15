@@ -1,6 +1,4 @@
 use crate::collidable::Collidable;
-use crate::spam_score::SpamEntries;
-use crate::spam_score::SpamRecord;
 use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
 use crate::UserValue;
@@ -14,8 +12,6 @@ use thiserror::Error;
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 pub struct User {
     fid: usize,
-    #[serde(rename = "entries")]
-    labels: Option<SpamEntries>,
 
     /// Some(Empty vec): has been checked and there were no cast records.
     /// None: Has not been checked.
@@ -115,7 +111,6 @@ impl User {
     pub fn new_without_labels(fid: usize) -> Self {
         Self {
             fid,
-            labels: None,
             latest_cast_record_check_date: None,
             reaction_times: None,
             latest_reaction_time_update_date: None,
@@ -143,18 +138,6 @@ impl User {
         self.fid
     }
 
-    pub fn all_spam_records_with_opt(&self) -> Option<Vec<SpamRecord>> {
-        let records = self
-            .labels
-            .as_ref()?
-            .all_spam_entries()
-            .iter()
-            .cloned()
-            .map(|x| x.record())
-            .collect_vec();
-        Some(records)
-    }
-
     pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
         self.latest_reaction_time_update_date
     }
@@ -165,18 +148,6 @@ impl User {
 
     pub fn latest_cast_record_check_date(&self) -> Option<NaiveDate> {
         self.latest_cast_record_check_date
-    }
-
-    pub fn latest_spam_score_update_date_with_opt(&self) -> Option<NaiveDate> {
-        Some(self.labels.as_ref()?.last_spam_entry().date())
-    }
-
-    pub fn earliest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
-        Some(self.labels.as_ref()?.earliest_spam_entry().date())
-    }
-
-    pub fn latest_spam_score_date_with_opt(&self) -> Option<NaiveDate> {
-        Some(self.labels.as_ref()?.last_spam_entry().date())
     }
 }
 
