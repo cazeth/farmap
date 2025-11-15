@@ -92,11 +92,6 @@ impl User {
         }
     }
 
-    // added for migration from SpamEntries to user_values<SpamUpdate> for test data
-    pub(crate) fn labels(&self) -> Option<SpamEntries> {
-        self.labels.clone()
-    }
-
     fn now() -> NaiveDateTime {
         Local::now().naive_local()
     }

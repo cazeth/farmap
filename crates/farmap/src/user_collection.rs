@@ -1,12 +1,8 @@
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
-use crate::spam_score::DatedSpamUpdate;
 use crate::user::InvalidInputError;
 use crate::user::User;
 use crate::user::UserError;
-use crate::UsersSubset;
-use itertools::Itertools;
-use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
@@ -58,6 +54,7 @@ impl UserCollection {
         self.map.get_mut(&fid)
     }
 
+    #[allow(unused)]
     pub(crate) fn user_mut_unchecked(&mut self, fid: usize) -> &mut User {
         self.map
             .get_mut(&fid)
@@ -75,31 +72,7 @@ impl UserCollection {
     // the problem with this is that when the file does not exist the program will fail because
     // there isn't really a way for the caller to anticipate this...
     pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
-        let mut collection = serde_json::from_str(&std::fs::read_to_string(db)?)?;
-
-        // this code refactors a user_collection to saves spam_entries as spam_updates.
-        let fid_update_list: Vec<usize>;
-
-        {
-            let mut set = UsersSubset::from(&collection);
-            set.filter(|user| {
-                user.labels().is_some() && user.user_values_of_kind::<DatedSpamUpdate>().is_empty()
-            });
-
-            fid_update_list = set.iter().map(|user| user.fid()).collect_vec();
-        }
-
-        if !fid_update_list.is_empty() {
-            warn!("discovered users in user collection with spam entries but no spam updates. Make sure to overwrite the database at the end of the program");
-        }
-
-        for fid in fid_update_list {
-            let user = collection.user_mut_unchecked(fid);
-            for spam_entry in user.all_spam_records_with_opt().unwrap().clone() {
-                let spam_update = DatedSpamUpdate::from(spam_entry.1, spam_entry.0);
-                user.add_user_value(spam_update).expect("should exist");
-            }
-        }
+        let collection = serde_json::from_str(&std::fs::read_to_string(db)?)?;
 
         Ok(collection)
     }
