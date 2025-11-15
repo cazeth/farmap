@@ -1,7 +1,6 @@
 use super::pinata_parser::followers_from_pinata_response;
 use super::pinata_parser::reaction_times_from_response;
 use super::ImporterError;
-use crate::User;
 use chrono::NaiveDateTime;
 use log::trace;
 use reqwest::{Client, Response};
@@ -48,17 +47,6 @@ impl PinataFetcher {
         let mut recast_reaction_times = reaction_times_from_response(recasts).await?;
         reaction_times.append(&mut recast_reaction_times);
         Ok(reaction_times)
-    }
-
-    /// update a user with reaction times from pinata.
-    /// The function returns the existing reaction_times, if the field was populated prior to the
-    /// method call.
-    pub async fn fetch_reaction_times_for_user(
-        &self,
-        user: &mut User,
-    ) -> Result<Option<Vec<NaiveDateTime>>, ImporterError> {
-        let reaction_times = self.fetch_reaction_times_for_fid(user.fid() as u64).await?;
-        Ok(user.update_reaction_times(reaction_times))
     }
 
     pub async fn casts_by_fid(&self, id: u64) -> Result<Response, ImporterError> {
