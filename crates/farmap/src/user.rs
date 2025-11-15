@@ -1,9 +1,7 @@
 use crate::collidable::Collidable;
-use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
 use crate::UserValue;
 use chrono::Local;
-use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use itertools::*;
 use serde::{Deserialize, Serialize};
@@ -121,19 +119,6 @@ pub enum UserValueError {
         "User Value collides with existing user value. A User cannot contain colliding user values"
     )]
     CollisionError,
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum UserError {
-    #[error("User {0} already has a spam record for date {1}. The existing spam score at the date is {} but a spamscore of {} is now trying to be set.", .fid, . date) ]
-    SpamScoreCollision {
-        fid: usize,
-        date: NaiveDate,
-        old_spam_score: SpamScore,
-        new_spam_score: SpamScore,
-    },
-    #[error("Trying to merge users with different fids. For merge_user to work both input users must have the same fid. provided fid_1: {} and provided fid_2 {}", .fid_1, .fid_2)]
-    DifferentFidMerge { fid_1: usize, fid_2: usize },
 }
 
 #[derive(Error, Debug, PartialEq)]

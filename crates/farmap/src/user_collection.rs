@@ -2,7 +2,6 @@ use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::user::InvalidInputError;
 use crate::user::User;
-use crate::user::UserError;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
@@ -138,9 +137,6 @@ pub enum CollectionError {
 pub enum DataCreationError {
     #[error("Input data is invalid.")]
     InvalidInputError(#[from] InvalidInputError),
-
-    #[error("UserError")]
-    UserError(#[from] UserError),
 
     #[error("Input is not readable or accessible")]
     DataReadError(#[from] DataReadError),
