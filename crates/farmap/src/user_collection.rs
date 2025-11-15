@@ -154,13 +154,13 @@ impl UserCollection {
         &self.map
     }
 
-    pub fn add_user(&mut self, user: User) -> Result<(), DuplicateUserError> {
+    pub fn add_user(&mut self, user: User) -> Result<(), CollectionError> {
         let fid = user.fid();
         if let Vacant(v) = self.map.entry(fid) {
             v.insert(user);
             Ok(())
         } else {
-            Err(DuplicateUserError)
+            Err(CollectionError::DuplicateUserError)
         }
     }
 }
