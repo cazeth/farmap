@@ -106,7 +106,7 @@ pub mod tests {
         m: u64,
         first_spam_score_date: NaiveDate,
     ) -> User {
-        let mut user = User::new_without_labels(fid as usize);
+        let mut user = User::new(fid as usize);
         let mut date = first_spam_score_date;
 
         for i in 0..m {

@@ -101,7 +101,7 @@ impl User {
         }
     }
 
-    pub fn new_without_labels(fid: usize) -> Self {
+    pub fn new(fid: usize) -> Self {
         Self {
             fid,
             user_values: None,
@@ -144,7 +144,7 @@ pub mod tests {
     }
 
     pub fn create_user(fid: usize) -> User {
-        User::new_without_labels(fid)
+        User::new(fid)
     }
 
     pub fn valid_user_value_add<T: UserValue>(user: &mut User, value: T) {
@@ -153,7 +153,7 @@ pub mod tests {
 
     #[test]
     fn test_user_values_of_kind_is_none_on_none_user_values() {
-        let user = User::new_without_labels(1);
+        let user = create_user(1);
         assert!(user.user_values_of_kind::<DatedSpamUpdate>().is_empty());
     }
 }

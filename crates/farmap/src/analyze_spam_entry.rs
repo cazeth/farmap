@@ -812,7 +812,7 @@ mod tests {
     fn basic_test_set() -> UserCollection {
         let value =
             DatedSpamUpdate::from(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), SpamScore::One);
-        let mut user = User::new_without_labels(1);
+        let mut user = User::new(1);
         user.add_user_value(value).unwrap();
         let mut collection = UserCollection::default();
         collection.add_user(user).unwrap();
@@ -891,7 +891,7 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
         let earlier_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-        let mut user = User::new_without_labels(1);
+        let mut user = User::new(1);
 
         assert!(user
             .try_add_user_value(DatedSpamUpdate::from(date, SpamScore::One))

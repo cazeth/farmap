@@ -40,7 +40,7 @@ impl UserCollection {
                     }
                 }
             } else {
-                let mut user = User::new_without_labels(value.tag() as usize);
+                let mut user = User::new(value.tag() as usize);
                 user.add_user_value(value.untag().0)
                     .expect("new user cannot collide");
                 self.add_user(user).expect("new user cannot collide");
