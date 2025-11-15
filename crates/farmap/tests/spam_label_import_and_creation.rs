@@ -1,6 +1,7 @@
 //!Some tests for local_spam_label_importer and user_collection
 use farmap::fetch::local_spam_label_importer;
-use farmap::spam_score::SpamEntry;
+use farmap::spam_score::DatedSpamUpdate;
+use farmap::Fidded;
 use farmap::User;
 use farmap::UserCollection;
 
@@ -40,6 +41,6 @@ pub fn test_error_on_invalid_fid() {
     .unwrap();
 
     let userline = userlines.pop().unwrap();
-    let new_entry = SpamEntry::try_from(userline);
+    let new_entry: Result<Fidded<DatedSpamUpdate>, _> = userline.try_into();
     assert!(new_entry.is_err());
 }
