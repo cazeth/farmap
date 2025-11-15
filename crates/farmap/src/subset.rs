@@ -1,7 +1,6 @@
 use crate::is_user::IsUser;
 use crate::user::User;
 use crate::user_collection::UserCollection;
-use chrono::NaiveDate;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -56,24 +55,6 @@ impl<'a> UsersSubset<'a> {
 
     pub fn add_user(&mut self, user: impl IsUser<'a>) {
         self.map.insert(user.fid(), user.user());
-    }
-
-    /// Returns a hashmap of the update count that occurred at each date.
-    pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
-        let mut result: HashMap<NaiveDate, usize> = HashMap::new();
-        for date in self
-            .iter()
-            .flat_map(|user| user.all_spam_records_with_opt())
-            .flatten()
-            .map(|(_, date)| date)
-        {
-            if let Some(current_count) = result.get_mut(&date) {
-                *current_count += 1;
-            } else {
-                result.insert(date, 1);
-            }
-        }
-        result
     }
 
     pub fn user_count(&self) -> usize {
