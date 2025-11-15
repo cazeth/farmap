@@ -42,6 +42,7 @@ pub use set_with_cast_data::SetWithCastData;
 pub use spam_score::DatedSpamScoreCount;
 pub use spam_score::SpamRecord;
 pub use spam_score::SpamScore;
+pub use spam_score::SpamScoreCount;
 pub use spam_score::SpamScoreDistribution;
 #[doc(inline)]
 pub use subset::UsersSubset;
