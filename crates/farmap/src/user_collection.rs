@@ -221,6 +221,15 @@ pub mod tests {
         pub fid: u64,
     }
 
+    #[track_caller]
+    pub fn collection_from_fidded<T: HasTag<u64>>(
+        values: impl IntoIterator<Item = T>,
+    ) -> UserCollection {
+        let mut collection = UserCollection::default();
+        collection.add_user_value_iter(values);
+        collection
+    }
+
     pub fn new_collection_from_user_value_iter<T>(
         values: impl IntoIterator<Item = T>,
     ) -> UserCollection
@@ -256,5 +265,41 @@ pub mod tests {
     pub fn dummy_data() -> UserCollection {
         let db_path = PathBuf::from("data/dummy-data_db.json");
         UserCollection::create_from_db(&db_path).unwrap()
+    }
+
+    mod add_user {
+
+        use super::*;
+
+        #[track_caller]
+        pub fn check_add_user(collection: &mut UserCollection, user: User) {
+            collection.add_user(user).unwrap()
+        }
+    }
+
+    mod user_count {
+        use super::add_user::check_add_user;
+        use crate::user::tests::create_user;
+
+        use super::*;
+
+        #[track_caller]
+        fn check_user_count(collection: &UserCollection, n: usize) {
+            assert_eq!(collection.user_count(), n)
+        }
+
+        #[test]
+        fn test_empty_user_count() {
+            let collection = empty_collection();
+            check_user_count(&collection, 0);
+        }
+
+        #[test]
+        fn test_non_empty_user_count() {
+            let mut collection = empty_collection();
+            check_add_user(&mut collection, create_user(1));
+            check_add_user(&mut collection, create_user(2));
+            check_user_count(&collection, 2);
+        }
     }
 }
