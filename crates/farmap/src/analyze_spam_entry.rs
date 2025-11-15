@@ -597,7 +597,6 @@ mod tests {
         fn dummy_data_with_nonemptying_date_filter() {
             let dummy_data = dummy_data();
             let mut set = create_set(&dummy_data).unwrap();
-            dbg!(&set);
 
             let date = NaiveDate::parse_from_str("2025-01-01", "%Y-%m-%d").unwrap();
 
@@ -682,7 +681,8 @@ mod tests {
     mod current_spam_distributions {
         use super::*;
 
-        fn check_distribution(set: &SetWithSpamEntries, nonspam: f32, maybe: f32, spam: f32) {
+        #[track_caller]
+        fn check_distribution(set: &SetWithSpamEntries, spam: f32, maybe: f32, nonspam: f32) {
             let distribution = set.current_spam_score_distribution();
             assert_eq!(distribution.non_spam(), nonspam);
             assert_eq!(distribution.maybe_spam(), maybe);
@@ -694,6 +694,27 @@ mod tests {
             let collection = create_users_with_spam_label_one(10);
             let set = create_set(&collection).unwrap();
             check_distribution(&set, 0.0, 1.0, 0.0);
+        }
+
+        #[test]
+        fn test_ones_and_twos() {
+            let collection = create_users_with_spam_labels_ones_and_twos(4);
+            let set = create_set(&collection).unwrap();
+            check_distribution(&set, 0.0, 0.5, 0.5);
+        }
+
+        #[test]
+        fn test_ones_and_twos_with_large_n() {
+            let collection = create_users_with_spam_labels_ones_and_twos(100);
+            let set = create_set(&collection).unwrap();
+            check_distribution(&set, 0.0, 0.5, 0.5);
+        }
+
+        #[test]
+        fn test_ones_and_twos_with_odd_n() {
+            let collection = create_users_with_spam_labels_ones_and_twos(5);
+            let set = create_set(&collection).unwrap();
+            check_distribution(&set, 0.0, 0.6, 0.4);
         }
     }
 
@@ -733,6 +754,7 @@ mod tests {
     }
 
     mod earliest_date {
+        use super::filter::*;
         use super::*;
         use crate::user_collection::tests::dummy_data;
 
@@ -742,6 +764,23 @@ mod tests {
             let set = create_set(&users).unwrap();
             let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
             assert_eq!(set.earliest_spam_score_date, date);
+        }
+
+        #[test]
+        fn test_earliest_date_after_filter() {
+            let users = dummy_data();
+            let mut set = create_set(&users).unwrap();
+
+            let filter_date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+            let filter =
+                |user: &UserWithSpamData| user.earliest_spam_update().date() >= filter_date;
+
+            check_filter(&mut set, filter, FilterValidity::NonEmpty);
+
+            assert_eq!(
+                set.earliest_spam_score_date,
+                NaiveDate::from_ymd_opt(2025, 1, 23).unwrap()
+            );
         }
     }
 
