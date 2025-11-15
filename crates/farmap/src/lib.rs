@@ -9,7 +9,6 @@
 //! using the User, UserCollection and Subset struct.
 mod analyze_spam_entry;
 pub use analyze_spam_entry::SetWithSpamEntries;
-pub mod cast_meta;
 mod cast_type;
 mod collidable;
 mod dated;
