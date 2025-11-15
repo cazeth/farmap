@@ -218,7 +218,11 @@ fn main() {
         }
 
         Some(Commands::Fid { fid }) => {
-            print_fid_history(&set, &fid);
+            if let Ok(spam_set) = SetWithSpamEntries::try_from(&set) {
+                print_fid_history(&spam_set, &fid);
+            } else {
+                println!("no spam data in data")
+            };
         }
         Some(Commands::AllFids) => {
             print_all(&set);
@@ -232,11 +236,15 @@ fn print_all(set: &UsersSubset) {
     }
 }
 
-fn print_fid_history(set: &UsersSubset, fid: &usize) {
-    println!("Spam record history for {fid}");
-    println!("------");
-    for record in set.user(*fid).unwrap().all_spam_records_with_opt().unwrap() {
-        println!("{:?}: {:?}", record.1, record.0 as usize);
+fn print_fid_history(set: &SetWithSpamEntries, fid: &usize) {
+    if let Some(user) = set.fid(*fid) {
+        println!("Spam record history for {fid}");
+        println!("------");
+        for record in user.dated_spam_updates() {
+            println!("{}: {}", record.date(), record.score() as usize)
+        }
+    } else {
+        println!("no spam data for user in data set")
     }
 }
 
