@@ -12,12 +12,6 @@ use thiserror::Error;
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 pub struct User {
     fid: usize,
-
-    /// Some(Empty vec): has been checked and there were no cast records.
-    /// None: Has not been checked.
-    reaction_times: Option<Vec<NaiveDateTime>>,
-    latest_reaction_time_update_date: Option<NaiveDateTime>,
-    latest_cast_record_check_date: Option<NaiveDate>,
     user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
 }
 
@@ -91,6 +85,7 @@ impl User {
     fn now() -> NaiveDateTime {
         Local::now().naive_local()
     }
+
     fn update_time_if_duplicate<T>(&mut self, value: &T) -> Option<NaiveDateTime>
     where
         T: UserValue,
@@ -111,43 +106,12 @@ impl User {
     pub fn new_without_labels(fid: usize) -> Self {
         Self {
             fid,
-            latest_cast_record_check_date: None,
-            reaction_times: None,
-            latest_reaction_time_update_date: None,
             user_values: None,
-        }
-    }
-
-    pub fn update_reaction_times(
-        &mut self,
-        reaction_times: Vec<NaiveDateTime>,
-    ) -> Option<Vec<NaiveDateTime>> {
-        self.latest_reaction_time_update_date = Some(Local::now().naive_utc());
-        self.reaction_times.replace(reaction_times)
-    }
-
-    pub fn latest_reaction_time(&self) -> Option<&NaiveDateTime> {
-        if let Some(reaction_times) = &self.reaction_times {
-            Some(reaction_times.iter().max()?)
-        } else {
-            None
         }
     }
 
     pub fn fid(&self) -> usize {
         self.fid
-    }
-
-    pub fn latest_reaction_time_update_date(&self) -> Option<NaiveDateTime> {
-        self.latest_reaction_time_update_date
-    }
-
-    pub fn reaction_times(&self) -> &Option<Vec<NaiveDateTime>> {
-        &self.reaction_times
-    }
-
-    pub fn latest_cast_record_check_date(&self) -> Option<NaiveDate> {
-        self.latest_cast_record_check_date
     }
 }
 
