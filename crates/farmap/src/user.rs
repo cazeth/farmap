@@ -1,10 +1,8 @@
 use crate::collidable::Collidable;
 use crate::spam_score::SpamEntries;
-use crate::spam_score::SpamEntry;
 use crate::spam_score::SpamRecord;
 use crate::spam_score::SpamScore;
 use crate::user_value::AnyUserValue;
-use crate::UnprocessedUserLine;
 use crate::UserValue;
 use chrono::Local;
 use chrono::NaiveDate;
@@ -206,27 +204,6 @@ pub enum UserError {
     },
     #[error("Trying to merge users with different fids. For merge_user to work both input users must have the same fid. provided fid_1: {} and provided fid_2 {}", .fid_1, .fid_2)]
     DifferentFidMerge { fid_1: usize, fid_2: usize },
-}
-
-impl TryFrom<UnprocessedUserLine> for User {
-    type Error = InvalidInputError;
-
-    fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
-        let label_value = SpamScore::try_from(value.label_value())?;
-        let fid = value.fid();
-        let date = value.date()?;
-        let record: SpamRecord = (label_value, date);
-        let entries = SpamEntries::new(SpamEntry::WithoutSourceCommit(record));
-
-        Ok(Self {
-            fid,
-            labels: Some(entries),
-            latest_cast_record_check_date: None,
-            reaction_times: None,
-            latest_reaction_time_update_date: None,
-            user_values: None,
-        })
-    }
 }
 
 #[derive(Error, Debug, PartialEq)]
