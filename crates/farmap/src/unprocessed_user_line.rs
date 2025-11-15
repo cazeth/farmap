@@ -1,4 +1,3 @@
-use crate::fetch::ConversionError;
 use crate::fetch::DataReadError;
 use crate::fetch::InvalidJsonlError;
 use crate::spam_score::DatedSpamUpdate;
@@ -115,13 +114,12 @@ impl UnprocessedUserLine {
 }
 
 impl TryFrom<UnprocessedUserLine> for Fidded<DatedSpamUpdate> {
-    type Error = ConversionError;
+    type Error = InvalidInputError;
     fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
         let fid = value.fid();
-        let date = value.date().map_err(|_| ConversionError::ConversionError)?;
+        let date = value.date()?;
         value.label_value();
-        let spam_score = SpamScore::try_from(value.label_value())
-            .map_err(|_| ConversionError::ConversionError)?;
+        let spam_score = SpamScore::try_from(value.label_value())?;
 
         let dated_spam_update = DatedSpamUpdate::from(date, spam_score);
         let fidded: Fidded<DatedSpamUpdate> = Fidded::from((dated_spam_update, fid));
