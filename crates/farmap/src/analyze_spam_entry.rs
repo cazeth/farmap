@@ -130,7 +130,7 @@ impl<'a> SetWithSpamEntries<'a> {
             .count() as u64
     }
 
-    /// A hashmap of the spam update count that occured at each date.
+    /// A hashmap of the spam update count that occurred at each date.
     pub fn count_updates(&self) -> HashMap<NaiveDate, usize> {
         let mut result: HashMap<NaiveDate, usize> = HashMap::new();
         for date in self

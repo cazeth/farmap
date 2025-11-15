@@ -29,7 +29,7 @@ pub fn parse_status(input: &str) -> Result<Vec<String>, ImporterError> {
         .collect::<Result<Vec<String>, ImporterError>>()
 }
 
-/// read all the lines of a body. If particular cannot be processed it is collected into the
+/// read all the lines of a body. If any particular line cannot be processed it is collected into the
 /// Vec<ImporterError>. All the valid lines are still collected into the Vec<UnprocessedUserLine>.
 pub fn parse_commit_hash_body(body: &str) -> (Vec<UnprocessedUserLine>, Vec<ImporterError>) {
     JsonLinesReader::new(body.as_bytes())

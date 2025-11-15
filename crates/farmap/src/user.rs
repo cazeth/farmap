@@ -56,7 +56,7 @@ impl User {
         }
     }
 
-    /// Insert a new [`UserValue`]. Returns an error on collision. Returns an Ok on duplicate.
+    /// Insert a new [`UserValue`]. Returns Ok() on duplicate.
     pub fn add_user_value<T>(&mut self, value: T) -> Result<(), UserValueError>
     where
         T: UserValue,
