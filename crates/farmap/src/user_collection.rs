@@ -4,7 +4,6 @@ use crate::spam_score::DatedSpamUpdate;
 use crate::user::InvalidInputError;
 use crate::user::User;
 use crate::user::UserError;
-use crate::UnprocessedUserLine;
 use crate::UsersSubset;
 use itertools::Itertools;
 use log::warn;
@@ -115,19 +114,6 @@ impl UserCollection {
         let mut file = File::create(db)?;
         let json_text = serde_json::to_string(self)?;
         file.write_all(json_text.as_bytes())?;
-        Ok(())
-    }
-
-    #[deprecated(
-        since = "TBD",
-        note = "create a User and add the user to the collection instead"
-    )]
-    pub fn push_unprocessed_user_line(
-        &mut self,
-        line: UnprocessedUserLine,
-    ) -> Result<(), Box<dyn Error>> {
-        let new_user = User::try_from(line)?;
-        self.add_user(new_user)?;
         Ok(())
     }
 
