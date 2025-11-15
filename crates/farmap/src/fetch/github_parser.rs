@@ -45,3 +45,23 @@ pub fn into_fidded_user_value_iter(
         .into_iter()
         .map(|x| Fidded::<DatedSpamUpdate>::try_from(x).unwrap())
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use std::fs::read_to_string;
+
+    pub fn fidded_user_values_from_raw_spam_data_file(
+    ) -> impl Iterator<Item = Fidded<DatedSpamUpdate>> {
+        let file_path = "data/dummy-data/spam.jsonl";
+        let body = read_to_string(file_path).unwrap();
+        let raw_iter = parse_commit_hash_body(&body).0;
+        into_fidded_user_value_iter(raw_iter)
+    }
+
+    #[test]
+    fn test_on_spam_data() {
+        let spam_data = fidded_user_values_from_raw_spam_data_file();
+        assert_eq!(3, spam_data.count())
+    }
+}
