@@ -6,7 +6,8 @@ use farmap::fetch::pinata_parser::cast_meta_from_pinata_response;
 use farmap::fetch::GithubFetcher;
 use farmap::fetch::ImporterError;
 use farmap::fetch::PinataFetcher;
-use farmap::spam_score::DatedSpamUpdateWithFid;
+use farmap::spam_score::DatedSpamUpdate;
+use farmap::Fidded;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
 use farmap::UserCollection;
@@ -188,7 +189,7 @@ pub async fn import_github_data(
         let dated_spam_updates = user_lines
             .0
             .into_iter()
-            .flat_map(DatedSpamUpdateWithFid::try_from)
+            .flat_map(Fidded::<DatedSpamUpdate>::try_from)
             .collect_vec();
         users.add_user_value_iter(dated_spam_updates);
     }
