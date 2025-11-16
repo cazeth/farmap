@@ -32,6 +32,7 @@ mod user_with_cast_data;
 mod user_with_spam_data;
 mod utils;
 pub use crate::has_tag::HasTag;
+pub use crate::unprocessed_user_line::SpamDataParseError;
 pub use cast_type::CastType;
 pub use cast_type::InvalidCastInputError;
 #[doc(inline)]
@@ -49,7 +50,6 @@ pub use subset::UsersSubset;
 pub use try_from_user::TryFromUser;
 pub use try_from_user_set::TryFromUserSet;
 pub use unprocessed_user_line::UnprocessedUserLine;
-pub use user::SpamDataParseError;
 pub use user::User;
 #[doc(inline)]
 pub use user_collection::UserCollection;

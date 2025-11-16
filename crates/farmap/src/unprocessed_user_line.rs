@@ -1,8 +1,8 @@
 use crate::fetch::DataReadError;
 use crate::fetch::InvalidJsonlError;
 use crate::spam_score::DatedSpamUpdate;
+use crate::spam_score::SpamScoreError;
 use crate::Fidded;
-use crate::SpamDataParseError;
 use crate::SpamScore;
 use chrono::DateTime;
 use chrono::NaiveDate;
@@ -10,6 +10,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_jsonlines::json_lines;
 use std::fs::read_dir;
+use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct UnprocessedUserLine {
@@ -131,4 +132,12 @@ impl TryFrom<UnprocessedUserLine> for Fidded<DatedSpamUpdate> {
 struct Type {
     fid: u64,
     target: String,
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum SpamDataParseError {
+    #[error(transparent)]
+    SpamScoreError(#[from] SpamScoreError),
+    #[error("Timestamp was {0}, which is invalid.", . timestamp)]
+    DateError { timestamp: usize },
 }
