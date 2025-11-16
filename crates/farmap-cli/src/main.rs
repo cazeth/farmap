@@ -5,7 +5,8 @@ use clap::Subcommand;
 use farmap::fetch::local_spam_label_importer;
 use farmap::fid_score_shift::ShiftSource;
 use farmap::fid_score_shift::ShiftTarget;
-use farmap::spam_score::DatedSpamUpdateWithFid;
+use farmap::spam_score::DatedSpamUpdate;
+use farmap::Fidded;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
 use farmap::User;
@@ -297,7 +298,7 @@ fn import_data_from_dir(data_dir: &str) -> UserCollection {
         warn!("non-fatal error on import: {error:?}")
     }
 
-    let user_lines: Vec<DatedSpamUpdateWithFid> =
+    let user_lines: Vec<Fidded<DatedSpamUpdate>> =
         oks.into_iter().map(|x| x.try_into().unwrap()).collect_vec();
     let mut collection = UserCollection::default();
     collection.add_user_value_iter(user_lines);
@@ -312,7 +313,7 @@ fn import_data_from_file(data_path: &str) -> UserCollection {
     for error in errors {
         warn!("non-fatal error on import: {error:?}")
     }
-    let user_lines: Vec<DatedSpamUpdateWithFid> =
+    let user_lines: Vec<Fidded<DatedSpamUpdate>> =
         oks.into_iter().map(|x| x.try_into().unwrap()).collect_vec();
     let mut collection = UserCollection::default();
     collection.add_user_value_iter(user_lines);
