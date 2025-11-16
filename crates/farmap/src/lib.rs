@@ -49,7 +49,7 @@ pub use subset::UsersSubset;
 pub use try_from_user::TryFromUser;
 pub use try_from_user_set::TryFromUserSet;
 pub use unprocessed_user_line::UnprocessedUserLine;
-pub use user::InvalidInputError;
+pub use user::SpamDataParseError;
 pub use user::User;
 #[doc(inline)]
 pub use user_collection::UserCollection;

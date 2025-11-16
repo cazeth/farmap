@@ -2,7 +2,7 @@ use crate::fetch::DataReadError;
 use crate::fetch::InvalidJsonlError;
 use crate::spam_score::DatedSpamUpdate;
 use crate::Fidded;
-use crate::InvalidInputError;
+use crate::SpamDataParseError;
 use crate::SpamScore;
 use chrono::DateTime;
 use chrono::NaiveDate;
@@ -37,11 +37,11 @@ impl UnprocessedUserLine {
         self.timestamp
     }
 
-    pub fn date(&self) -> Result<NaiveDate, InvalidInputError> {
+    pub fn date(&self) -> Result<NaiveDate, SpamDataParseError> {
         if let Some(date) = DateTime::from_timestamp(self.timestamp().try_into().unwrap(), 0) {
             Ok(date.date_naive())
         } else {
-            Err(InvalidInputError::DateError {
+            Err(SpamDataParseError::DateError {
                 timestamp: self.timestamp(),
             })
         }
@@ -114,7 +114,7 @@ impl UnprocessedUserLine {
 }
 
 impl TryFrom<UnprocessedUserLine> for Fidded<DatedSpamUpdate> {
-    type Error = InvalidInputError;
+    type Error = SpamDataParseError;
     fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
         let fid = value.fid();
         let date = value.date()?;

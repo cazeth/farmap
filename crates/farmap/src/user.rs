@@ -1,4 +1,5 @@
 use crate::collidable::Collidable;
+use crate::spam_score::SpamScoreError;
 use crate::user_value::AnyUserValue;
 use crate::UserValue;
 use chrono::Local;
@@ -122,9 +123,9 @@ pub enum UserValueError {
 }
 
 #[derive(Error, Debug, PartialEq)]
-pub enum InvalidInputError {
-    #[error("SpamScore was {0}, not zero, one or two.", .label)]
-    SpamScoreError { label: usize },
+pub enum SpamDataParseError {
+    #[error(transparent)]
+    SpamScoreError(#[from] SpamScoreError),
     #[error("Timestamp was {0}, which is invalid.", . timestamp)]
     DateError { timestamp: usize },
 }

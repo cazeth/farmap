@@ -5,7 +5,7 @@ use crate::has_tag::HasTag;
 use crate::user_value::AnyUserValue;
 use crate::user_value::UserValue;
 use crate::user_value::UserValueSeal;
-use crate::{user::InvalidInputError, utils::distribution_from_counts, UnprocessedUserLine};
+use crate::utils::distribution_from_counts;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -153,14 +153,14 @@ impl TryFrom<String> for CommitHash {
 pub struct InvalidHashError(String);
 
 impl TryFrom<usize> for SpamScore {
-    type Error = InvalidInputError;
+    type Error = SpamScoreError;
 
     fn try_from(value: usize) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Zero),
             1 => Ok(Self::One),
             2 => Ok(Self::Two),
-            _ => Err(InvalidInputError::SpamScoreError { label: value }),
+            _ => Err(SpamScoreError::OutOfBoundsError { value }),
         }
     }
 }
@@ -182,6 +182,13 @@ impl TryFrom<SpamScoreCount> for SpamScoreDistribution {
             spam: distribution[0],
         })
     }
+}
+
+#[derive(Debug, Error, PartialEq)]
+#[non_exhaustive]
+pub enum SpamScoreError {
+    #[error("Tried to create a spam score but it was out of bounds: {value}")]
+    OutOfBoundsError { value: usize },
 }
 
 #[derive(Debug, Error)]
@@ -285,18 +292,6 @@ impl HasTag<u64> for DatedSpamUpdateWithFid {
 
     fn tag(&self) -> u64 {
         self.1
-    }
-}
-
-impl TryFrom<UnprocessedUserLine> for DatedSpamUpdateWithFid {
-    type Error = InvalidInputError;
-
-    fn try_from(value: UnprocessedUserLine) -> Result<Self, Self::Error> {
-        let spam_score = SpamScore::try_from(value.label_value())?;
-        let spam_update = SpamUpdate::from(spam_score);
-        let spam_update_with_fid = (spam_update, value.fid() as u64);
-        let date = value.date()?;
-        Ok(DatedSpamUpdateWithFid::from(date, spam_update_with_fid))
     }
 }
 

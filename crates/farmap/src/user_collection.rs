@@ -1,6 +1,5 @@
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
-use crate::user::InvalidInputError;
 use crate::user::User;
 use serde::Deserialize;
 use serde::Serialize;
@@ -136,7 +135,7 @@ pub enum CollectionError {
 #[derive(Error, Debug, PartialEq)]
 pub enum DataCreationError {
     #[error("Input data is invalid.")]
-    InvalidInputError(#[from] InvalidInputError),
+    InvalidInputError,
 
     #[error("Input is not readable or accessible")]
     DataReadError(#[from] DataReadError),
