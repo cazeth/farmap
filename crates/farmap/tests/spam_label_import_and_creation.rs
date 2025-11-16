@@ -18,15 +18,15 @@ pub fn test_spam_score_collision_with_error_collect() {
     let mut user_collection = UserCollection::default();
     let first_line = updates[0];
 
-    let mut user = User::new(first_line.1 as usize);
+    let mut user = User::new(first_line.fid() as usize);
 
-    user.add_user_value(first_line.0)
+    user.add_user_value(first_line.unfid())
         .expect("should not collide");
 
     let first_line_result = user_collection.add_user(user);
     let second_line = user_lines[1].as_ref().unwrap();
     let mut user = User::new(second_line.fid());
-    user.add_user_value(first_line.0).unwrap();
+    user.add_user_value(first_line.unfid()).unwrap();
     let second_line_result = user_collection.add_user(user);
 
     assert!(first_line_result.is_ok());

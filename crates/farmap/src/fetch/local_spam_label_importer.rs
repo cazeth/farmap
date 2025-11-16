@@ -2,7 +2,8 @@
 //! The data can be added to a [UserCollection](crate::UserCollection).
 use super::{DataReadError, RetrieveError};
 use crate::fetch::InvalidJsonlError;
-use crate::spam_score::DatedSpamUpdateWithFid;
+use crate::spam_score::DatedSpamUpdate;
+use crate::Fidded;
 use crate::UnprocessedUserLine;
 use itertools::Itertools;
 use serde_jsonlines::json_lines;
@@ -11,14 +12,14 @@ use std::path::Path;
 
 pub fn import_data_from_file(
     path: impl AsRef<Path>,
-) -> Result<Vec<DatedSpamUpdateWithFid>, RetrieveError> {
+) -> Result<Vec<Fidded<DatedSpamUpdate>>, RetrieveError> {
     let import_result = import_data_from_file_with_collected_res(path)
         .map_err(|_| RetrieveError::CouldNotFetchData)?;
 
     import_result
         .into_iter()
         .flatten()
-        .map(TryInto::<DatedSpamUpdateWithFid>::try_into)
+        .map(TryInto::<Fidded<DatedSpamUpdate>>::try_into)
         .try_collect()
         .map_err(|_| RetrieveError::InvalidFetchedData)
 }
