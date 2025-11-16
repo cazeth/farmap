@@ -156,9 +156,7 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use crate::UserValue;
-    use chrono::NaiveDate;
     use std::path::PathBuf;
 
     #[test]
@@ -215,23 +213,12 @@ pub mod tests {
         UserCollection::default()
     }
 
-    pub fn basic_single_user_test_collection_with_n_spam_updates(n: u64) -> UserCollection {
-        let date = NaiveDate::parse_from_str("2020-1-1", "%Y-%m-%d").unwrap();
-        let user = create_user_with_m_spam_scores(1, n, date);
-
-        let mut user_collection = UserCollection::default();
-        user_collection
-            .add_user(user)
-            .expect("only one user in collection - cannot collide");
-        user_collection
-    }
-
     pub fn dummy_data() -> UserCollection {
         let db_path = PathBuf::from("data/dummy-data_db.json");
         UserCollection::create_from_db(&db_path).unwrap()
     }
 
-    mod add_user {
+    pub mod add_user {
 
         use super::*;
 

@@ -430,7 +430,8 @@ mod tests {
     use crate::fid_score_shift::ShiftTarget;
     use crate::spam_score::DatedSpamUpdate;
     use crate::time_utils::date;
-    use crate::user_collection::tests::basic_single_user_test_collection_with_n_spam_updates;
+    use crate::user_collection::tests::add_user::check_add_user;
+    use crate::user_collection::tests::empty_collection;
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use crate::SpamScore;
     use std::collections::HashSet;
@@ -526,9 +527,17 @@ mod tests {
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
+    fn basic_single_user_test_collection_with_n_spam_updates(n: u64) -> UserCollection {
+        let date = date("2020-1-1");
+        let user = create_user_with_m_spam_scores(1, n, date);
+
+        let mut user_collection = empty_collection();
+        check_add_user(&mut user_collection, user);
+        user_collection
+    }
+
     mod test_new {
         use super::*;
-        use crate::user_collection::tests::*;
 
         #[test]
         fn empty_test_set() {
