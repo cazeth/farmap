@@ -11,11 +11,10 @@ pub async fn parse_follow_response(response: Response) -> Result<Vec<u64>, Impor
 }
 
 fn parse_raw_json(json: Value) -> Result<Vec<u64>, ImporterError> {
-    parse_raw_json_with_opt(&json).ok_or(ImporterError::BadApiResponse(json.to_string()))
-}
-
-fn parse_raw_json_with_opt(json: &Value) -> Option<Vec<u64>> {
-    let array = json.pointer("/result/users")?.as_array()?;
+    let array = json
+        .pointer("/result/users")
+        .and_then(|x| x.as_array())
+        .ok_or(ImporterError::BadApiResponse(json.to_string()))?;
     array
         .iter()
         .map(|object| {
@@ -25,7 +24,8 @@ fn parse_raw_json_with_opt(json: &Value) -> Option<Vec<u64>> {
                 .and_then(|fid_str| fid_str.as_str())
                 .and_then(|fid| fid.parse::<u64>().ok())
         })
-        .collect::<Option<Vec<u64>>>()
+        .map(|x| x.ok_or(ImporterError::BadApiResponse(json.to_string())))
+        .collect::<Result<Vec<u64>, ImporterError>>()
 }
 
 #[cfg(test)]
