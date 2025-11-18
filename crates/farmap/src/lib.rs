@@ -15,6 +15,7 @@ mod dated;
 pub mod fetch;
 pub mod fid_score_shift;
 mod fidded;
+mod follow_count;
 mod has_tag;
 mod is_user;
 mod set_with_cast_data;
@@ -38,6 +39,7 @@ pub use cast_type::InvalidCastInputError;
 #[doc(inline)]
 pub use fid_score_shift::FidScoreShift;
 pub use fidded::Fidded;
+pub use follow_count::FollowCount;
 pub use is_user::IsUser;
 pub use set_with_cast_data::SetWithCastData;
 pub use spam_score::DatedSpamScoreCount;

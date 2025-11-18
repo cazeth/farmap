@@ -1,5 +1,6 @@
 use crate::cast_type::CastType;
 use crate::dated::Dated;
+use crate::follow_count::FollowCount;
 use crate::spam_score::{DatedSpamUpdate, SpamScore, SpamUpdate};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
@@ -26,6 +27,7 @@ pub enum AnyUserValue {
     SpamUpdate(SpamUpdate),
     SpamScore(SpamScore),
     DatedCastType(Dated<CastType>),
+    FollowCount(FollowCount),
 }
 
 impl AnyUserValue {
