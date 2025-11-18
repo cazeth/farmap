@@ -27,7 +27,7 @@ impl User {
 
     /// Add a [`UserValue`] to a [`User`]. Returns an error in case of Collision. This method
     /// relies on Ts implementation of Collidable to determine collisions.
-    pub fn try_add_user_value<T>(&mut self, value: T) -> Result<(), UserValueError>
+    pub fn try_add_user_value<T>(&mut self, value: T) -> Result<(), UserError>
     where
         T: UserValue + Collidable,
     {
@@ -38,12 +38,12 @@ impl User {
         {
             self.add_user_value(value)
         } else {
-            Err(UserValueError::CollisionError)
+            Err(UserError::CollisionError)
         }
     }
 
     /// Insert a new [`UserValue`]. Returns Ok() on duplicate.
-    pub fn add_user_value<T>(&mut self, value: T) -> Result<(), UserValueError>
+    pub fn add_user_value<T>(&mut self, value: T) -> Result<(), UserError>
     where
         T: UserValue,
     {
@@ -114,7 +114,8 @@ impl User {
 }
 
 #[derive(Error, Debug, PartialEq)]
-pub enum UserValueError {
+#[non_exhaustive]
+pub enum UserError {
     #[error(
         "User Value collides with existing user value. A User cannot contain colliding user values"
     )]
