@@ -1,11 +1,11 @@
 use crate::collidable::Collidable;
 use crate::user_value::AnyUserValue;
+use crate::UserError;
 use crate::UserValue;
 use chrono::Local;
 use chrono::NaiveDateTime;
 use itertools::*;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 pub struct User {
@@ -111,15 +111,6 @@ impl User {
     pub fn fid(&self) -> usize {
         self.fid
     }
-}
-
-#[derive(Error, Debug, PartialEq)]
-#[non_exhaustive]
-pub enum UserError {
-    #[error(
-        "User Value collides with existing user value. A User cannot contain colliding user values"
-    )]
-    CollisionError,
 }
 
 #[cfg(test)]

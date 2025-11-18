@@ -27,6 +27,7 @@ mod try_from_user_set;
 mod unprocessed_user_line;
 pub mod user;
 pub mod user_collection;
+mod user_error;
 mod user_set;
 mod user_value;
 mod user_with_cast_data;
@@ -53,9 +54,9 @@ pub use try_from_user::TryFromUser;
 pub use try_from_user_set::TryFromUserSet;
 pub use unprocessed_user_line::UnprocessedUserLine;
 pub use user::User;
-pub use user::UserError;
 #[doc(inline)]
 pub use user_collection::UserCollection;
+pub use user_error::UserError;
 pub use user_set::UserSet;
 pub use user_value::UserValue;
 pub use user_with_cast_data::UserWithCastData;
