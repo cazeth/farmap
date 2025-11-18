@@ -4,6 +4,7 @@ use crate::spam_score::{DatedSpamUpdate, SpamScore, SpamUpdate};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
+#[allow(private_bounds)]
 pub trait UserValue:
     Serialize + DeserializeOwned + Clone + Debug + PartialEq + UserValueSeal
 {
@@ -16,7 +17,7 @@ pub trait UserValue:
     fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self>;
 }
 
-pub trait UserValueSeal {}
+pub(crate) trait UserValueSeal {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[non_exhaustive]
