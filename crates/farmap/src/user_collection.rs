@@ -1,6 +1,7 @@
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::user::User;
+use crate::Fid;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
@@ -48,14 +49,18 @@ impl UserCollection {
         errors
     }
 
-    pub fn user_mut(&mut self, fid: usize) -> Option<&mut User> {
-        self.map.get_mut(&fid)
+    pub fn user_mut(&mut self, fid: impl Into<Fid>) -> Option<&mut User> {
+        let fid: Fid = fid.into();
+        let usize_fid: usize = fid.into();
+        self.map.get_mut(&usize_fid)
     }
 
     #[allow(unused)]
-    pub(crate) fn user_mut_unchecked(&mut self, fid: usize) -> &mut User {
+    pub(crate) fn user_mut_unchecked(&mut self, fid: impl Into<Fid>) -> &mut User {
+        let fid: Fid = fid.into();
+        let usize_fid: usize = fid.into();
         self.map
-            .get_mut(&fid)
+            .get_mut(&usize_fid)
             .expect("fid {fid} should exist in collection")
     }
 
