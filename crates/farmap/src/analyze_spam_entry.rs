@@ -430,6 +430,7 @@ mod tests {
     use crate::fid_score_shift::ShiftTarget;
     use crate::spam_score::DatedSpamUpdate;
     use crate::time_utils::date;
+    use crate::user::tests::create_new_user;
     use crate::user_collection::tests::add_user::check_add_user;
     use crate::user_collection::tests::empty_collection;
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
@@ -821,7 +822,7 @@ mod tests {
     fn basic_test_set() -> UserCollection {
         let value =
             DatedSpamUpdate::from(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), SpamScore::One);
-        let mut user = User::new(1);
+        let mut user = create_new_user(1);
         user.add_user_value(value).unwrap();
         let mut collection = UserCollection::default();
         collection.add_user(user).unwrap();
@@ -900,7 +901,7 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2020, 1, 2).unwrap();
         let earlier_date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-        let mut user = User::new(1);
+        let mut user = create_new_user(1);
 
         assert!(user
             .try_add_user_value(DatedSpamUpdate::from(date, SpamScore::One))

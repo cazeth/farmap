@@ -230,7 +230,7 @@ pub mod tests {
 
     mod user_count {
         use super::add_user::check_add_user;
-        use crate::user::tests::create_user;
+        use crate::user::tests::create_new_user;
 
         use super::*;
 
@@ -248,8 +248,8 @@ pub mod tests {
         #[test]
         fn test_non_empty_user_count() {
             let mut collection = empty_collection();
-            check_add_user(&mut collection, create_user(1));
-            check_add_user(&mut collection, create_user(2));
+            check_add_user(&mut collection, create_new_user(1));
+            check_add_user(&mut collection, create_new_user(2));
             check_user_count(&collection, 2);
         }
     }

@@ -92,7 +92,7 @@ impl<'a> IsUser<'a> for UserWithSpamData<'a> {
 pub mod tests {
     use crate::spam_score::DatedSpamUpdate;
     use crate::spam_score::SpamScore;
-    use crate::user::tests::create_user;
+    use crate::user::tests::create_new_user;
     use crate::user::tests::valid_user_value_add;
     use crate::User;
     use chrono::Days;
@@ -106,7 +106,7 @@ pub mod tests {
         m: u64,
         first_spam_score_date: NaiveDate,
     ) -> User {
-        let mut user = User::new(fid as usize);
+        let mut user = create_new_user(fid);
         let mut date = first_spam_score_date;
 
         for i in 0..m {
@@ -148,7 +148,7 @@ pub mod tests {
 
         #[test]
         fn test_user_with_single_spam_score() {
-            let mut user = create_user(1);
+            let mut user = create_new_user(1);
             add_spam_score(&mut user, 1, "2024-03-05");
             let spam_user = valid_spam_user(&user);
             check_spam_score_at_date(&spam_user, None, "2024-03-04");

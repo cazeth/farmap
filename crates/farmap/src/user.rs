@@ -1,5 +1,6 @@
 use crate::collidable::Collidable;
 use crate::user_value::AnyUserValue;
+use crate::Fid;
 use crate::UserError;
 use crate::UserValue;
 use chrono::Local;
@@ -9,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 pub struct User {
-    fid: usize,
+    fid: Fid,
     user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
 }
 
@@ -101,7 +102,8 @@ impl User {
         }
     }
 
-    pub fn new(fid: usize) -> Self {
+    pub fn new(fid: impl Into<Fid>) -> Self {
+        let fid = fid.into();
         Self {
             fid,
             user_values: None,
@@ -109,25 +111,30 @@ impl User {
     }
 
     pub fn fid(&self) -> usize {
-        self.fid
+        self.fid.into()
     }
 }
 
 #[cfg(test)]
 pub mod tests {
     use crate::spam_score::DatedSpamUpdate;
+    use crate::Fid;
 
     use super::*;
 
     pub mod test_fid {
         use super::*;
 
-        pub fn is_fid(user: &User, fid: usize) -> bool {
-            user.fid() == fid
+        pub fn is_fid(user: &User, fid: impl Into<Fid>) -> bool {
+            let fid = fid.into();
+            Fid::from(user.fid()) == fid
         }
     }
 
-    pub fn create_user(fid: usize) -> User {
+    pub fn create_new_user(fid: impl TryInto<Fid>) -> User {
+        let fid: Fid = fid
+            .try_into()
+            .unwrap_or_else(|_| panic!("could not convert"));
         User::new(fid)
     }
 
@@ -137,7 +144,7 @@ pub mod tests {
 
     #[test]
     fn test_user_values_of_kind_is_none_on_none_user_values() {
-        let user = create_user(1);
+        let user = create_new_user(1);
         assert!(user.user_values_of_kind::<DatedSpamUpdate>().is_empty());
     }
 }
