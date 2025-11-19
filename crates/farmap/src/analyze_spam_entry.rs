@@ -476,9 +476,9 @@ mod tests {
     fn iter_from_spam_incrementor(
         n: usize,
         start_score: SpamScore,
+        start_date: NaiveDate,
         score_incrementor: fn(SpamScore) -> SpamScore,
     ) -> impl Iterator<Item = DatedSpamUpdate> {
-        let start_date = date("2020-01-01");
         successors(
             Some(DatedSpamUpdate::from(start_date, start_score)),
             move |prev| {
@@ -490,12 +490,12 @@ mod tests {
         .take(n)
     }
 
-    fn create_users_with_spam_label_one(n: usize) -> UserCollection {
+    fn create_users_with_spam_label_one(n: usize, date: NaiveDate) -> UserCollection {
         fn spam_score_is_constant_one(_: SpamScore) -> SpamScore {
             SpamScore::One
         }
 
-        let iter = iter_from_spam_incrementor(n, SpamScore::One, spam_score_is_constant_one);
+        let iter = iter_from_spam_incrementor(n, SpamScore::One, date, spam_score_is_constant_one);
 
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
@@ -509,7 +509,8 @@ mod tests {
             }
         }
 
-        let iter = iter_from_spam_incrementor(n, SpamScore::Zero, cycling_spam_score);
+        let iter =
+            iter_from_spam_incrementor(n, SpamScore::Zero, date("2020-01-01"), cycling_spam_score);
 
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
@@ -523,7 +524,12 @@ mod tests {
             }
         }
 
-        let iter = iter_from_spam_incrementor(n, SpamScore::One, one_and_two_alternating);
+        let iter = iter_from_spam_incrementor(
+            n,
+            SpamScore::One,
+            date("2020-01-01"),
+            one_and_two_alternating,
+        );
 
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
@@ -549,7 +555,7 @@ mod tests {
 
         #[test]
         fn ones() {
-            let collection = create_users_with_spam_label_one(10);
+            let collection = create_users_with_spam_label_one(10, date("2020-01-01"));
             let set = create_set(&collection);
             assert!(set.is_some());
         }
@@ -701,7 +707,7 @@ mod tests {
 
         #[test]
         fn test_ones() {
-            let collection = create_users_with_spam_label_one(10);
+            let collection = create_users_with_spam_label_one(10, date("2020-01-01"));
             let set = create_set(&collection).unwrap();
             check_distribution(&set, 0.0, 1.0, 0.0);
         }
@@ -736,7 +742,7 @@ mod tests {
         }
 
         fn test_ones(n: u64) {
-            let collection = create_users_with_spam_label_one(n as usize);
+            let collection = create_users_with_spam_label_one(n as usize, date("2020-01-01"));
             let set = create_set(&collection).unwrap();
             check_update_count(&set, n);
         }
@@ -819,16 +825,6 @@ mod tests {
         assert_eq!(expected_shifts, actual_shifts);
     }
 
-    fn basic_test_set() -> UserCollection {
-        let value =
-            DatedSpamUpdate::from(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), SpamScore::One);
-        let mut user = create_new_user(1);
-        user.add_user_value(value).unwrap();
-        let mut collection = UserCollection::default();
-        collection.add_user(user).unwrap();
-        collection
-    }
-
     // one user created per day with one spam score per day m times. Starting at zero then rotating
     // through zero, one, two...
     fn basic_m_user_test_collection_with_n_spam_updates(m: u64, n: u64) -> UserCollection {
@@ -859,7 +855,7 @@ mod tests {
 
     #[test]
     fn test_earliest_and_latest_spam_score_date() {
-        let collection = basic_test_set();
+        let collection = create_users_with_spam_label_one(1, date("2024-01-01"));
         let set = create_set(&collection).unwrap();
         check_earliest_date(&set, "2024-01-01");
         check_latest_date(&set, "2024-01-01");
