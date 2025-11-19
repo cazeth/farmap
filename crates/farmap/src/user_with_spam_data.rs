@@ -112,8 +112,7 @@ pub mod tests {
         for i in 0..m {
             let spam_update =
                 DatedSpamUpdate::from(date, SpamScore::try_from((i % 3) as usize).unwrap());
-            user.add_user_value(spam_update)
-                .expect("should not cause collision");
+            valid_user_value_add(&mut user, spam_update);
             date = date.checked_add_days(Days::new(1)).unwrap();
         }
         user
