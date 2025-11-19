@@ -18,7 +18,7 @@ pub fn test_spam_score_collision_with_error_collect() {
     let mut user_collection = UserCollection::default();
     let first_line = updates[0];
 
-    let mut user = User::new(first_line.fid() as usize);
+    let mut user = User::new(first_line.fid());
 
     user.add_user_value(first_line.unfid())
         .expect("should not collide");

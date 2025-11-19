@@ -2,6 +2,7 @@ use super::ImporterError;
 use crate::dated::Dated;
 use crate::fidded::Fidded;
 use crate::CastType;
+use crate::Fid;
 use chrono::Duration;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
@@ -90,7 +91,8 @@ pub async fn cast_meta_from_pinata_response(
                 })
                 .map(|x| {
                     let dated_cast_type = Dated::<CastType>::from(x.0, x.1);
-                    let result: Fidded<Dated<CastType>> = (dated_cast_type, x.2).into();
+                    let fid = Fid::from(x.2);
+                    let result: Fidded<Dated<CastType>> = (dated_cast_type, fid).into();
                     result
                 })
         })

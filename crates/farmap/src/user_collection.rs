@@ -24,11 +24,11 @@ impl UserCollection {
     /// Returns a vec of all the collision errors, if there are any.
     pub fn add_user_value_iter(
         &mut self,
-        values: impl IntoIterator<Item = impl HasTag<u64>>,
+        values: impl IntoIterator<Item = impl HasTag<Fid>>,
     ) -> Option<Vec<CollectionError>> {
         let mut errors: Option<Vec<CollectionError>> = None;
         for value in values {
-            if let Some(user) = self.user_mut(value.tag() as usize) {
+            if let Some(user) = self.user_mut(value.tag()) {
                 let user_add_result = user
                     .add_user_value(value.untag().0)
                     .map_err(|_| CollectionError::UserValueCollisionError);
@@ -40,7 +40,7 @@ impl UserCollection {
                     }
                 }
             } else {
-                let mut user = User::new(value.tag() as usize);
+                let mut user = User::new(value.tag());
                 user.add_user_value(value.untag().0)
                     .expect("new user cannot collide");
                 self.add_user(user).expect("new user cannot collide");
@@ -169,27 +169,27 @@ pub mod tests {
         assert_eq!(dummy_data().user_count(), 2);
     }
 
-    impl<T> HasTag<u64> for TestUserValue<T>
+    impl<T> HasTag<Fid> for TestUserValue<T>
     where
         T: UserValue,
     {
-        fn tag(&self) -> u64 {
+        fn tag(&self) -> Fid {
             self.fid
         }
 
         #[allow(refining_impl_trait)]
-        fn untag(self) -> (T, u64) {
+        fn untag(self) -> (T, Fid) {
             (self.value, self.fid)
         }
     }
 
     struct TestUserValue<T: UserValue> {
         pub value: T,
-        pub fid: u64,
+        pub fid: Fid,
     }
 
     #[track_caller]
-    pub fn collection_from_fidded<T: HasTag<u64>>(
+    pub fn collection_from_fidded<T: HasTag<Fid>>(
         values: impl IntoIterator<Item = T>,
     ) -> UserCollection {
         let mut collection = UserCollection::default();
@@ -207,7 +207,7 @@ pub mod tests {
         let res = collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {
             TestUserValue {
                 value: x,
-                fid: n as u64 + 1,
+                fid: (n as u64 + 1).into(),
             }
         }));
         assert!(res.is_none()); // There is one entry per fid so there should be no collisions

@@ -1,3 +1,4 @@
+use crate::Fid;
 use crate::HasTag;
 use crate::UserValue;
 
@@ -5,7 +6,7 @@ use crate::UserValue;
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub struct Fidded<T> {
     inner: T,
-    fid: usize,
+    fid: Fid,
 }
 
 impl<T> Fidded<T> {
@@ -13,13 +14,13 @@ impl<T> Fidded<T> {
         self.inner
     }
 
-    pub fn fid(&self) -> usize {
+    pub fn fid(&self) -> Fid {
         self.fid
     }
 }
 
-impl<T> From<(T, usize)> for Fidded<T> {
-    fn from(value: (T, usize)) -> Self {
+impl<T> From<(T, Fid)> for Fidded<T> {
+    fn from(value: (T, Fid)) -> Self {
         Self {
             inner: value.0,
             fid: value.1,
@@ -27,13 +28,12 @@ impl<T> From<(T, usize)> for Fidded<T> {
     }
 }
 
-impl<T: UserValue> HasTag<u64> for Fidded<T> {
-    fn tag(&self) -> u64 {
-        self.fid as u64
+impl<T: UserValue> HasTag<Fid> for Fidded<T> {
+    fn tag(&self) -> Fid {
+        self.fid
     }
 
-    fn untag(self) -> (impl UserValue, u64) {
-        let fid = self.fid as u64;
-        (self.inner, fid)
+    fn untag(self) -> (impl UserValue, Fid) {
+        (self.inner, self.fid)
     }
 }

@@ -1,5 +1,6 @@
 use crate::spam_score::DatedSpamUpdate;
 use crate::spam_score::SpamScoreError;
+use crate::Fid;
 use crate::Fidded;
 use crate::SpamScore;
 use chrono::DateTime;
@@ -53,6 +54,7 @@ impl TryFrom<UnprocessedUserLine> for Fidded<DatedSpamUpdate> {
         let spam_score = SpamScore::try_from(value.label_value())?;
 
         let dated_spam_update = DatedSpamUpdate::from(date, spam_score);
+        let fid = Fid::from(fid);
         let fidded: Fidded<DatedSpamUpdate> = Fidded::from((dated_spam_update, fid));
         Ok(fidded)
     }
