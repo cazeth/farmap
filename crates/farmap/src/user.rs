@@ -37,19 +37,21 @@ impl User {
             .iter()
             .all(|x| !Collidable::is_collision(*x, &value))
         {
-            self.add_user_value(value)
+            self.add_user_value(value);
+            Ok(())
         } else {
             Err(UserError::CollisionError)
         }
     }
 
     /// Insert a new [`UserValue`]. Returns Ok() on duplicate.
-    pub fn add_user_value<T>(&mut self, value: T) -> Result<(), UserError>
+    /// This method does not check for collisions.
+    pub fn add_user_value<T>(&mut self, value: T)
     where
         T: UserValue,
     {
         if self.update_time_if_duplicate(&value).is_some() {
-            return Ok(());
+            return;
         };
 
         let any_user_value = value.into_any_user_value();
@@ -58,7 +60,6 @@ impl User {
         } else {
             self.user_values = Some(vec![(any_user_value, Self::now())]);
         }
-        Ok(())
     }
 
     pub fn all_user_values(&self) -> &Option<Vec<(AnyUserValue, NaiveDateTime)>> {
@@ -139,7 +140,7 @@ pub mod tests {
     }
 
     pub fn valid_user_value_add<T: UserValue>(user: &mut User, value: T) {
-        user.add_user_value::<T>(value).unwrap()
+        user.add_user_value::<T>(value)
     }
 
     #[test]

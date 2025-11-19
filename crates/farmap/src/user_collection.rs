@@ -22,31 +22,16 @@ pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCre
 
 impl UserCollection {
     /// Returns a vec of all the collision errors, if there are any.
-    pub fn add_user_value_iter(
-        &mut self,
-        values: impl IntoIterator<Item = impl HasTag<Fid>>,
-    ) -> Option<Vec<CollectionError>> {
-        let mut errors: Option<Vec<CollectionError>> = None;
+    pub fn add_user_value_iter(&mut self, values: impl IntoIterator<Item = impl HasTag<Fid>>) {
         for value in values {
             if let Some(user) = self.user_mut(value.tag()) {
-                let user_add_result = user
-                    .add_user_value(value.untag().0)
-                    .map_err(|_| CollectionError::UserValueCollisionError);
-                if let Err(add_result) = user_add_result {
-                    if let Some(errors) = &mut errors {
-                        errors.push(add_result);
-                    } else {
-                        errors = Some(vec![add_result])
-                    }
-                }
+                user.add_user_value(value.untag().0);
             } else {
                 let mut user = User::new(value.tag());
-                user.add_user_value(value.untag().0)
-                    .expect("new user cannot collide");
+                user.add_user_value(value.untag().0);
                 self.add_user(user).expect("new user cannot collide");
             }
         }
-        errors
     }
 
     pub fn user_mut(&mut self, fid: impl Into<Fid>) -> Option<&mut User> {
@@ -204,13 +189,12 @@ pub mod tests {
         T: UserValue,
     {
         let mut collection = UserCollection::default();
-        let res = collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {
+        collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {
             TestUserValue {
                 value: x,
                 fid: (n as u64 + 1).into(),
             }
         }));
-        assert!(res.is_none()); // There is one entry per fid so there should be no collisions
         collection
     }
 
