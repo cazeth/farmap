@@ -1,10 +1,17 @@
+use std::fmt::Debug;
 use std::num::TryFromIntError;
 
 use serde::{Deserialize, Serialize};
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd)]
 pub struct Fid(u64);
 
 impl std::fmt::Display for Fid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Debug for Fid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -42,5 +49,11 @@ impl TryFrom<i32> for Fid {
 impl From<Fid> for usize {
     fn from(value: Fid) -> Self {
         value.0 as usize
+    }
+}
+
+impl From<Fid> for u64 {
+    fn from(value: Fid) -> Self {
+        value.0
     }
 }
