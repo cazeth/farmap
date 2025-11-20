@@ -1,4 +1,5 @@
 use crate::collidable::Collidable;
+use crate::user_serde::UserSerde;
 use crate::user_value::AnyUserValue;
 use crate::Fid;
 use crate::UserError;
@@ -9,6 +10,8 @@ use itertools::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
+#[serde(from = "UserSerde")]
+#[serde(into = "UserSerde")]
 pub struct User {
     fid: Fid,
     user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
@@ -113,6 +116,20 @@ impl User {
 
     pub fn fid(&self) -> Fid {
         self.fid.into()
+    }
+
+    pub(crate) fn from_user_values(fid: Fid, values: Vec<(AnyUserValue, NaiveDateTime)>) -> Self {
+        if !values.is_empty() {
+            Self {
+                fid,
+                user_values: Some(values),
+            }
+        } else {
+            Self {
+                fid,
+                user_values: None,
+            }
+        }
     }
 }
 

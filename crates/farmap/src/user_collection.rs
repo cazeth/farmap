@@ -1,6 +1,7 @@
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::user::User;
+use crate::user_collection_serde::UserCollectionSerde;
 use crate::Fid;
 use serde::Deserialize;
 use serde::Serialize;
@@ -13,7 +14,9 @@ use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
 
-#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[serde(from = "UserCollectionSerde")]
+#[serde(into = "UserCollectionSerde")]
 pub struct UserCollection {
     map: HashMap<Fid, User>,
 }
@@ -111,6 +114,12 @@ impl UserCollection {
     }
 }
 
+impl From<HashMap<Fid, User>> for UserCollection {
+    fn from(value: HashMap<Fid, User>) -> Self {
+        Self { map: value }
+    }
+}
+
 #[derive(Error, Debug, PartialEq, Clone, Hash)]
 #[non_exhaustive]
 pub enum CollectionError {
@@ -202,7 +211,7 @@ pub mod tests {
     }
 
     pub fn dummy_data() -> UserCollection {
-        let db_path = PathBuf::from("data/dummy-data_db.json");
+        let db_path = PathBuf::from("data/dummy-data_db_v1.json");
         UserCollection::create_from_db(&db_path).unwrap()
     }
 
