@@ -3,6 +3,7 @@ use crate::spam_score::DatedSpamScoreDistribution;
 use crate::spam_score::DatedSpamUpdate;
 use crate::time_utils::TimeIterator;
 use crate::DatedSpamScoreCount;
+use crate::Fid;
 use crate::FidScoreShift;
 use crate::SpamScore;
 use crate::SpamScoreDistribution;
@@ -52,7 +53,7 @@ impl<'a> SetWithSpamEntries<'a> {
     where
         F: Fn(&UserWithSpamData) -> bool,
     {
-        let new_map: HashMap<usize, &User> = self
+        let new_map: HashMap<Fid, &User> = self
             .set
             .clone()
             .into_map()
@@ -79,7 +80,7 @@ impl<'a> SetWithSpamEntries<'a> {
             None
         } else {
             let set = std::mem::take(&mut self.set);
-            let new_set: HashMap<usize, &User> = set
+            let new_set: HashMap<Fid, &User> = set
                 .into_map()
                 .values()
                 .map(|user| UserWithSpamData::try_from(*user).expect("should not be able to fail"))

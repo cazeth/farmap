@@ -111,7 +111,7 @@ impl User {
         }
     }
 
-    pub fn fid(&self) -> usize {
+    pub fn fid(&self) -> Fid {
         self.fid.into()
     }
 }

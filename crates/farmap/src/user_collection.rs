@@ -15,7 +15,7 @@ use thiserror::Error;
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
-    map: HashMap<usize, User>,
+    map: HashMap<Fid, User>,
 }
 
 pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
@@ -36,20 +36,19 @@ impl UserCollection {
 
     pub fn user_mut(&mut self, fid: impl Into<Fid>) -> Option<&mut User> {
         let fid: Fid = fid.into();
-        let usize_fid: usize = fid.into();
-        self.map.get_mut(&usize_fid)
+        self.map.get_mut(&fid)
     }
 
     #[allow(unused)]
     pub(crate) fn user_mut_unchecked(&mut self, fid: impl Into<Fid>) -> &mut User {
         let fid: Fid = fid.into();
-        let usize_fid: usize = fid.into();
         self.map
-            .get_mut(&usize_fid)
+            .get_mut(&fid)
             .expect("fid {fid} should exist in collection")
     }
 
-    pub fn user(&self, fid: usize) -> Option<&User> {
+    pub fn user(&self, fid: impl Into<Fid>) -> Option<&User> {
+        let fid: Fid = fid.into();
         self.map.get(&fid)
     }
 
@@ -88,8 +87,8 @@ impl UserCollection {
         let new_map = old_map
             .into_values()
             .filter(|user| filter(user))
-            .map(|user| (user.fid(), user))
-            .collect::<HashMap<usize, User>>();
+            .map(|user| (user.fid().into(), user))
+            .collect::<HashMap<Fid, User>>();
         self.map = new_map;
     }
 
@@ -97,12 +96,12 @@ impl UserCollection {
         self.map.values()
     }
 
-    pub fn data(&self) -> &HashMap<usize, User> {
+    pub fn data(&self) -> &HashMap<Fid, User> {
         &self.map
     }
 
     pub fn add_user(&mut self, user: User) -> Result<(), CollectionError> {
-        let fid = user.fid();
+        let fid: Fid = user.fid().into();
         if let Vacant(v) = self.map.entry(fid) {
             v.insert(user);
             Ok(())

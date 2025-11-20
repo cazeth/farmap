@@ -86,10 +86,10 @@ async fn latest_moves(
 
     if let Some(mut set) = SetWithSpamEntries::new(users_ref) {
         if let Some(to_fid) = filters.to_fid {
-            set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
+            set.filter(|user: &UserWithSpamData| u64::from(user.fid()) <= to_fid);
         };
         if let Some(from_fid) = filters.from_fid {
-            set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
+            set.filter(|user: &UserWithSpamData| u64::from(user.fid()) >= from_fid);
         };
 
         let result = set.spam_changes_with_fid_score_shift(comparison_time, Days::new(21));
@@ -181,10 +181,10 @@ async fn weekly_spam_score_distributions(
     let users_ref: &UserCollection = &users;
     let mut set = SetWithSpamEntries::new(users_ref).ok_or(StatusCode::NO_CONTENT)?;
     if let Some(to_fid) = filters.to_fid {
-        set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
+        set.filter(|user: &UserWithSpamData| u64::from(user.fid()) <= to_fid);
     };
     if let Some(from_fid) = filters.from_fid {
-        set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
+        set.filter(|user: &UserWithSpamData| u64::from(user.fid()) <= from_fid);
     };
 
     let result = set.weekly_spam_score_distributions();
@@ -199,10 +199,10 @@ async fn weekly_spam_score_counts(
     let users_ref: &UserCollection = &users;
     if let Some(mut set) = SetWithSpamEntries::new(users_ref) {
         if let Some(to_fid) = filters.to_fid {
-            set.filter(|user: &UserWithSpamData| user.fid() as u64 <= to_fid);
+            set.filter(|user: &UserWithSpamData| u64::from(user.fid()) <= to_fid);
         };
         if let Some(from_fid) = filters.from_fid {
-            set.filter(|user: &UserWithSpamData| user.fid() as u64 >= from_fid);
+            set.filter(|user: &UserWithSpamData| u64::from(user.fid()) >= from_fid);
         };
 
         let counts = set.weekly_spam_score_counts();

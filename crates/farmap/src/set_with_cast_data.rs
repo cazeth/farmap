@@ -2,6 +2,7 @@ use crate::cast_type::CastType;
 use crate::dated::Dated;
 use crate::try_from_user::TryFromUser;
 use crate::try_from_user_set::TryFromUserSet;
+use crate::Fid;
 use crate::User;
 use crate::UserCollection;
 use crate::UserWithCastData;
@@ -32,7 +33,7 @@ impl<'a> IntoIterator for SetWithCastData<'a> {
     type Item = UserWithCastData<'a>;
 
     type IntoIter = std::iter::Map<
-        std::collections::hash_map::IntoValues<usize, &'a User>,
+        std::collections::hash_map::IntoValues<Fid, &'a User>,
         fn(&'a User) -> UserWithCastData<'a>,
     >;
 

@@ -285,7 +285,7 @@ fn pinata_fetch_list(users: &UserCollection) -> HashSet<u64> {
                 });
 
                 subset.into_iter().map(|x| x.fid()).for_each(|x| {
-                    result_fids.insert(x as u64);
+                    result_fids.insert(x.into());
                 });
             };
         };

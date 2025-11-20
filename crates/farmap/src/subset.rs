@@ -1,11 +1,12 @@
 use crate::is_user::IsUser;
 use crate::user::User;
 use crate::user_collection::UserCollection;
+use crate::Fid;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct UsersSubset<'a> {
-    map: HashMap<usize, &'a User>,
+    map: HashMap<Fid, &'a User>,
 }
 
 impl<'a> UsersSubset<'a> {
@@ -13,7 +14,7 @@ impl<'a> UsersSubset<'a> {
     where
         F: Fn(&User) -> bool,
     {
-        let filtered_map: HashMap<usize, &'a User> = users
+        let filtered_map: HashMap<Fid, &'a User> = users
             .iter()
             .filter(|user| filter(user))
             .map(|user| (user.fid(), user))
@@ -32,7 +33,7 @@ impl<'a> UsersSubset<'a> {
             .values()
             .filter(|user| filter(user))
             .map(|user| (user.fid(), *user))
-            .collect::<HashMap<usize, &User>>();
+            .collect::<HashMap<Fid, &User>>();
     }
 
     /// return a new struct with filter applied
@@ -45,11 +46,12 @@ impl<'a> UsersSubset<'a> {
         new
     }
 
-    pub fn into_map(self) -> HashMap<usize, &'a User> {
+    pub fn into_map(self) -> HashMap<Fid, &'a User> {
         self.map
     }
 
-    pub fn drop_fid(&mut self, fid: usize) -> Option<&User> {
+    pub fn drop_fid(&mut self, fid: impl Into<Fid>) -> Option<&User> {
+        let fid = fid.into();
         self.map.get(&fid).map(|v| &**v)
     }
 
@@ -61,7 +63,8 @@ impl<'a> UsersSubset<'a> {
         self.map.len()
     }
 
-    pub fn user(&self, fid: usize) -> Option<&User> {
+    pub fn user(&self, fid: impl Into<Fid>) -> Option<&User> {
+        let fid = fid.into();
         self.map.get(&fid).copied()
     }
 
@@ -72,22 +75,22 @@ impl<'a> UsersSubset<'a> {
 
 impl<'a> IntoIterator for UsersSubset<'a> {
     type Item = &'a User;
-    type IntoIter = std::collections::hash_map::IntoValues<usize, &'a User>;
+    type IntoIter = std::collections::hash_map::IntoValues<Fid, &'a User>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.map.into_values()
     }
 }
 
-impl<'a> From<HashMap<usize, &'a User>> for UsersSubset<'a> {
-    fn from(value: HashMap<usize, &'a User>) -> Self {
+impl<'a> From<HashMap<Fid, &'a User>> for UsersSubset<'a> {
+    fn from(value: HashMap<Fid, &'a User>) -> Self {
         Self { map: value }
     }
 }
 
 impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
     fn from(users: &'a UserCollection) -> Self {
-        let map: HashMap<usize, &User> = users
+        let map: HashMap<Fid, &User> = users
             .data()
             .iter()
             .map(|(key, value)| (*key, value))

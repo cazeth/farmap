@@ -1,5 +1,6 @@
 use crate::is_user::IsUser;
 use crate::spam_score::DatedSpamUpdate;
+use crate::Fid;
 use crate::SpamScore;
 use crate::{fetch::ConversionError, User};
 use chrono::NaiveDate;
@@ -42,7 +43,7 @@ impl<'a> UserWithSpamData<'a> {
         self.user
     }
 
-    pub fn fid(&self) -> usize {
+    pub fn fid(&self) -> Fid {
         self.user.fid()
     }
 
@@ -79,7 +80,7 @@ fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserW
 }
 
 impl<'a> IsUser<'a> for UserWithSpamData<'a> {
-    fn fid(&self) -> usize {
+    fn fid(&self) -> Fid {
         self.fid()
     }
 
@@ -157,7 +158,7 @@ pub mod tests {
         #[test]
         pub fn test_spam_scores_on_dummy_data() {
             let collection = dummy_data();
-            let user = valid_spam_user(collection.user(1).unwrap());
+            let user = valid_spam_user(collection.user(1_u64).unwrap());
 
             check_spam_score_at_date(&user, None, "2023-01-25");
             check_spam_score_at_date(&user, Some(1), "2024-01-25");
@@ -186,9 +187,9 @@ pub mod tests {
         #[test]
         pub fn dummy_data_earliest_spam_date() {
             let collection = dummy_data();
-            let user = valid_spam_user(collection.user(1).unwrap());
+            let user = valid_spam_user(collection.user(1_u64).unwrap());
             check_earliest_spam_update_date(&user, "2024-01-01");
-            let user = valid_spam_user(collection.user(2).unwrap());
+            let user = valid_spam_user(collection.user(2_u64).unwrap());
             check_earliest_spam_update_date(&user, "2025-01-23");
         }
     }

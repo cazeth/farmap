@@ -3,6 +3,7 @@ use crate::is_user::IsUser;
 use crate::try_from_user::TryFromUser;
 use crate::user::User;
 use crate::CastType;
+use crate::Fid;
 use thiserror::Error;
 
 /// A reference to a [`User`] of lifetime a that contains at least one CastType.
@@ -12,7 +13,7 @@ pub struct UserWithCastData<'a> {
 }
 
 impl<'a> IsUser<'a> for UserWithCastData<'a> {
-    fn fid(&self) -> usize {
+    fn fid(&self) -> Fid {
         self.user.fid()
     }
 
