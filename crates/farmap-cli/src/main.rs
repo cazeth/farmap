@@ -233,7 +233,7 @@ fn main() {
 
 fn print_all(set: &UsersSubset) {
     for user in set.iter() {
-        println!("{:?}", user.fid())
+        println!("{}", user.fid())
     }
 }
 
