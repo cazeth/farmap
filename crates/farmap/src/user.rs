@@ -115,7 +115,7 @@ impl User {
     }
 
     pub fn fid(&self) -> Fid {
-        self.fid.into()
+        self.fid
     }
 
     pub(crate) fn from_user_values(fid: Fid, values: Vec<(AnyUserValue, NaiveDateTime)>) -> Self {
@@ -145,7 +145,7 @@ pub mod tests {
 
         pub fn is_fid(user: &User, fid: impl Into<Fid>) -> bool {
             let fid = fid.into();
-            Fid::from(user.fid()) == fid
+            user.fid() == fid
         }
     }
 
