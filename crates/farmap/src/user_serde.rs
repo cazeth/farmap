@@ -12,6 +12,9 @@ pub struct UserSerde {
     #[serde(default)]
     version: u64,
     #[serde(default)]
+    #[serde(rename(serialize = "user_values"))]
+    user_values_v2: Vec<AnyUserValue>,
+    #[serde(default)]
     #[serde(skip_serializing)]
     user_values: Vec<(AnyUserValue, NaiveDateTime)>,
     fid: Fid,
@@ -19,7 +22,9 @@ pub struct UserSerde {
 
 impl From<UserSerde> for User {
     fn from(value: UserSerde) -> Self {
-        User::from_user_values(value.fid, value.user_values)
+        let user_values = value.user_values.into_iter().map(|x| x.0).collect();
+
+        User::from_user_values(value.fid, user_values)
     }
 }
 
@@ -32,7 +37,8 @@ impl From<User> for UserSerde {
         };
         Self {
             version: LATEST_VERSION,
-            user_values,
+            user_values_v2: user_values,
+            user_values: Vec::new(),
             fid: value.fid(),
         }
     }

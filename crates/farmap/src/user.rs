@@ -4,8 +4,6 @@ use crate::user_value::AnyUserValue;
 use crate::Fid;
 use crate::UserError;
 use crate::UserValue;
-use chrono::Local;
-use chrono::NaiveDateTime;
 use itertools::*;
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +12,7 @@ use serde::{Deserialize, Serialize};
 #[serde(into = "UserSerde")]
 pub struct User {
     fid: Fid,
-    user_values: Option<Vec<(AnyUserValue, NaiveDateTime)>>,
+    user_values: Option<Vec<AnyUserValue>>,
 }
 
 impl User {
@@ -23,7 +21,7 @@ impl User {
         if let Some(user_values) = &self.user_values {
             user_values
                 .iter()
-                .any(|(val, _)| T::from_any_user_value_ref(val).is_some())
+                .any(|val| T::from_any_user_value_ref(val).is_some())
         } else {
             false
         }
@@ -53,19 +51,15 @@ impl User {
     where
         T: UserValue,
     {
-        if self.update_time_if_duplicate(&value).is_some() {
-            return;
-        };
-
         let any_user_value = value.into_any_user_value();
         if let Some(value_vec) = &mut self.user_values {
-            value_vec.push((any_user_value, Self::now()))
+            value_vec.push(any_user_value)
         } else {
-            self.user_values = Some(vec![(any_user_value, Self::now())]);
+            self.user_values = Some(vec![any_user_value]);
         }
     }
 
-    pub fn all_user_values(&self) -> &Option<Vec<(AnyUserValue, NaiveDateTime)>> {
+    pub fn all_user_values(&self) -> &Option<Vec<AnyUserValue>> {
         &self.user_values
     }
 
@@ -78,31 +72,10 @@ impl User {
         if let Some(user_values) = &self.user_values {
             user_values
                 .iter()
-                .flat_map(|(user_value, _)| user_value.specify_ref::<T>())
+                .flat_map(|user_value| user_value.specify_ref::<T>())
                 .collect_vec()
         } else {
             Vec::new()
-        }
-    }
-
-    fn now() -> NaiveDateTime {
-        Local::now().naive_local()
-    }
-
-    fn update_time_if_duplicate<T>(&mut self, value: &T) -> Option<NaiveDateTime>
-    where
-        T: UserValue,
-    {
-        if let Some(user_values) = &mut self.user_values {
-            let duplicate_position = user_values
-                .iter()
-                .position(|prev| prev.0 == value.as_any_user_value())?;
-
-            let new_time = Self::now();
-            let old_time = std::mem::replace(&mut user_values[duplicate_position].1, new_time);
-            Some(old_time)
-        } else {
-            None
         }
     }
 
@@ -118,7 +91,7 @@ impl User {
         self.fid
     }
 
-    pub(crate) fn from_user_values(fid: Fid, values: Vec<(AnyUserValue, NaiveDateTime)>) -> Self {
+    pub(crate) fn from_user_values(fid: Fid, values: Vec<AnyUserValue>) -> Self {
         if !values.is_empty() {
             Self {
                 fid,

@@ -303,7 +303,7 @@ impl<'a> TryFrom<&UsersSubset<'a>> for SetWithSpamEntries<'a> {
             user.all_user_values()
                 .iter()
                 .flatten()
-                .flat_map(|user_value| user_value.0.specify_ref::<DatedSpamUpdate>())
+                .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
                 .count()
                 > 0
         });
@@ -378,7 +378,7 @@ where
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
         .flatten() // second flatten iterates over AnyUserValue
-        .flat_map(|x| x.0.specify_ref::<DatedSpamUpdate>())
+        .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .map(|x| x.date())
         .min()
         .expect("internal error - SetWithSpamEntry should always have earliest spam score date")
@@ -391,7 +391,7 @@ where
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
         .flatten() // second flatten iterates over AnyUserValue
-        .flat_map(|x| x.0.specify_ref::<DatedSpamUpdate>())
+        .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .map(|x| x.date())
         .max()
         .expect("internal error - SetWithSpamEntry should always have earliest spam score date")
@@ -402,7 +402,7 @@ fn user_spam_updates(user: &User) -> Vec<&DatedSpamUpdate> {
         .as_ref()
         .expect("user should have at least one user value")
         .iter()
-        .flat_map(|x| x.0.specify_ref::<DatedSpamUpdate>())
+        .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .collect()
 }
 

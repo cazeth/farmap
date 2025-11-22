@@ -35,7 +35,7 @@ impl<'a> UserWithSpamData<'a> {
             .as_ref()
             .expect("cannot be empty")
             .iter()
-            .flat_map(|user_value| user_value.0.specify_ref::<DatedSpamUpdate>())
+            .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
             .collect_vec()
     }
 
@@ -69,7 +69,7 @@ fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserW
         .all_user_values()
         .as_ref()?
         .iter()
-        .flat_map(|user_value| user_value.0.specify_ref::<DatedSpamUpdate>())
+        .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
         .count()
         != 0
     {
