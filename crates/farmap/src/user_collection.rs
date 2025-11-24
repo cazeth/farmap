@@ -3,6 +3,7 @@ use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::user::User;
 use crate::user_collection_serde::UserCollectionSerde;
+use crate::user_value::UserValue;
 use crate::Fid;
 use serde::Deserialize;
 use serde::Serialize;
@@ -26,13 +27,16 @@ pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCre
 
 impl UserCollection {
     /// Returns a vec of all the collision errors, if there are any.
-    pub fn add_user_value_iter(&mut self, values: impl IntoIterator<Item = impl HasTag<Fid>>) {
+    pub fn add_user_value_iter<S>(&mut self, values: impl IntoIterator<Item = impl HasTag<Fid, S>>)
+    where
+        S: UserValue,
+    {
         for value in values {
             if let Some(user) = self.user_mut(value.tag()) {
-                user.add_user_value(value.untag().0);
+                user.add_user_value(value.untag().1);
             } else {
                 let mut user = User::new(value.tag());
-                user.add_user_value(value.untag().0);
+                user.add_user_value(value.untag().1);
                 self.add_user(user).expect("new user cannot collide");
             }
         }
@@ -153,7 +157,7 @@ pub mod tests {
         assert_eq!(dummy_data().user_count(), 2);
     }
 
-    impl<T> HasTag<Fid> for TestUserValue<T>
+    impl<T> HasTag<Fid, T> for TestUserValue<T>
     where
         T: UserValue,
     {
@@ -162,8 +166,8 @@ pub mod tests {
         }
 
         #[allow(refining_impl_trait)]
-        fn untag(self) -> (T, Fid) {
-            (self.value, self.fid)
+        fn untag(self) -> (Fid, T) {
+            (self.fid, self.value)
         }
     }
 
@@ -173,7 +177,7 @@ pub mod tests {
     }
 
     #[track_caller]
-    pub fn collection_from_fidded<T: HasTag<Fid>>(
+    pub fn collection_from_fidded<S: UserValue, T: HasTag<Fid, S>>(
         values: impl IntoIterator<Item = T>,
     ) -> UserCollection {
         let mut collection = UserCollection::default();

@@ -26,23 +26,23 @@ pub type DatedSpamUpdate = Dated<SpamUpdate>;
 pub type DatedSpamUpdateWithFid = Dated<SpamUpdateWithFid>;
 pub type SpamUpdateWithFid = (SpamUpdate, u64);
 
-impl HasTag<u64> for SpamUpdateWithFid {
+impl HasTag<u64, SpamUpdate> for SpamUpdateWithFid {
     fn tag(&self) -> u64 {
         self.1
     }
 
-    fn untag(self) -> (SpamUpdate, u64) {
-        (self.0, self.1)
+    fn untag(self) -> (u64, SpamUpdate) {
+        (self.1, self.0)
     }
 }
 
-impl HasTag<(NaiveDate, u64)> for DatedSpamUpdateWithFid {
+impl HasTag<(NaiveDate, u64), SpamUpdate> for DatedSpamUpdateWithFid {
     fn tag(&self) -> (NaiveDate, u64) {
         (self.date(), self.as_inner().1)
     }
 
-    fn untag(self) -> (SpamUpdate, (NaiveDate, u64)) {
-        (self.into_inner().into(), (self.date(), self.as_inner().1))
+    fn untag(self) -> ((NaiveDate, u64), SpamUpdate) {
+        ((self.date(), self.as_inner().1), self.into_inner().into())
     }
 }
 
@@ -281,13 +281,13 @@ impl Collidable for DatedSpamUpdate {
     }
 }
 
-impl HasTag<u64> for DatedSpamUpdateWithFid {
-    fn untag(self) -> (DatedSpamUpdate, u64) {
+impl HasTag<u64, DatedSpamUpdate> for DatedSpamUpdateWithFid {
+    fn untag(self) -> (u64, DatedSpamUpdate) {
         let date = self.date();
         let spam_update = self.into_inner();
         let fid = spam_update.1;
         let res = DatedSpamUpdate::from(date, spam_update);
-        (res, fid)
+        (fid, res)
     }
 
     fn tag(&self) -> u64 {

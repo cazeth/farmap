@@ -28,12 +28,12 @@ impl<T> From<(T, Fid)> for Fidded<T> {
     }
 }
 
-impl<T: UserValue> HasTag<Fid> for Fidded<T> {
+impl<T: UserValue> HasTag<Fid, T> for Fidded<T> {
     fn tag(&self) -> Fid {
         self.fid
     }
 
-    fn untag(self) -> (impl UserValue, Fid) {
-        (self.inner, self.fid)
+    fn untag(self) -> (Fid, T) {
+        (self.fid, self.inner)
     }
 }
