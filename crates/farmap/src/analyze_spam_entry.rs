@@ -431,9 +431,9 @@ mod tests {
     use crate::fid_score_shift::ShiftTarget;
     use crate::spam_score::DatedSpamUpdate;
     use crate::time_utils::date;
-    use crate::user::tests::create_new_user;
     use crate::user_collection::tests::add_user::check_add_user;
     use crate::user_collection::tests::empty_collection;
+    use crate::user_store_with_native_user_value::tests::create_new_user;
     use crate::user_with_spam_data::tests::create_user_with_m_spam_scores;
     use crate::SpamScore;
     use std::collections::HashSet;

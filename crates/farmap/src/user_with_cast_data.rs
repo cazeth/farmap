@@ -1,9 +1,9 @@
 use crate::dated::Dated;
 use crate::is_user::IsUser;
 use crate::try_from_user::TryFromUser;
-use crate::user::UserStoreWithNativeUserValue;
 use crate::CastType;
 use crate::Fid;
+use crate::UserStoreWithNativeUserValue;
 use thiserror::Error;
 
 /// A reference to a [`User`] of lifetime a that contains at least one CastType.

@@ -1,10 +1,10 @@
 use crate::fetch::DataReadError;
-use crate::user::UserStoreWithNativeUserValue;
 use crate::user_collection_serde::UserCollectionSerde;
 use crate::user_value::UserValue;
 use crate::CollectionError;
 use crate::Fid;
 use crate::HasTag;
+use crate::UserStoreWithNativeUserValue;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
@@ -225,7 +225,7 @@ pub mod tests {
 
     mod user_count {
         use super::add_user::check_add_user;
-        use crate::user::tests::create_new_user;
+        use crate::user_store_with_native_user_value::tests::create_new_user;
 
         use super::*;
 

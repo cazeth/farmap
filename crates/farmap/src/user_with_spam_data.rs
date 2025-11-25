@@ -96,8 +96,8 @@ impl<'a> IsUser<'a> for UserWithSpamData<'a> {
 pub mod tests {
     use crate::spam_score::DatedSpamUpdate;
     use crate::spam_score::SpamScore;
-    use crate::user::tests::create_new_user;
-    use crate::user::tests::valid_user_value_add;
+    use crate::user_store_with_native_user_value::tests::create_new_user;
+    use crate::user_store_with_native_user_value::tests::valid_user_value_add;
     use crate::UserStoreWithNativeUserValue;
     use chrono::Days;
     use chrono::NaiveDate;

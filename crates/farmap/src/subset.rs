@@ -1,7 +1,7 @@
 use crate::is_user::IsUser;
-use crate::user::UserStoreWithNativeUserValue;
 use crate::user_collection::UserCollection;
 use crate::Fid;
+use crate::UserStoreWithNativeUserValue;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -119,7 +119,7 @@ mod tests {
 
     mod test_user_count {
         use super::*;
-        use crate::user::tests::test_fid::is_fid;
+        use crate::user_store_with_native_user_value::tests::test_fid::is_fid;
 
         #[track_caller]
         pub fn check_user_count(set: &UsersSubset, count: usize) {
