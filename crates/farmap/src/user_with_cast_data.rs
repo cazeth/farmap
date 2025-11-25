@@ -1,7 +1,7 @@
 use crate::dated::Dated;
 use crate::is_user::IsUser;
 use crate::try_from_user::TryFromUser;
-use crate::user::User;
+use crate::user::UserStoreWithNativeUserValue;
 use crate::CastType;
 use crate::Fid;
 use thiserror::Error;
@@ -9,7 +9,7 @@ use thiserror::Error;
 /// A reference to a [`User`] of lifetime a that contains at least one CastType.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserWithCastData<'a> {
-    user: &'a User,
+    user: &'a UserStoreWithNativeUserValue,
 }
 
 impl<'a> IsUser<'a> for UserWithCastData<'a> {
@@ -17,14 +17,14 @@ impl<'a> IsUser<'a> for UserWithCastData<'a> {
         self.user.fid()
     }
 
-    fn user(&self) -> &'a User {
+    fn user(&self) -> &'a UserStoreWithNativeUserValue {
         self.user
     }
 }
 
-impl<'a> TryFrom<&'a User> for UserWithCastData<'a> {
+impl<'a> TryFrom<&'a UserStoreWithNativeUserValue> for UserWithCastData<'a> {
     type Error = NoCastDataError;
-    fn try_from(value: &'a User) -> Result<Self, Self::Error> {
+    fn try_from(value: &'a UserStoreWithNativeUserValue) -> Result<Self, Self::Error> {
         if value.has::<Dated<CastType>>() {
             Ok(Self { user: value })
         } else {

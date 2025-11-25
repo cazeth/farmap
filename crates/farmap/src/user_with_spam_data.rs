@@ -1,20 +1,21 @@
+use crate::fetch::ConversionError;
 use crate::is_user::IsUser;
 use crate::spam_score::DatedSpamUpdate;
 use crate::Fid;
 use crate::SpamScore;
-use crate::{fetch::ConversionError, User};
+use crate::UserStoreWithNativeUserValue;
 use chrono::NaiveDate;
 use itertools::Itertools;
 
 /// A User guaranteed to have at least one [SpamUpdate](crate::spam_score::SpamUpdate).
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserWithSpamData<'a> {
-    user: &'a User,
+    user: &'a UserStoreWithNativeUserValue,
 }
 
-impl<'a> TryFrom<&'a User> for UserWithSpamData<'a> {
+impl<'a> TryFrom<&'a UserStoreWithNativeUserValue> for UserWithSpamData<'a> {
     type Error = ConversionError;
-    fn try_from(value: &'a User) -> Result<Self, Self::Error> {
+    fn try_from(value: &'a UserStoreWithNativeUserValue) -> Result<Self, Self::Error> {
         optioned_user_to_user_with_spam_data_conversion(value)
             .ok_or(ConversionError::ConversionError)
     }
@@ -39,7 +40,7 @@ impl<'a> UserWithSpamData<'a> {
             .collect_vec()
     }
 
-    pub fn user(&self) -> &'a User {
+    pub fn user(&self) -> &'a UserStoreWithNativeUserValue {
         self.user
     }
 
@@ -64,7 +65,9 @@ impl<'a> UserWithSpamData<'a> {
     }
 }
 
-fn optioned_user_to_user_with_spam_data_conversion(value: &User) -> Option<UserWithSpamData> {
+fn optioned_user_to_user_with_spam_data_conversion(
+    value: &UserStoreWithNativeUserValue,
+) -> Option<UserWithSpamData> {
     if value
         .all_user_values()
         .as_ref()?
@@ -84,7 +87,7 @@ impl<'a> IsUser<'a> for UserWithSpamData<'a> {
         self.fid()
     }
 
-    fn user(&self) -> &'a User {
+    fn user(&self) -> &'a UserStoreWithNativeUserValue {
         self.user
     }
 }
@@ -95,7 +98,7 @@ pub mod tests {
     use crate::spam_score::SpamScore;
     use crate::user::tests::create_new_user;
     use crate::user::tests::valid_user_value_add;
-    use crate::User;
+    use crate::UserStoreWithNativeUserValue;
     use chrono::Days;
     use chrono::NaiveDate;
 
@@ -106,7 +109,7 @@ pub mod tests {
         fid: u64,
         m: u64,
         first_spam_score_date: NaiveDate,
-    ) -> User {
+    ) -> UserStoreWithNativeUserValue {
         let mut user = create_new_user(fid);
         let mut date = first_spam_score_date;
 
@@ -119,11 +122,11 @@ pub mod tests {
         user
     }
 
-    pub fn valid_spam_user(user: &User) -> UserWithSpamData {
+    pub fn valid_spam_user(user: &UserStoreWithNativeUserValue) -> UserWithSpamData {
         UserWithSpamData::try_from(user).unwrap()
     }
 
-    pub fn add_spam_score(user: &mut User, spam_score: u64, date: &str) {
+    pub fn add_spam_score(user: &mut UserStoreWithNativeUserValue, spam_score: u64, date: &str) {
         let date = NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
         let spam_score = SpamScore::try_from(spam_score as usize).unwrap();
         let dated_spam_update =

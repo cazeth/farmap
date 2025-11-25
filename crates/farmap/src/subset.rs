@@ -1,20 +1,20 @@
 use crate::is_user::IsUser;
-use crate::user::User;
+use crate::user::UserStoreWithNativeUserValue;
 use crate::user_collection::UserCollection;
 use crate::Fid;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct UsersSubset<'a> {
-    map: HashMap<Fid, &'a User>,
+    map: HashMap<Fid, &'a UserStoreWithNativeUserValue>,
 }
 
 impl<'a> UsersSubset<'a> {
     pub fn from_filter<F>(users: &'a UserCollection, filter: F) -> Self
     where
-        F: Fn(&User) -> bool,
+        F: Fn(&UserStoreWithNativeUserValue) -> bool,
     {
-        let filtered_map: HashMap<Fid, &'a User> = users
+        let filtered_map: HashMap<Fid, &'a UserStoreWithNativeUserValue> = users
             .iter()
             .filter(|user| filter(user))
             .map(|user| (user.fid(), user))
@@ -26,31 +26,31 @@ impl<'a> UsersSubset<'a> {
     /// apply filter to existing subset and mutate subset.
     pub fn filter<F>(&mut self, filter: F)
     where
-        F: Fn(&User) -> bool,
+        F: Fn(&UserStoreWithNativeUserValue) -> bool,
     {
         self.map = self
             .map
             .values()
             .filter(|user| filter(user))
             .map(|user| (user.fid(), *user))
-            .collect::<HashMap<Fid, &User>>();
+            .collect::<HashMap<Fid, &UserStoreWithNativeUserValue>>();
     }
 
     /// return a new struct with filter applied
     pub fn filtered<F>(&self, filter: F) -> Self
     where
-        F: Fn(&User) -> bool,
+        F: Fn(&UserStoreWithNativeUserValue) -> bool,
     {
         let mut new = self.clone();
         new.filter(filter);
         new
     }
 
-    pub fn into_map(self) -> HashMap<Fid, &'a User> {
+    pub fn into_map(self) -> HashMap<Fid, &'a UserStoreWithNativeUserValue> {
         self.map
     }
 
-    pub fn drop_fid(&mut self, fid: impl Into<Fid>) -> Option<&User> {
+    pub fn drop_fid(&mut self, fid: impl Into<Fid>) -> Option<&UserStoreWithNativeUserValue> {
         let fid = fid.into();
         self.map.get(&fid).map(|v| &**v)
     }
@@ -63,34 +63,34 @@ impl<'a> UsersSubset<'a> {
         self.map.len()
     }
 
-    pub fn user(&self, fid: impl Into<Fid>) -> Option<&User> {
+    pub fn user(&self, fid: impl Into<Fid>) -> Option<&UserStoreWithNativeUserValue> {
         let fid = fid.into();
         self.map.get(&fid).copied()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &User> {
+    pub fn iter(&self) -> impl Iterator<Item = &UserStoreWithNativeUserValue> {
         self.map.values().copied()
     }
 }
 
 impl<'a> IntoIterator for UsersSubset<'a> {
-    type Item = &'a User;
-    type IntoIter = std::collections::hash_map::IntoValues<Fid, &'a User>;
+    type Item = &'a UserStoreWithNativeUserValue;
+    type IntoIter = std::collections::hash_map::IntoValues<Fid, &'a UserStoreWithNativeUserValue>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.map.into_values()
     }
 }
 
-impl<'a> From<HashMap<Fid, &'a User>> for UsersSubset<'a> {
-    fn from(value: HashMap<Fid, &'a User>) -> Self {
+impl<'a> From<HashMap<Fid, &'a UserStoreWithNativeUserValue>> for UsersSubset<'a> {
+    fn from(value: HashMap<Fid, &'a UserStoreWithNativeUserValue>) -> Self {
         Self { map: value }
     }
 }
 
 impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
     fn from(users: &'a UserCollection) -> Self {
-        let map: HashMap<Fid, &User> = users
+        let map: HashMap<Fid, &UserStoreWithNativeUserValue> = users
             .data()
             .iter()
             .map(|(key, value)| (*key, value))
@@ -144,7 +144,7 @@ mod tests {
         fn test_user_count_before_and_after_filter() {
             let users = dummy_data();
             let mut set = create_set(&users);
-            let fid_filter = |user: &User| is_fid(user, 1 as u64);
+            let fid_filter = |user: &UserStoreWithNativeUserValue| is_fid(user, 1 as u64);
             check_user_count(&set, 2);
             test_filter::check_filter(&mut set, fid_filter);
             check_user_count(&set, 1);
@@ -154,7 +154,7 @@ mod tests {
         fn test_user_count_before_and_after_filter_two() {
             let users = dummy_data();
             let mut set = create_set(&users);
-            let fid_filter = |user: &User| !is_fid(user, 3 as u64);
+            let fid_filter = |user: &UserStoreWithNativeUserValue| !is_fid(user, 3 as u64);
             check_user_count(&set, 2);
             test_filter::check_filter(&mut set, fid_filter);
             check_user_count(&set, 2);
@@ -165,7 +165,10 @@ mod tests {
         use super::*;
 
         #[track_caller]
-        pub fn check_filter(set: &mut UsersSubset, filter: impl Fn(&User) -> bool) {
+        pub fn check_filter(
+            set: &mut UsersSubset,
+            filter: impl Fn(&UserStoreWithNativeUserValue) -> bool,
+        ) {
             set.filter(filter);
         }
     }

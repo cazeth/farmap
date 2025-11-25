@@ -1,6 +1,6 @@
 use crate::user_value::AnyUserValue;
 use crate::Fid;
-use crate::User;
+use crate::UserStoreWithNativeUserValue;
 use chrono::NaiveDateTime;
 use serde::Deserialize;
 use serde::Serialize;
@@ -20,16 +20,16 @@ pub struct UserSerde {
     fid: Fid,
 }
 
-impl From<UserSerde> for User {
+impl From<UserSerde> for UserStoreWithNativeUserValue {
     fn from(value: UserSerde) -> Self {
         let user_values = value.user_values.into_iter().map(|x| x.0).collect();
 
-        User::from_user_values(value.fid, user_values)
+        UserStoreWithNativeUserValue::from_user_values(value.fid, user_values)
     }
 }
 
-impl From<User> for UserSerde {
-    fn from(value: User) -> Self {
+impl From<UserStoreWithNativeUserValue> for UserSerde {
+    fn from(value: UserStoreWithNativeUserValue) -> Self {
         let user_values = if let Some(values) = value.all_user_values() {
             values.clone()
         } else {

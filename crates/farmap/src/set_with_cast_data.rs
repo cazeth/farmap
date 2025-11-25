@@ -3,8 +3,8 @@ use crate::dated::Dated;
 use crate::try_from_user::TryFromUser;
 use crate::try_from_user_set::TryFromUserSet;
 use crate::Fid;
-use crate::User;
 use crate::UserCollection;
+use crate::UserStoreWithNativeUserValue;
 use crate::UserWithCastData;
 use crate::{UserSet, UsersSubset};
 use thiserror::Error;
@@ -33,8 +33,8 @@ impl<'a> IntoIterator for SetWithCastData<'a> {
     type Item = UserWithCastData<'a>;
 
     type IntoIter = std::iter::Map<
-        std::collections::hash_map::IntoValues<Fid, &'a User>,
-        fn(&'a User) -> UserWithCastData<'a>,
+        std::collections::hash_map::IntoValues<Fid, &'a UserStoreWithNativeUserValue>,
+        fn(&'a UserStoreWithNativeUserValue) -> UserWithCastData<'a>,
     >;
 
     fn into_iter(self) -> Self::IntoIter {

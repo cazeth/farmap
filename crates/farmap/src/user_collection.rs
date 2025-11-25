@@ -1,5 +1,5 @@
 use crate::fetch::DataReadError;
-use crate::user::User;
+use crate::user::UserStoreWithNativeUserValue;
 use crate::user_collection_serde::UserCollectionSerde;
 use crate::user_value::UserValue;
 use crate::CollectionError;
@@ -20,7 +20,7 @@ use thiserror::Error;
 #[serde(from = "UserCollectionSerde")]
 #[serde(into = "UserCollectionSerde")]
 pub struct UserCollection {
-    map: HashMap<Fid, User>,
+    map: HashMap<Fid, UserStoreWithNativeUserValue>,
 }
 
 pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
@@ -35,27 +35,30 @@ impl UserCollection {
             if let Some(user) = self.user_mut(value.tag()) {
                 user.add_user_value(value.untag().1);
             } else {
-                let mut user = User::new(value.tag());
+                let mut user = UserStoreWithNativeUserValue::new(value.tag());
                 user.add_user_value(value.untag().1);
                 self.add_user(user).expect("new user cannot collide");
             }
         }
     }
 
-    pub fn user_mut(&mut self, fid: impl Into<Fid>) -> Option<&mut User> {
+    pub fn user_mut(&mut self, fid: impl Into<Fid>) -> Option<&mut UserStoreWithNativeUserValue> {
         let fid: Fid = fid.into();
         self.map.get_mut(&fid)
     }
 
     #[allow(unused)]
-    pub(crate) fn user_mut_unchecked(&mut self, fid: impl Into<Fid>) -> &mut User {
+    pub(crate) fn user_mut_unchecked(
+        &mut self,
+        fid: impl Into<Fid>,
+    ) -> &mut UserStoreWithNativeUserValue {
         let fid: Fid = fid.into();
         self.map
             .get_mut(&fid)
             .expect("fid {fid} should exist in collection")
     }
 
-    pub fn user(&self, fid: impl Into<Fid>) -> Option<&User> {
+    pub fn user(&self, fid: impl Into<Fid>) -> Option<&UserStoreWithNativeUserValue> {
         let fid: Fid = fid.into();
         self.map.get(&fid)
     }
@@ -89,26 +92,26 @@ impl UserCollection {
     /// struct. For most situations it is preferred to create a subset of the data.
     pub fn apply_filter<F>(&mut self, filter: F)
     where
-        F: Fn(&User) -> bool,
+        F: Fn(&UserStoreWithNativeUserValue) -> bool,
     {
         let old_map = std::mem::take(&mut self.map);
         let new_map = old_map
             .into_values()
             .filter(|user| filter(user))
             .map(|user| (user.fid().into(), user))
-            .collect::<HashMap<Fid, User>>();
+            .collect::<HashMap<Fid, UserStoreWithNativeUserValue>>();
         self.map = new_map;
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &User> {
+    pub fn iter(&self) -> impl Iterator<Item = &UserStoreWithNativeUserValue> {
         self.map.values()
     }
 
-    pub fn data(&self) -> &HashMap<Fid, User> {
+    pub fn data(&self) -> &HashMap<Fid, UserStoreWithNativeUserValue> {
         &self.map
     }
 
-    pub fn add_user(&mut self, user: User) -> Result<(), CollectionError> {
+    pub fn add_user(&mut self, user: UserStoreWithNativeUserValue) -> Result<(), CollectionError> {
         let fid: Fid = user.fid().into();
         if let Vacant(v) = self.map.entry(fid) {
             v.insert(user);
@@ -119,8 +122,8 @@ impl UserCollection {
     }
 }
 
-impl From<HashMap<Fid, User>> for UserCollection {
-    fn from(value: HashMap<Fid, User>) -> Self {
+impl From<HashMap<Fid, UserStoreWithNativeUserValue>> for UserCollection {
+    fn from(value: HashMap<Fid, UserStoreWithNativeUserValue>) -> Self {
         Self { map: value }
     }
 }
@@ -215,7 +218,7 @@ pub mod tests {
         use super::*;
 
         #[track_caller]
-        pub fn check_add_user(collection: &mut UserCollection, user: User) {
+        pub fn check_add_user(collection: &mut UserCollection, user: UserStoreWithNativeUserValue) {
             collection.add_user(user).unwrap()
         }
     }

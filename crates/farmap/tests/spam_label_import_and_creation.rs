@@ -2,8 +2,8 @@
 use farmap::fetch::local_spam_label_importer;
 use farmap::spam_score::DatedSpamUpdate;
 use farmap::Fidded;
-use farmap::User;
 use farmap::UserCollection;
+use farmap::UserStoreWithNativeUserValue as User;
 
 #[test]
 pub fn test_spam_score_collision_with_error_collect() {

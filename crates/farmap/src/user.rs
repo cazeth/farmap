@@ -10,12 +10,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone, Hash)]
 #[serde(from = "UserSerde")]
 #[serde(into = "UserSerde")]
-pub struct User {
+pub struct UserStoreWithNativeUserValue {
     fid: Fid,
     user_values: Option<Vec<AnyUserValue>>,
 }
 
-impl User {
+impl UserStoreWithNativeUserValue {
     /// Check if a User has at least one value of type T.
     pub fn has<T: UserValue>(&self) -> bool {
         if let Some(user_values) = &self.user_values {
@@ -116,20 +116,20 @@ pub mod tests {
     pub mod test_fid {
         use super::*;
 
-        pub fn is_fid(user: &User, fid: impl Into<Fid>) -> bool {
+        pub fn is_fid(user: &UserStoreWithNativeUserValue, fid: impl Into<Fid>) -> bool {
             let fid = fid.into();
             user.fid() == fid
         }
     }
 
-    pub fn create_new_user(fid: impl TryInto<Fid>) -> User {
+    pub fn create_new_user(fid: impl TryInto<Fid>) -> UserStoreWithNativeUserValue {
         let fid: Fid = fid
             .try_into()
             .unwrap_or_else(|_| panic!("could not convert"));
-        User::new(fid)
+        UserStoreWithNativeUserValue::new(fid)
     }
 
-    pub fn valid_user_value_add<T: UserValue>(user: &mut User, value: T) {
+    pub fn valid_user_value_add<T: UserValue>(user: &mut UserStoreWithNativeUserValue, value: T) {
         user.add_user_value::<T>(value)
     }
 

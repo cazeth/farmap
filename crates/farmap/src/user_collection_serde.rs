@@ -1,6 +1,6 @@
 use crate::Fid;
-use crate::User;
 use crate::UserCollection;
+use crate::UserStoreWithNativeUserValue;
 use log::warn;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ const LATEST_VERSION: u64 = 1;
 pub struct UserCollectionSerde {
     #[serde(default)]
     version: u64,
-    map: HashMap<Fid, User>,
+    map: HashMap<Fid, UserStoreWithNativeUserValue>,
 }
 
 impl UserCollectionSerde {

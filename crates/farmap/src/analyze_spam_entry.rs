@@ -7,9 +7,9 @@ use crate::Fid;
 use crate::FidScoreShift;
 use crate::SpamScore;
 use crate::SpamScoreDistribution;
-use crate::User;
 use crate::UserCollection;
 use crate::UserSet;
+use crate::UserStoreWithNativeUserValue;
 use crate::UserWithSpamData;
 use crate::UsersSubset;
 use chrono::Days;
@@ -53,7 +53,7 @@ impl<'a> SetWithSpamEntries<'a> {
     where
         F: Fn(&UserWithSpamData) -> bool,
     {
-        let new_map: HashMap<Fid, &User> = self
+        let new_map: HashMap<Fid, &UserStoreWithNativeUserValue> = self
             .set
             .clone()
             .into_map()
@@ -80,7 +80,7 @@ impl<'a> SetWithSpamEntries<'a> {
             None
         } else {
             let set = std::mem::take(&mut self.set);
-            let new_set: HashMap<Fid, &User> = set
+            let new_set: HashMap<Fid, &UserStoreWithNativeUserValue> = set
                 .into_map()
                 .values()
                 .map(|user| UserWithSpamData::try_from(*user).expect("should not be able to fail"))
@@ -373,7 +373,7 @@ pub struct EmptySetError;
 
 fn earliest_spam_score_date<'a, I>(iterator: I) -> NaiveDate
 where
-    I: Iterator<Item = &'a User>,
+    I: Iterator<Item = &'a UserStoreWithNativeUserValue>,
 {
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
@@ -386,7 +386,7 @@ where
 
 fn latest_spam_score_date<'a, I>(iterator: I) -> NaiveDate
 where
-    I: Iterator<Item = &'a User>,
+    I: Iterator<Item = &'a UserStoreWithNativeUserValue>,
 {
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
@@ -397,7 +397,7 @@ where
         .expect("internal error - SetWithSpamEntry should always have earliest spam score date")
 }
 
-fn user_spam_updates(user: &User) -> Vec<&DatedSpamUpdate> {
+fn user_spam_updates(user: &UserStoreWithNativeUserValue) -> Vec<&DatedSpamUpdate> {
     user.all_user_values()
         .as_ref()
         .expect("user should have at least one user value")
@@ -406,13 +406,13 @@ fn user_spam_updates(user: &User) -> Vec<&DatedSpamUpdate> {
         .collect()
 }
 
-fn user_earliest_spam_score_date(user: &User) -> NaiveDate {
+fn user_earliest_spam_score_date(user: &UserStoreWithNativeUserValue) -> NaiveDate {
     let user_iter = [user].into_iter();
     earliest_spam_score_date(user_iter)
 }
 
 #[allow(unused)]
-fn user_latest_spam_score_date(user: &User) -> NaiveDate {
+fn user_latest_spam_score_date(user: &UserStoreWithNativeUserValue) -> NaiveDate {
     let user_iter = [user].into_iter();
     latest_spam_score_date(user_iter)
 }
