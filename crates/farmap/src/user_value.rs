@@ -6,23 +6,23 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
 #[allow(private_bounds)]
-pub trait UserValue:
-    Serialize + DeserializeOwned + Clone + Debug + PartialEq + UserValueSeal
+pub trait NativeUserValue:
+    Serialize + DeserializeOwned + Clone + Debug + PartialEq + NativeUserValueSeal
 {
-    fn into_any_user_value(self) -> AnyUserValue;
+    fn into_any_user_value(self) -> AnyNativeUserValue;
 
-    fn as_any_user_value(&self) -> AnyUserValue;
+    fn as_any_user_value(&self) -> AnyNativeUserValue;
 
-    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self>;
+    fn from_any_user_value(any_user_value: AnyNativeUserValue) -> Option<Self>;
 
-    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self>;
+    fn from_any_user_value_ref(any_user_value: &AnyNativeUserValue) -> Option<&Self>;
 }
 
-pub(crate) trait UserValueSeal {}
+pub(crate) trait NativeUserValueSeal {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[non_exhaustive]
-pub enum AnyUserValue {
+pub enum AnyNativeUserValue {
     DatedSpamUpdate(DatedSpamUpdate),
     SpamUpdate(SpamUpdate),
     SpamScore(SpamScore),
@@ -30,12 +30,12 @@ pub enum AnyUserValue {
     FollowCount(FollowCount),
 }
 
-impl AnyUserValue {
-    pub fn specify<T: UserValue>(self) -> Option<T> {
+impl AnyNativeUserValue {
+    pub fn specify<T: NativeUserValue>(self) -> Option<T> {
         T::from_any_user_value(self)
     }
 
-    pub fn specify_ref<T: UserValue>(&self) -> Option<&T> {
+    pub fn specify_ref<T: NativeUserValue>(&self) -> Option<&T> {
         T::from_any_user_value_ref(self)
     }
 }

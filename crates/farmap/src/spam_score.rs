@@ -1,8 +1,8 @@
 #![allow(refining_impl_trait)]
 use crate::dated::Dated;
-use crate::user_value::AnyUserValue;
-use crate::user_value::UserValue;
-use crate::user_value::UserValueSeal;
+use crate::user_value::AnyNativeUserValue;
+use crate::user_value::NativeUserValue;
+use crate::user_value::NativeUserValueSeal;
 use crate::utils::distribution_from_counts;
 use crate::Collidable;
 use crate::HasTag;
@@ -216,51 +216,51 @@ impl From<SpamScore> for SpamUpdate {
     }
 }
 
-impl UserValue for SpamUpdate {
-    fn as_any_user_value(&self) -> AnyUserValue {
-        AnyUserValue::SpamScore(self.score())
+impl NativeUserValue for SpamUpdate {
+    fn as_any_user_value(&self) -> AnyNativeUserValue {
+        AnyNativeUserValue::SpamScore(self.score())
     }
 
-    fn into_any_user_value(self) -> AnyUserValue {
-        AnyUserValue::SpamScore(self.score())
+    fn into_any_user_value(self) -> AnyNativeUserValue {
+        AnyNativeUserValue::SpamScore(self.score())
     }
 
-    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self> {
+    fn from_any_user_value(any_user_value: AnyNativeUserValue) -> Option<Self> {
         match any_user_value {
-            AnyUserValue::SpamUpdate(x) => Some(x),
+            AnyNativeUserValue::SpamUpdate(x) => Some(x),
             _ => None,
         }
     }
 
-    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self> {
+    fn from_any_user_value_ref(any_user_value: &AnyNativeUserValue) -> Option<&Self> {
         match any_user_value {
-            AnyUserValue::SpamUpdate(x) => Some(x),
+            AnyNativeUserValue::SpamUpdate(x) => Some(x),
             _ => None,
         }
     }
 }
 
-impl UserValueSeal for SpamUpdate {}
+impl NativeUserValueSeal for SpamUpdate {}
 
-impl UserValue for DatedSpamUpdate {
-    fn as_any_user_value(&self) -> AnyUserValue {
-        AnyUserValue::DatedSpamUpdate(*self)
+impl NativeUserValue for DatedSpamUpdate {
+    fn as_any_user_value(&self) -> AnyNativeUserValue {
+        AnyNativeUserValue::DatedSpamUpdate(*self)
     }
 
-    fn into_any_user_value(self) -> AnyUserValue {
-        AnyUserValue::DatedSpamUpdate(self)
+    fn into_any_user_value(self) -> AnyNativeUserValue {
+        AnyNativeUserValue::DatedSpamUpdate(self)
     }
 
-    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self> {
+    fn from_any_user_value(any_user_value: AnyNativeUserValue) -> Option<Self> {
         match any_user_value {
-            AnyUserValue::DatedSpamUpdate(x) => Some(x),
+            AnyNativeUserValue::DatedSpamUpdate(x) => Some(x),
             _ => None,
         }
     }
 
-    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self> {
+    fn from_any_user_value_ref(any_user_value: &AnyNativeUserValue) -> Option<&Self> {
         match any_user_value {
-            AnyUserValue::DatedSpamUpdate(x) => Some(x),
+            AnyNativeUserValue::DatedSpamUpdate(x) => Some(x),
             _ => None,
         }
     }
@@ -273,7 +273,7 @@ impl From<(SpamScore, NaiveDate)> for DatedSpamUpdate {
     }
 }
 
-impl UserValueSeal for DatedSpamUpdate {}
+impl NativeUserValueSeal for DatedSpamUpdate {}
 
 impl Collidable for DatedSpamUpdate {
     fn is_collision(&self, other: &Self) -> bool {

@@ -1,7 +1,7 @@
 use crate::dated::Dated;
-use crate::user_value::AnyUserValue;
-use crate::user_value::UserValueSeal;
-use crate::UserValue;
+use crate::user_value::AnyNativeUserValue;
+use crate::user_value::NativeUserValue;
+use crate::user_value::NativeUserValueSeal;
 use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
@@ -28,27 +28,27 @@ pub enum InvalidCastInputError {
     InvalidInput,
 }
 
-impl UserValueSeal for Dated<CastType> {}
+impl NativeUserValueSeal for Dated<CastType> {}
 
-impl UserValue for Dated<CastType> {
-    fn as_any_user_value(&self) -> AnyUserValue {
-        AnyUserValue::DatedCastType(*self)
+impl NativeUserValue for Dated<CastType> {
+    fn as_any_user_value(&self) -> AnyNativeUserValue {
+        AnyNativeUserValue::DatedCastType(*self)
     }
 
-    fn into_any_user_value(self) -> AnyUserValue {
-        AnyUserValue::DatedCastType(self)
+    fn into_any_user_value(self) -> AnyNativeUserValue {
+        AnyNativeUserValue::DatedCastType(self)
     }
 
-    fn from_any_user_value(any_user_value: AnyUserValue) -> Option<Self> {
+    fn from_any_user_value(any_user_value: AnyNativeUserValue) -> Option<Self> {
         match any_user_value {
-            AnyUserValue::DatedCastType(x) => Some(x),
+            AnyNativeUserValue::DatedCastType(x) => Some(x),
             _ => None,
         }
     }
 
-    fn from_any_user_value_ref(any_user_value: &AnyUserValue) -> Option<&Self> {
+    fn from_any_user_value_ref(any_user_value: &AnyNativeUserValue) -> Option<&Self> {
         match any_user_value {
-            AnyUserValue::DatedCastType(x) => Some(x),
+            AnyNativeUserValue::DatedCastType(x) => Some(x),
             _ => None,
         }
     }

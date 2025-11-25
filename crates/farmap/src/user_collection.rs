@@ -1,6 +1,6 @@
 use crate::fetch::DataReadError;
 use crate::user_collection_serde::UserCollectionSerde;
-use crate::user_value::UserValue;
+use crate::user_value::NativeUserValue;
 use crate::CollectionError;
 use crate::Fid;
 use crate::HasTag;
@@ -29,7 +29,7 @@ impl UserCollection {
     /// Returns a vec of all the collision errors, if there are any.
     pub fn add_user_value_iter<S>(&mut self, values: impl IntoIterator<Item = impl HasTag<Fid, S>>)
     where
-        S: UserValue,
+        S: NativeUserValue,
     {
         for value in values {
             if let Some(user) = self.user_mut(value.tag()) {
@@ -152,7 +152,7 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::UserValue;
+    use crate::user_value::NativeUserValue;
     use std::path::PathBuf;
 
     #[test]
@@ -162,7 +162,7 @@ pub mod tests {
 
     impl<T> HasTag<Fid, T> for TestUserValue<T>
     where
-        T: UserValue,
+        T: NativeUserValue,
     {
         fn tag(&self) -> Fid {
             self.fid
@@ -174,13 +174,13 @@ pub mod tests {
         }
     }
 
-    struct TestUserValue<T: UserValue> {
+    struct TestUserValue<T: NativeUserValue> {
         pub value: T,
         pub fid: Fid,
     }
 
     #[track_caller]
-    pub fn collection_from_fidded<S: UserValue, T: HasTag<Fid, S>>(
+    pub fn collection_from_fidded<S: NativeUserValue, T: HasTag<Fid, S>>(
         values: impl IntoIterator<Item = T>,
     ) -> UserCollection {
         let mut collection = UserCollection::default();
@@ -192,7 +192,7 @@ pub mod tests {
         values: impl IntoIterator<Item = T>,
     ) -> UserCollection
     where
-        T: UserValue,
+        T: NativeUserValue,
     {
         let mut collection = UserCollection::default();
         collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {

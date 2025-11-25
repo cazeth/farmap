@@ -1,4 +1,4 @@
-use crate::user_value::AnyUserValue;
+use crate::user_value::AnyNativeUserValue;
 use crate::Fid;
 use crate::UserStoreWithNativeUserValue;
 use chrono::NaiveDateTime;
@@ -13,10 +13,10 @@ pub struct UserSerde {
     version: u64,
     #[serde(default)]
     #[serde(rename(serialize = "user_values"))]
-    user_values_v2: Vec<AnyUserValue>,
+    user_values_v2: Vec<AnyNativeUserValue>,
     #[serde(default)]
     #[serde(skip_serializing)]
-    user_values: Vec<(AnyUserValue, NaiveDateTime)>,
+    user_values: Vec<(AnyNativeUserValue, NaiveDateTime)>,
     fid: Fid,
 }
 

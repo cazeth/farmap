@@ -1,9 +1,9 @@
 use crate::user_serde::UserSerde;
-use crate::user_value::AnyUserValue;
+use crate::user_value::AnyNativeUserValue;
+use crate::user_value::NativeUserValue;
 use crate::Collidable;
 use crate::Fid;
 use crate::UserError;
-use crate::UserValue;
 use itertools::*;
 use serde::{Deserialize, Serialize};
 
@@ -12,12 +12,12 @@ use serde::{Deserialize, Serialize};
 #[serde(into = "UserSerde")]
 pub struct UserStoreWithNativeUserValue {
     fid: Fid,
-    user_values: Option<Vec<AnyUserValue>>,
+    user_values: Option<Vec<AnyNativeUserValue>>,
 }
 
 impl UserStoreWithNativeUserValue {
     /// Check if a User has at least one value of type T.
-    pub fn has<T: UserValue>(&self) -> bool {
+    pub fn has<T: NativeUserValue>(&self) -> bool {
         if let Some(user_values) = &self.user_values {
             user_values
                 .iter()
@@ -31,7 +31,7 @@ impl UserStoreWithNativeUserValue {
     /// relies on Ts implementation of Collidable to determine collisions.
     pub fn try_add_user_value<T>(&mut self, value: T) -> Result<(), UserError>
     where
-        T: UserValue + Collidable,
+        T: NativeUserValue + Collidable,
     {
         if self
             .user_values_of_kind::<T>()
@@ -49,7 +49,7 @@ impl UserStoreWithNativeUserValue {
     /// This method does not check for collisions.
     pub fn add_user_value<T>(&mut self, value: T)
     where
-        T: UserValue,
+        T: NativeUserValue,
     {
         let any_user_value = value.into_any_user_value();
         if let Some(value_vec) = &mut self.user_values {
@@ -59,7 +59,7 @@ impl UserStoreWithNativeUserValue {
         }
     }
 
-    pub fn all_user_values(&self) -> &Option<Vec<AnyUserValue>> {
+    pub fn all_user_values(&self) -> &Option<Vec<AnyNativeUserValue>> {
         &self.user_values
     }
 
@@ -67,7 +67,7 @@ impl UserStoreWithNativeUserValue {
     /// empty vec.
     pub fn user_values_of_kind<T>(&self) -> Vec<&T>
     where
-        T: UserValue,
+        T: NativeUserValue,
     {
         if let Some(user_values) = &self.user_values {
             user_values
@@ -91,7 +91,7 @@ impl UserStoreWithNativeUserValue {
         self.fid
     }
 
-    pub(crate) fn from_user_values(fid: Fid, values: Vec<AnyUserValue>) -> Self {
+    pub(crate) fn from_user_values(fid: Fid, values: Vec<AnyNativeUserValue>) -> Self {
         if !values.is_empty() {
             Self {
                 fid,
@@ -129,7 +129,10 @@ pub mod tests {
         UserStoreWithNativeUserValue::new(fid)
     }
 
-    pub fn valid_user_value_add<T: UserValue>(user: &mut UserStoreWithNativeUserValue, value: T) {
+    pub fn valid_user_value_add<T: NativeUserValue>(
+        user: &mut UserStoreWithNativeUserValue,
+        value: T,
+    ) {
         user.add_user_value::<T>(value)
     }
 

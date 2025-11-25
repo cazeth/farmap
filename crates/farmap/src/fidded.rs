@@ -1,6 +1,6 @@
+use crate::user_value::NativeUserValue;
 use crate::Fid;
 use crate::HasTag;
-use crate::UserValue;
 
 /// A fid value wrapper.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
@@ -28,7 +28,7 @@ impl<T> From<(T, Fid)> for Fidded<T> {
     }
 }
 
-impl<T: UserValue> HasTag<Fid, T> for Fidded<T> {
+impl<T: NativeUserValue> HasTag<Fid, T> for Fidded<T> {
     fn tag(&self) -> Fid {
         self.fid
     }
