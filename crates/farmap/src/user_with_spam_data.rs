@@ -33,8 +33,6 @@ impl<'a> UserWithSpamData<'a> {
     pub fn dated_spam_updates(&self) -> Vec<&DatedSpamUpdate> {
         self.user
             .all_user_values()
-            .as_ref()
-            .expect("cannot be empty")
             .iter()
             .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
             .collect_vec()
@@ -70,7 +68,6 @@ fn optioned_user_to_user_with_spam_data_conversion(
 ) -> Option<UserWithSpamData> {
     if value
         .all_user_values()
-        .as_ref()?
         .iter()
         .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
         .count()

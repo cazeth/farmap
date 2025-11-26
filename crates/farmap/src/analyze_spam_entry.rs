@@ -302,7 +302,6 @@ impl<'a> TryFrom<&UsersSubset<'a>> for SetWithSpamEntries<'a> {
         let new_subset = value.filtered(|user| {
             user.all_user_values()
                 .iter()
-                .flatten()
                 .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
                 .count()
                 > 0
@@ -377,7 +376,6 @@ where
 {
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
-        .flatten() // second flatten iterates over AnyUserValue
         .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .map(|x| x.date())
         .min()
@@ -390,7 +388,6 @@ where
 {
     iterator
         .flat_map(|user| user.all_user_values()) // flatten to remove users with no user_values
-        .flatten() // second flatten iterates over AnyUserValue
         .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .map(|x| x.date())
         .max()
@@ -399,8 +396,6 @@ where
 
 fn user_spam_updates(user: &UserStoreWithNativeUserValue) -> Vec<&DatedSpamUpdate> {
     user.all_user_values()
-        .as_ref()
-        .expect("user should have at least one user value")
         .iter()
         .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .collect()
@@ -565,7 +560,6 @@ mod tests {
         fn ones_and_twos() {
             let collection = create_users_with_spam_labels_ones_and_twos(2);
             let set = create_set(&collection);
-            dbg!(&set);
             assert!(set.is_some())
         }
 

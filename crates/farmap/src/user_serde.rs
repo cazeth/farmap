@@ -30,14 +30,9 @@ impl From<UserSerde> for UserStoreWithNativeUserValue {
 
 impl From<UserStoreWithNativeUserValue> for UserSerde {
     fn from(value: UserStoreWithNativeUserValue) -> Self {
-        let user_values = if let Some(values) = value.all_user_values() {
-            values.clone()
-        } else {
-            Vec::new()
-        };
         Self {
             version: LATEST_VERSION,
-            user_values_v2: user_values,
+            user_values_v2: value.all_user_values().to_vec(),
             user_values: Vec::new(),
             fid: value.fid(),
         }

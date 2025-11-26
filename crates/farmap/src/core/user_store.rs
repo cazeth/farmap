@@ -43,7 +43,6 @@ impl<T: AnyUserValue> UserStore<T> {
         self.values.iter().flat_map(|x| x.specify_ref::<S>())
     }
 
-    #[expect(unused)]
     pub(crate) fn from_generic_user_values(
         fid: impl Into<Fid>,
         values: impl IntoIterator<Item = T>,
