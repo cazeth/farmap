@@ -1,11 +1,11 @@
 #![allow(refining_impl_trait)]
-use crate::collidable::Collidable;
 use crate::dated::Dated;
-use crate::has_tag::HasTag;
 use crate::user_value::AnyUserValue;
 use crate::user_value::UserValue;
 use crate::user_value::UserValueSeal;
 use crate::utils::distribution_from_counts;
+use crate::Collidable;
+use crate::HasTag;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

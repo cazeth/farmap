@@ -1,6 +1,6 @@
-use crate::collidable::Collidable;
 use crate::user_serde::UserSerde;
 use crate::user_value::AnyUserValue;
+use crate::Collidable;
 use crate::Fid;
 use crate::UserError;
 use crate::UserValue;

@@ -1,10 +1,10 @@
-use crate::collection_error::CollectionError;
 use crate::fetch::DataReadError;
-use crate::has_tag::HasTag;
 use crate::user::User;
 use crate::user_collection_serde::UserCollectionSerde;
 use crate::user_value::UserValue;
+use crate::CollectionError;
 use crate::Fid;
+use crate::HasTag;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;

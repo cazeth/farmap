@@ -1,4 +1,4 @@
-//! Check for conflicting values, i.e. values that are contradictory in some way.
+/// Check for conflicting values, i.e. values that are contradictory in some way.
 pub trait Collidable {
     fn is_collision(&self, other: &Self) -> bool;
 }
