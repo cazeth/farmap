@@ -1,4 +1,6 @@
 use crate::cast_type::CastType;
+use crate::core::AnyUserValue;
+use crate::core::UserValue;
 use crate::dated::Dated;
 use crate::follow_count::FollowCount;
 use crate::spam_score::{DatedSpamUpdate, SpamScore, SpamUpdate};
@@ -37,5 +39,15 @@ impl AnyNativeUserValue {
 
     pub fn specify_ref<T: NativeUserValue>(&self) -> Option<&T> {
         T::from_any_user_value_ref(self)
+    }
+}
+
+impl AnyUserValue for AnyNativeUserValue {
+    fn specify_ref<S: UserValue<AnyNativeUserValue>>(&self) -> Option<&S> {
+        S::from_any_ref(self)
+    }
+
+    fn specify<S: UserValue<AnyNativeUserValue>>(self) -> Option<S> {
+        S::from_any(self)
     }
 }
