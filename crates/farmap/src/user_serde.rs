@@ -32,7 +32,7 @@ impl From<UserStoreWithNativeUserValue> for UserSerde {
     fn from(value: UserStoreWithNativeUserValue) -> Self {
         Self {
             version: LATEST_VERSION,
-            user_values_v2: value.all_user_values().to_vec(),
+            user_values_v2: value.all_user_values().cloned().collect(),
             user_values: Vec::new(),
             fid: value.fid(),
         }

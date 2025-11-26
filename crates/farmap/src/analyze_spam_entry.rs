@@ -301,7 +301,6 @@ impl<'a> TryFrom<&UsersSubset<'a>> for SetWithSpamEntries<'a> {
     fn try_from(value: &UsersSubset<'a>) -> Result<Self, Self::Error> {
         let new_subset = value.filtered(|user| {
             user.all_user_values()
-                .iter()
                 .flat_map(|user_value| user_value.specify_ref::<DatedSpamUpdate>())
                 .count()
                 > 0
@@ -396,7 +395,6 @@ where
 
 fn user_spam_updates(user: &UserStoreWithNativeUserValue) -> Vec<&DatedSpamUpdate> {
     user.all_user_values()
-        .iter()
         .flat_map(|x| x.specify_ref::<DatedSpamUpdate>())
         .collect()
 }

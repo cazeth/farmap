@@ -39,7 +39,7 @@ impl UserStoreWithNativeUserValue {
         self.core.add_user_value(value);
     }
 
-    pub fn all_user_values(&self) -> &Vec<AnyNativeUserValue> {
+    pub fn all_user_values(&self) -> impl Iterator<Item = &AnyNativeUserValue> {
         self.core.all_user_values()
     }
 
