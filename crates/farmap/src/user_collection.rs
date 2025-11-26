@@ -1,3 +1,4 @@
+use crate::collection_error::CollectionError;
 use crate::fetch::DataReadError;
 use crate::has_tag::HasTag;
 use crate::user::User;
@@ -118,16 +119,6 @@ impl From<HashMap<Fid, User>> for UserCollection {
     fn from(value: HashMap<Fid, User>) -> Self {
         Self { map: value }
     }
-}
-
-#[derive(Error, Debug, PartialEq, Clone, Hash)]
-#[non_exhaustive]
-pub enum CollectionError {
-    #[error("Tried to add colliding value")]
-    UserValueCollisionError,
-
-    #[error("user already exists in collection")]
-    DuplicateUserError,
 }
 
 #[derive(Error, Debug, PartialEq)]
