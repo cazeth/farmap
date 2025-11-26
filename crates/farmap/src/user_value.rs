@@ -20,6 +20,24 @@ pub trait NativeUserValue:
     fn from_any_user_value_ref(any_user_value: &AnyNativeUserValue) -> Option<&Self>;
 }
 
+impl<T> UserValue<AnyNativeUserValue> for T
+where
+    T: NativeUserValue,
+{
+    fn as_any(&self) -> AnyNativeUserValue {
+        T::as_any_user_value(self)
+    }
+    fn into_any(self) -> AnyNativeUserValue {
+        T::into_any_user_value(self)
+    }
+    fn from_any(list: AnyNativeUserValue) -> Option<Self> {
+        T::from_any_user_value(list)
+    }
+    fn from_any_ref(list: &AnyNativeUserValue) -> Option<&Self> {
+        T::from_any_user_value_ref(list)
+    }
+}
+
 pub(crate) trait NativeUserValueSeal {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
