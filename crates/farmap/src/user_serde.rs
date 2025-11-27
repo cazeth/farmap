@@ -1,4 +1,4 @@
-use crate::user_value::AnyNativeUserValue;
+use crate::AnyNativeUserValue;
 use crate::Fid;
 use crate::UserStoreWithNativeUserValue;
 use chrono::NaiveDateTime;

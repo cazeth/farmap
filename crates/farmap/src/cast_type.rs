@@ -1,7 +1,7 @@
 use crate::dated::Dated;
-use crate::user_value::AnyNativeUserValue;
-use crate::user_value::NativeUserValue;
-use crate::user_value::NativeUserValueSeal;
+use crate::native_user_value::AnyNativeUserValue;
+use crate::native_user_value::NativeUserValueSeal;
+use crate::NativeUserValue;
 use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;

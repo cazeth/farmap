@@ -144,7 +144,7 @@ mod tests {
         fn test_user_count_before_and_after_filter() {
             let users = dummy_data();
             let mut set = create_set(&users);
-            let fid_filter = |user: &UserStoreWithNativeUserValue| is_fid(user, 1 as u64);
+            let fid_filter = |user: &UserStoreWithNativeUserValue| is_fid(user, 1_u64);
             check_user_count(&set, 2);
             test_filter::check_filter(&mut set, fid_filter);
             check_user_count(&set, 1);
@@ -154,7 +154,7 @@ mod tests {
         fn test_user_count_before_and_after_filter_two() {
             let users = dummy_data();
             let mut set = create_set(&users);
-            let fid_filter = |user: &UserStoreWithNativeUserValue| !is_fid(user, 3 as u64);
+            let fid_filter = |user: &UserStoreWithNativeUserValue| !is_fid(user, 3_u64);
             check_user_count(&set, 2);
             test_filter::check_filter(&mut set, fid_filter);
             check_user_count(&set, 2);

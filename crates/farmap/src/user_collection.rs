@@ -1,9 +1,9 @@
 use crate::fetch::DataReadError;
 use crate::user_collection_serde::UserCollectionSerde;
-use crate::user_value::NativeUserValue;
 use crate::CollectionError;
 use crate::Fid;
 use crate::HasTag;
+use crate::NativeUserValue;
 use crate::UserStoreWithNativeUserValue;
 use serde::Deserialize;
 use serde::Serialize;
@@ -152,7 +152,7 @@ pub enum DbReadError {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::user_value::NativeUserValue;
+    use crate::NativeUserValue;
     use std::path::PathBuf;
 
     #[test]

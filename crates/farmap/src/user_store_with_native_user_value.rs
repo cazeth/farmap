@@ -1,9 +1,9 @@
 use crate::core::UserStore;
 use crate::user_serde::UserSerde;
-use crate::user_value::AnyNativeUserValue;
-use crate::user_value::NativeUserValue;
+use crate::AnyNativeUserValue;
 use crate::Collidable;
 use crate::Fid;
+use crate::NativeUserValue;
 use crate::UserError;
 use serde::{Deserialize, Serialize};
 

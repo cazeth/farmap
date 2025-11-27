@@ -1,7 +1,7 @@
-use crate::user_value::AnyNativeUserValue;
-use crate::user_value::NativeUserValue;
+use crate::native_user_value::AnyNativeUserValue;
+use crate::NativeUserValue;
 
-use crate::user_value::NativeUserValueSeal;
+use crate::native_user_value::NativeUserValueSeal;
 use serde::Deserialize;
 use serde::Serialize;
 
