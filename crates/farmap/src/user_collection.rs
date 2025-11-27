@@ -98,7 +98,7 @@ impl UserCollection {
         let new_map = old_map
             .into_values()
             .filter(|user| filter(user))
-            .map(|user| (user.fid().into(), user))
+            .map(|user| (user.fid(), user))
             .collect::<HashMap<Fid, UserStoreWithNativeUserValue>>();
         self.map = new_map;
     }
@@ -112,7 +112,7 @@ impl UserCollection {
     }
 
     pub fn add_user(&mut self, user: UserStoreWithNativeUserValue) -> Result<(), CollectionError> {
-        let fid: Fid = user.fid().into();
+        let fid: Fid = user.fid();
         if let Vacant(v) = self.map.entry(fid) {
             v.insert(user);
             Ok(())
