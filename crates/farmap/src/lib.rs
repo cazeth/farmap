@@ -63,6 +63,7 @@ pub use unprocessed_user_line::UnprocessedUserLine;
 pub use user_collection::UserCollection;
 pub use user_set::UserSet;
 pub use user_store_with_native_user_value::UserStoreWithNativeUserValue;
+pub use user_value::AnyNativeUserValue;
 pub use user_value::NativeUserValue;
 pub use user_with_cast_data::UserWithCastData;
 pub use user_with_spam_data::UserWithSpamData;
