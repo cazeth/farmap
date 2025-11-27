@@ -56,7 +56,7 @@ impl<T: AnyUserValue> UserStore<T> {
         self.fid
     }
 
-    pub fn all_user_values<'a>(&'a self) -> impl Iterator<Item = &'a T> {
+    pub fn all_user_values(&self) -> impl Iterator<Item = &T> {
         self.values.iter()
     }
 }
