@@ -1,5 +1,5 @@
 use crate::is_user::IsUser;
-use crate::user_collection::UserCollection;
+use crate::user_collection::UserCollectionWithNativeUserValue;
 use crate::Fid;
 use crate::UserStoreWithNativeUserValue;
 use std::collections::HashMap;
@@ -10,7 +10,7 @@ pub struct UsersSubset<'a> {
 }
 
 impl<'a> UsersSubset<'a> {
-    pub fn from_filter<F>(users: &'a UserCollection, filter: F) -> Self
+    pub fn from_filter<F>(users: &'a UserCollectionWithNativeUserValue, filter: F) -> Self
     where
         F: Fn(&UserStoreWithNativeUserValue) -> bool,
     {
@@ -88,8 +88,8 @@ impl<'a> From<HashMap<Fid, &'a UserStoreWithNativeUserValue>> for UsersSubset<'a
     }
 }
 
-impl<'a> From<&'a UserCollection> for UsersSubset<'a> {
-    fn from(users: &'a UserCollection) -> Self {
+impl<'a> From<&'a UserCollectionWithNativeUserValue> for UsersSubset<'a> {
+    fn from(users: &'a UserCollectionWithNativeUserValue) -> Self {
         let map: HashMap<Fid, &UserStoreWithNativeUserValue> = users
             .data()
             .iter()
@@ -108,12 +108,12 @@ mod tests {
 
     #[test]
     fn empty_set() {
-        let users = UserCollection::default();
+        let users = UserCollectionWithNativeUserValue::default();
         let set = UsersSubset::from(&users);
         assert_eq!(set.user_count(), 0);
     }
 
-    pub fn create_set(collection: &UserCollection) -> UsersSubset {
+    pub fn create_set(collection: &UserCollectionWithNativeUserValue) -> UsersSubset {
         UsersSubset::from(collection)
     }
 

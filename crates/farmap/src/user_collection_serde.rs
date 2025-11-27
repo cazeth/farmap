@@ -1,5 +1,5 @@
 use crate::Fid;
-use crate::UserCollection;
+use crate::UserCollectionWithNativeUserValue;
 use crate::UserStoreWithNativeUserValue;
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -21,7 +21,7 @@ impl UserCollectionSerde {
     }
 }
 
-impl From<UserCollectionSerde> for UserCollection {
+impl From<UserCollectionSerde> for UserCollectionWithNativeUserValue {
     fn from(value: UserCollectionSerde) -> Self {
         if !value.is_latest_version() {
             warn!("Data is not latest version. Please overwrite your database.");
@@ -30,8 +30,8 @@ impl From<UserCollectionSerde> for UserCollection {
     }
 }
 
-impl From<UserCollection> for UserCollectionSerde {
-    fn from(value: UserCollection) -> Self {
+impl From<UserCollectionWithNativeUserValue> for UserCollectionSerde {
+    fn from(value: UserCollectionWithNativeUserValue) -> Self {
         let data = value.data();
         Self {
             version: LATEST_VERSION,

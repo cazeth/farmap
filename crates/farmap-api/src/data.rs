@@ -10,7 +10,7 @@ use farmap::spam_score::DatedSpamUpdate;
 use farmap::Fidded;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
-use farmap::UserCollection;
+use farmap::UserCollectionWithNativeUserValue as UserCollection;
 use futures::stream::{self, StreamExt};
 use futures::TryStreamExt;
 use itertools::iproduct;

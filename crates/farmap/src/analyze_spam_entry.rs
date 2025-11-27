@@ -7,7 +7,7 @@ use crate::Fid;
 use crate::FidScoreShift;
 use crate::SpamScore;
 use crate::SpamScoreDistribution;
-use crate::UserCollection;
+use crate::UserCollectionWithNativeUserValue;
 use crate::UserSet;
 use crate::UserStoreWithNativeUserValue;
 use crate::UserWithSpamData;
@@ -33,7 +33,7 @@ impl<'a> SetWithSpamEntries<'a> {
     /// Creates a set that contains all the [User]s with spamdata.
     /// Returns None when a [UserCollection] doesn't have [User]s that contains at least one
     /// [SpamUpdate](crate::spam_score::DatedSpamUpdate).
-    pub fn new(collection: &'a UserCollection) -> Option<Self> {
+    pub fn new(collection: &'a UserCollectionWithNativeUserValue) -> Option<Self> {
         let set = UsersSubset::from_filter(collection, |user| user.has::<DatedSpamUpdate>());
         if set.user_count() == 0 {
             None
@@ -434,7 +434,7 @@ mod tests {
 
     use super::*;
 
-    fn create_set(collection: &UserCollection) -> Option<SetWithSpamEntries> {
+    fn create_set(collection: &UserCollectionWithNativeUserValue) -> Option<SetWithSpamEntries> {
         SetWithSpamEntries::new(collection)
     }
 
@@ -484,7 +484,10 @@ mod tests {
         .take(n)
     }
 
-    fn create_users_with_spam_label_one(n: usize, date: NaiveDate) -> UserCollection {
+    fn create_users_with_spam_label_one(
+        n: usize,
+        date: NaiveDate,
+    ) -> UserCollectionWithNativeUserValue {
         fn spam_score_is_constant_one(_: SpamScore) -> SpamScore {
             SpamScore::One
         }
@@ -494,7 +497,7 @@ mod tests {
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
-    fn create_users_with_cycling_spam_labels(n: usize) -> UserCollection {
+    fn create_users_with_cycling_spam_labels(n: usize) -> UserCollectionWithNativeUserValue {
         fn cycling_spam_score(prev: SpamScore) -> SpamScore {
             match prev {
                 SpamScore::Zero => SpamScore::One,
@@ -509,7 +512,7 @@ mod tests {
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
-    fn create_users_with_spam_labels_ones_and_twos(n: usize) -> UserCollection {
+    fn create_users_with_spam_labels_ones_and_twos(n: usize) -> UserCollectionWithNativeUserValue {
         fn one_and_two_alternating(prev: SpamScore) -> SpamScore {
             match prev {
                 SpamScore::One => SpamScore::Two,
@@ -528,7 +531,9 @@ mod tests {
         crate::user_collection::tests::new_collection_from_user_value_iter(iter)
     }
 
-    fn basic_single_user_test_collection_with_n_spam_updates(n: u64) -> UserCollection {
+    fn basic_single_user_test_collection_with_n_spam_updates(
+        n: u64,
+    ) -> UserCollectionWithNativeUserValue {
         let date = date("2020-1-1");
         let user = create_user_with_m_spam_scores(1, n, date);
 
@@ -820,8 +825,11 @@ mod tests {
 
     // one user created per day with one spam score per day m times. Starting at zero then rotating
     // through zero, one, two...
-    fn basic_m_user_test_collection_with_n_spam_updates(m: u64, n: u64) -> UserCollection {
-        let mut collection = UserCollection::default();
+    fn basic_m_user_test_collection_with_n_spam_updates(
+        m: u64,
+        n: u64,
+    ) -> UserCollectionWithNativeUserValue {
+        let mut collection = UserCollectionWithNativeUserValue::default();
         let mut date = NaiveDate::parse_from_str("2020-1-1", "%Y-%m-%d").unwrap();
         for i in 0..m {
             let user = create_user_with_m_spam_scores(i, n, date);

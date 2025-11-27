@@ -9,7 +9,7 @@ use chrono::{Days, Months, NaiveDate};
 use farmap::SetWithCastData;
 use farmap::SetWithSpamEntries;
 use farmap::TryFromUserSet;
-use farmap::UserCollection;
+use farmap::UserCollectionWithNativeUserValue as UserCollection;
 use farmap::UserWithSpamData;
 use log::info;
 use log::trace;

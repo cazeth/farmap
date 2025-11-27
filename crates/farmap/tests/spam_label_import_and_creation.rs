@@ -2,7 +2,7 @@
 use farmap::fetch::local_spam_label_importer;
 use farmap::spam_score::DatedSpamUpdate;
 use farmap::Fidded;
-use farmap::UserCollection;
+use farmap::UserCollectionWithNativeUserValue;
 use farmap::UserStoreWithNativeUserValue as User;
 
 #[test]
@@ -15,7 +15,7 @@ pub fn test_spam_score_collision_with_error_collect() {
         local_spam_label_importer::import_data_from_file("data/invalid-data/collision_data.jsonl")
             .unwrap();
 
-    let mut user_collection = UserCollection::default();
+    let mut user_collection = UserCollectionWithNativeUserValue::default();
     let first_line = updates[0];
 
     let mut user = User::new(first_line.fid());

@@ -3,7 +3,7 @@ use crate::dated::Dated;
 use crate::try_from_user::TryFromUser;
 use crate::try_from_user_set::TryFromUserSet;
 use crate::Fid;
-use crate::UserCollection;
+use crate::UserCollectionWithNativeUserValue;
 use crate::UserStoreWithNativeUserValue;
 use crate::UserWithCastData;
 use crate::{UserSet, UsersSubset};
@@ -76,9 +76,9 @@ impl<'a, T: UserSet<'a>> TryFromUserSet<'a, T> for SetWithCastData<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a UserCollection> for SetWithCastData<'a> {
+impl<'a> TryFrom<&'a UserCollectionWithNativeUserValue> for SetWithCastData<'a> {
     type Error = SetWithCastDataError;
-    fn try_from(collection: &'a UserCollection) -> Result<Self, Self::Error> {
+    fn try_from(collection: &'a UserCollectionWithNativeUserValue) -> Result<Self, Self::Error> {
         let set = UsersSubset::from_filter(collection, |user| user.has::<Dated<CastType>>());
         if set.user_count() != 0 {
             Ok(Self { set })
@@ -101,7 +101,7 @@ pub enum SetWithCastDataError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::user_collection::UserCollection;
+    use crate::user_collection::UserCollectionWithNativeUserValue;
     use chrono::NaiveDate;
 
     fn same_date_cast_iter(count: usize, date: NaiveDate) -> impl Iterator<Item = Dated<CastType>> {
@@ -111,12 +111,14 @@ mod tests {
 
     #[allow(unused)]
     #[track_caller]
-    fn create_valid_cast_user_set(collection: &UserCollection) -> SetWithCastData {
+    fn create_valid_cast_user_set(
+        collection: &UserCollectionWithNativeUserValue,
+    ) -> SetWithCastData {
         collection.try_into().unwrap()
     }
 
     #[track_caller]
-    fn check_err_on_invalid_cast_user_set(collection: &UserCollection) {
+    fn check_err_on_invalid_cast_user_set(collection: &UserCollectionWithNativeUserValue) {
         let err = SetWithCastData::try_from(collection);
         if let Err(err) = err {
             assert_eq!(err, SetWithCastDataError::EmptySetError);

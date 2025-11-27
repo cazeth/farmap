@@ -25,7 +25,7 @@ mod time_utils;
 mod try_from_user;
 mod try_from_user_set;
 mod unprocessed_user_line;
-pub mod user_collection;
+mod user_collection;
 mod user_collection_serde;
 mod user_serde;
 mod user_set;
@@ -62,7 +62,7 @@ pub use try_from_user::TryFromUser;
 pub use try_from_user_set::TryFromUserSet;
 pub use unprocessed_user_line::UnprocessedUserLine;
 #[doc(inline)]
-pub use user_collection::UserCollection;
+pub use user_collection::UserCollectionWithNativeUserValue;
 pub use user_set::UserSet;
 pub use user_store_with_native_user_value::UserStoreWithNativeUserValue;
 pub use user_with_cast_data::UserWithCastData;

@@ -1,4 +1,3 @@
-use crate::fetch::DataReadError;
 use crate::user_collection_serde::UserCollectionSerde;
 use crate::CollectionError;
 use crate::Fid;
@@ -9,18 +8,15 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::HashMap;
-use thiserror::Error;
 
 #[derive(Default, Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[serde(from = "UserCollectionSerde")]
 #[serde(into = "UserCollectionSerde")]
-pub struct UserCollection {
+pub struct UserCollectionWithNativeUserValue {
     map: HashMap<Fid, UserStoreWithNativeUserValue>,
 }
 
-pub type CreateResult = Result<(UserCollection, Vec<DataCreationError>), DataCreationError>;
-
-impl UserCollection {
+impl UserCollectionWithNativeUserValue {
     /// Returns a vec of all the collision errors, if there are any.
     pub fn add_user_value_iter<S>(&mut self, values: impl IntoIterator<Item = impl HasTag<Fid, S>>)
     where
@@ -96,31 +92,10 @@ impl UserCollection {
     }
 }
 
-impl From<HashMap<Fid, UserStoreWithNativeUserValue>> for UserCollection {
+impl From<HashMap<Fid, UserStoreWithNativeUserValue>> for UserCollectionWithNativeUserValue {
     fn from(value: HashMap<Fid, UserStoreWithNativeUserValue>) -> Self {
         Self { map: value }
     }
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum DataCreationError {
-    #[error("Input data is invalid.")]
-    InvalidInputError,
-
-    #[error("Input is not readable or accessible")]
-    DataReadError(#[from] DataReadError),
-
-    #[error("DuplicateUserError")]
-    DuplicateUserError,
-}
-
-#[derive(Error, Debug)]
-pub enum DbReadError {
-    #[error("fs error")]
-    FSError(#[from] std::io::Error),
-
-    #[error("json error")]
-    JSONError(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
@@ -154,21 +129,22 @@ pub mod tests {
     }
 
     #[track_caller]
+    #[expect(unused)]
     pub fn collection_from_fidded<S: NativeUserValue, T: HasTag<Fid, S>>(
         values: impl IntoIterator<Item = T>,
-    ) -> UserCollection {
-        let mut collection = UserCollection::default();
+    ) -> UserCollectionWithNativeUserValue {
+        let mut collection = UserCollectionWithNativeUserValue::default();
         collection.add_user_value_iter(values);
         collection
     }
 
     pub fn new_collection_from_user_value_iter<T>(
         values: impl IntoIterator<Item = T>,
-    ) -> UserCollection
+    ) -> UserCollectionWithNativeUserValue
     where
         T: NativeUserValue,
     {
-        let mut collection = UserCollection::default();
+        let mut collection = UserCollectionWithNativeUserValue::default();
         collection.add_user_value_iter(values.into_iter().enumerate().map(|(n, x)| {
             TestUserValue {
                 value: x,
@@ -178,11 +154,11 @@ pub mod tests {
         collection
     }
 
-    pub fn empty_collection() -> UserCollection {
-        UserCollection::default()
+    pub fn empty_collection() -> UserCollectionWithNativeUserValue {
+        UserCollectionWithNativeUserValue::default()
     }
 
-    pub fn dummy_data() -> UserCollection {
+    pub fn dummy_data() -> UserCollectionWithNativeUserValue {
         let db_path = PathBuf::from("data/dummy-data_db_v1.json");
         serde_json::from_str(&std::fs::read_to_string(db_path).unwrap()).unwrap()
     }
@@ -192,7 +168,10 @@ pub mod tests {
         use super::*;
 
         #[track_caller]
-        pub fn check_add_user(collection: &mut UserCollection, user: UserStoreWithNativeUserValue) {
+        pub fn check_add_user(
+            collection: &mut UserCollectionWithNativeUserValue,
+            user: UserStoreWithNativeUserValue,
+        ) {
             collection.add_user(user).unwrap()
         }
     }
@@ -204,7 +183,7 @@ pub mod tests {
         use super::*;
 
         #[track_caller]
-        fn check_user_count(collection: &UserCollection, n: usize) {
+        fn check_user_count(collection: &UserCollectionWithNativeUserValue, n: usize) {
             assert_eq!(collection.user_count(), n)
         }
 

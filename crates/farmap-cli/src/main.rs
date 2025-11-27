@@ -9,7 +9,7 @@ use farmap::spam_score::DatedSpamUpdate;
 use farmap::Fidded;
 use farmap::SetWithSpamEntries;
 use farmap::SpamScore;
-use farmap::UserCollection;
+use farmap::UserCollectionWithNativeUserValue as UserCollection;
 use farmap::UserStoreWithNativeUserValue as User;
 use farmap::UserWithSpamData;
 use farmap::UsersSubset;
