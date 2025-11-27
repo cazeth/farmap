@@ -9,11 +9,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
-use std::path::Path;
 use thiserror::Error;
 
 #[derive(Default, Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -65,27 +60,6 @@ impl UserCollection {
 
     pub fn user_count(&self) -> usize {
         self.map.len()
-    }
-
-    // the problem with this is that when the file does not exist the program will fail because
-    // there isn't really a way for the caller to anticipate this...
-    pub fn create_from_db(db: &Path) -> Result<Self, DbReadError> {
-        let collection = serde_json::from_str(&std::fs::read_to_string(db)?)?;
-
-        Ok(collection)
-    }
-
-    pub fn create_from_file(file: &mut std::fs::File) -> Result<Self, DbReadError> {
-        let mut result = String::new();
-        file.read_to_string(&mut result)?;
-        Ok(serde_json::from_str(&result)?)
-    }
-
-    pub fn save_to_db(&self, db: &Path) -> Result<(), Box<dyn Error>> {
-        let mut file = File::create(db)?;
-        let json_text = serde_json::to_string(self)?;
-        file.write_all(json_text.as_bytes())?;
-        Ok(())
     }
 
     /// Applies a filter to the user data. Use with caution since the data is removed from the
@@ -210,7 +184,7 @@ pub mod tests {
 
     pub fn dummy_data() -> UserCollection {
         let db_path = PathBuf::from("data/dummy-data_db_v1.json");
-        UserCollection::create_from_db(&db_path).unwrap()
+        serde_json::from_str(&std::fs::read_to_string(db_path).unwrap()).unwrap()
     }
 
     pub mod add_user {
