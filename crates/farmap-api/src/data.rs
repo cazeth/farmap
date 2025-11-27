@@ -32,7 +32,7 @@ pub async fn get_data() -> UserCollection {
 
     info!("reacreating user data from local database...");
     let mut users = if readwrite_to_filesystem.get() {
-        UserCollection::create_from_db(&users_db_path).unwrap_or_default()
+        create_from_db(&users_db_path).unwrap_or_default()
     } else {
         UserCollection::default()
     };
@@ -68,12 +68,26 @@ pub async fn get_data() -> UserCollection {
     import_pinata_data(&mut users).await;
 
     if readwrite_to_filesystem.get() {
-        users
-            .save_to_db(&users_db_path)
+        save_to_db(&users, &users_db_path)
             .unwrap_or_else(|_| handle_rw_error(&readwrite_to_filesystem));
     };
 
     users
+}
+
+pub fn create_from_db(db: &Path) -> Result<UserCollection, Box<dyn std::error::Error>> {
+    let users = serde_json::from_str(&std::fs::read_to_string(db)?)?;
+    Ok(users)
+}
+
+pub fn save_to_db(
+    collection: &UserCollection,
+    db: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut file = File::create(db)?;
+    let json_text = serde_json::to_string(collection)?;
+    file.write_all(json_text.as_bytes())?;
+    Ok(())
 }
 
 pub async fn import_pinata_data(users: &mut UserCollection) {

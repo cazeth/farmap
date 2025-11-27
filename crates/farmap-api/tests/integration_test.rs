@@ -1,4 +1,3 @@
-use farmap::UserCollection;
 use farmap_api::app::build_app;
 use reqwest::StatusCode;
 use serde_json::Value;
@@ -9,9 +8,8 @@ use tokio::net::TcpListener;
 
 async fn spawn_test_server() -> (SocketAddr, tokio::task::JoinHandle<()>) {
     let test_db_path = PathBuf::from("test-data/user-db.json");
-    let users =
-        UserCollection::create_from_db(&test_db_path).expect("Failed to load test database");
 
+    let users = serde_json::from_str(&std::fs::read_to_string(test_db_path).unwrap()).unwrap();
     let shared_users = Arc::new(users);
 
     std::env::remove_var("ALLOW_TOKEN");
