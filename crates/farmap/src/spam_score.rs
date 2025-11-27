@@ -4,7 +4,6 @@ use crate::native_user_value::AnyNativeUserValue;
 use crate::native_user_value::NativeUserValueSeal;
 use crate::utils::distribution_from_counts;
 use crate::Collidable;
-use crate::HasTag;
 use crate::NativeUserValue;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -19,38 +18,9 @@ pub enum SpamScore {
 
 pub type SpamScoreWithSourceCommit = (SpamScore, CommitHash);
 pub type SpamRecord = (SpamScore, NaiveDate);
-pub type SpamRecordWithSourceCommit = ((SpamScore, NaiveDate), CommitHash);
 pub type DatedSpamScoreCount = Dated<SpamScoreCount>;
 pub type DatedSpamScoreDistribution = Dated<SpamScoreDistribution>;
 pub type DatedSpamUpdate = Dated<SpamUpdate>;
-pub type DatedSpamUpdateWithFid = Dated<SpamUpdateWithFid>;
-pub type SpamUpdateWithFid = (SpamUpdate, u64);
-
-impl HasTag<u64, SpamUpdate> for SpamUpdateWithFid {
-    fn tag(&self) -> u64 {
-        self.1
-    }
-
-    fn untag(self) -> (u64, SpamUpdate) {
-        (self.1, self.0)
-    }
-}
-
-impl HasTag<(NaiveDate, u64), SpamUpdate> for DatedSpamUpdateWithFid {
-    fn tag(&self) -> (NaiveDate, u64) {
-        (self.date(), self.as_inner().1)
-    }
-
-    fn untag(self) -> ((NaiveDate, u64), SpamUpdate) {
-        ((self.date(), self.as_inner().1), self.into_inner().into())
-    }
-}
-
-impl From<SpamUpdateWithFid> for SpamUpdate {
-    fn from(value: SpamUpdateWithFid) -> SpamUpdate {
-        value.0
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SpamScoreCount {
@@ -278,20 +248,6 @@ impl NativeUserValueSeal for DatedSpamUpdate {}
 impl Collidable for DatedSpamUpdate {
     fn is_collision(&self, other: &Self) -> bool {
         self.date() == other.date() && self.score() != other.score()
-    }
-}
-
-impl HasTag<u64, DatedSpamUpdate> for DatedSpamUpdateWithFid {
-    fn untag(self) -> (u64, DatedSpamUpdate) {
-        let date = self.date();
-        let spam_update = self.into_inner();
-        let fid = spam_update.1;
-        let res = DatedSpamUpdate::from(date, spam_update);
-        (fid, res)
-    }
-
-    fn tag(&self) -> u64 {
-        self.1
     }
 }
 
