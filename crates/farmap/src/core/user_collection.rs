@@ -13,9 +13,17 @@ use std::collections::HashMap;
 ///
 /// The type parameter T refers to the [`AnyUserValue`] that all the users in the collection
 /// implement. All users in the collection must be generic over the same [`AnyUserValue`].
-///
+#[derive(Debug, PartialEq, Clone)]
 pub struct UserCollection<T: AnyUserValue> {
     map: HashMap<Fid, UserStore<T>>,
+}
+
+impl<T: AnyUserValue> Default for UserCollection<T> {
+    fn default() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
 }
 
 #[expect(unused)]
