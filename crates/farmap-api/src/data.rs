@@ -64,6 +64,15 @@ pub async fn get_data() -> UserCollection {
 
     info!("finished with github data");
     info!("number of users are {:?}", users.user_count());
+    if let Some(spam_set) = SetWithSpamEntries::new(&users) {
+        info!(
+            "number of users with spam data is {:?}",
+            spam_set.user_count()
+        )
+    }
+    {
+        info!("There are no spam users in the dataset!")
+    }
 
     import_pinata_data(&mut users).await;
 
@@ -129,7 +138,7 @@ pub async fn import_pinata_data(users: &mut UserCollection) {
 
         if let Some(user) = users.user_mut(fid) {
             for value in cast_metas {
-                let _ = user.add_user_value(value);
+                user.add_user_value(value);
             }
             trace!("adding cast records to fid {fid}");
         } else {
